@@ -26,7 +26,7 @@ if(WITH_FTD2XX_AS_PACKAGE)
   )
 else()
   set(SSP_DEPENDENCIES
-    $ENV{FTD2XX_LIB}/libftd2xx.so.1.4.24
+    $ENV{FTD2XX_LIB}/libftd2xx.so
   )
 endif()
 
