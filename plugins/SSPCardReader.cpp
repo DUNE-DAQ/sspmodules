@@ -89,7 +89,6 @@ SSPCardReader::init(const data_t& args)
 void
 SSPCardReader::do_configure(const data_t& args)
 {
-  //m_cfg = args.get<sspcardreader::Conf>();
 }
 
 void

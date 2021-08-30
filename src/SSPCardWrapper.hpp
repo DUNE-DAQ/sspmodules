@@ -9,6 +9,7 @@
 #define SSPMODULES_SRC_CARDWRAPPER_HPP_
 
 #include "readout/utils/ReusableThread.hpp"
+#include "anlBoard/DeviceInterface.h"
 
 //#include "packetformat/block_format.hpp"
 
@@ -44,14 +45,25 @@ public:
 
 private:
   // Types
-  //using module_conf_t = dunedaq::sspmodules::felixcardreader::Conf;
+  //using module_conf_t = dunedaq::sspmodules::sspcardreader::Conf;
 
-  // Constants
-  //static constexpr size_t m_max_links_per_card = 6;
-  // static constexpr size_t m_margin_blocks = 4;
-  // static constexpr size_t m_block_threshold = 256;
-  //static constexpr size_t m_block_size = 4096; // felix::packetformat::BLOCKSIZE;
-  //static constexpr size_t m_dma_wraparound = FLX_DMA_WRAPAROUND;
+  //these are SSP configurations for this instance of the SSP Card Wrapper
+  //dune::detail::FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh), //KIRBY this is something I don't know how to transition to the new framework
+
+  unsigned int board_id_;
+  SSPDAQ::Comm_t  interface_type_; //is this ethernet or USB or emulated, note that USB is needed for interfacing with the board registers
+  unsigned int partitionNumber;
+
+  SSPDAQ::DeviceInterface* device_interface_;
+
+  //sspmodules::DeviceInterface* device_interface_; //KIRBY this is the thing in artdaq that did all of the heavy lifting
+
+  // Tracking metrics for debugging and checking consistency
+  unsigned long fNNoFragments_;
+  unsigned long fNFragmentsSent_;
+  unsigned long fNGetNextCalls_;
+  int fFragmentTimestampOffset_;
+  //std::string instance_name_for_metrics_;
 
   // Card
   void open_card();
