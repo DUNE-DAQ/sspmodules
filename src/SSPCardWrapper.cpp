@@ -23,7 +23,9 @@
 namespace dunedaq {
 namespace sspmodules {
 
-SSPCardWrapper::SSPCardWrapper()
+  SSPCardWrapper::SSPCardWrapper():
+    m_run_marker{ false },
+    m_ssp_processor(0)
 {
 
   //instance_name_for_metrics_ = "SSP " + boost::lexical_cast<std::string>(board_id_);
@@ -110,16 +112,40 @@ SSPCardWrapper::configure(const data_t& args)
 void
 SSPCardWrapper::start(const data_t& /*args*/)
 {
+  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << m_card_id_str << "...";
+  if (!m_run_marker.load()) {
+    set_running(true);
+    m_ssp_processor.set_work(&SSPCardWrapper::process_SSP, this);
+    //TLOG_DEBUG(TLVL_WORK_STEPS) << "Started CardWrapper of card " << m_card_id_str << "...";
+  } else {
+    //TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << m_card_id_str << " is already running!";
+    std::cout << "CardWrapper of card " << board_id_ << " is already running!\n";
+  }
 }
 
 void
 SSPCardWrapper::stop(const data_t& /*args*/)
 {
+  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping CardWrapper of card " << m_card_id_str << "...";
+  if (m_run_marker.load()) {
+    set_running(false);
+    while (!m_ssp_processor.get_readiness()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    //TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped CardWrapper of card " << m_card_id_str << "!";
+    std::cout  << "Stopped CardWrapper of card " << board_id_ << "!";
+  } else {
+    //TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << m_card_id_str << " is already stopped!";
+    std::cout << "CardWrapper of card " << board_id_ << " is already stopped!";
+  } 
 }
 
 void
 SSPCardWrapper::set_running(bool should_run)
 {
+  bool was_running = m_run_marker.exchange(should_run);
+  //TLOG_DEBUG(TLVL_WORK_STEPS) << "Active state was toggled from " << was_running << " to " << should_run;
+  std::cout << "Active state was toggled from " << was_running << " to " << should_run;
 }
 
 void
@@ -350,6 +376,69 @@ SSPCardWrapper::ConfigureDAQ(const data_t& args)
   //} //I believe that this is all taken care of by the new framework
   
 }  
+
+void
+SSPCardWrapper::process_SSP()
+{
+  //TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper starts processing blocks...";
+  while (m_run_marker.load()) {
+
+    bool hasSeenSlice = false;
+
+    while (!hasSeenSlice) {
+    
+      std::vector<unsigned int> millislice;
+      // JCF, Mar-8-2016
+      // Could I just wrap this in a try-catch block?
+      device_interface_->ReadEvents(millislice);
+      if (device_interface_->exception())
+	{
+	  //set_exception(true);
+	  std::cout << "dune::SSP::getNext_ : found device interface thread in exception state";
+	}
+      
+      static size_t ncalls = 1;
+      static size_t ncalls_with_millislice = 0;
+      
+      if (millislice.size() > 0) {
+	ncalls_with_millislice++;
+      }
+      ncalls++;
+
+      if (millislice.size()==0) {
+	if (!hasSeenSlice){
+	  ++fNNoFragments_;
+	  usleep(100000);
+	}
+	break;
+      }
+      hasSeenSlice=true;
+
+      std::cout <<device_interface_->GetIdentifier()
+                         <<"Generator sending fragment "<<fNFragmentsSent_
+                         <<", calls to GetNext "<<fNReadEventCalls_
+                         <<", of which returned null "<<fNNoFragments_<<std::endl;                         
+      
+      std::size_t dataLength = millislice.size()-SSPDAQ::MillisliceHeader::sizeInUInts;
+
+      //SSPFragment::Metadata metadata;
+      //metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());
+      //auto timestamp = (metadata.sliceHeader.triggerTime + fFragmentTimestampOffset_) / 3 ;
+      //std::cout << "SSP millislice w/ timestamp is " << timestamp
+      //                                     << " millislice counter is "<< std::to_string(ncalls_with_millislice);
+      
+    }
+    
+    //SSPFragment::Metadata metadata;
+    //metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());
+    // We'll use the static factory function 
+    // artdaq::Fragment::FragmentBytes(std::size_t payload_size_in_bytes, sequence_id_t sequence_id,
+    //  fragment_id_t fragment_id, type_t type, const T & metadata)
+    // which will then return a unique_ptr to an artdaq::Fragment
+    // object.
+    std::this_thread::sleep_for(std::chrono::microseconds(5000)); // fix 5ms initial poll
+  }
+}
 
 } // namespace sspmodules
 } // namespace dunedaq

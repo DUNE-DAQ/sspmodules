@@ -9,6 +9,7 @@
 #define SSPMODULES_SRC_CARDWRAPPER_HPP_
 
 #include "readout/utils/ReusableThread.hpp"
+//#include "dune-raw-data/Overlays/SSPFragment.hh"
 #include "anlBoard/DeviceInterface.h"
 
 //#include "packetformat/block_format.hpp"
@@ -55,13 +56,15 @@ private:
   unsigned int partitionNumber;
 
   SSPDAQ::DeviceInterface* device_interface_;
+  readout::ReusableThread m_ssp_processor;
+  std::atomic<bool> m_run_marker;
 
   //sspmodules::DeviceInterface* device_interface_; //KIRBY this is the thing in artdaq that did all of the heavy lifting
 
   // Tracking metrics for debugging and checking consistency
   unsigned long fNNoFragments_;
   unsigned long fNFragmentsSent_;
-  unsigned long fNGetNextCalls_;
+  unsigned long fNReadEventCalls_;
   int fFragmentTimestampOffset_;
   //std::string instance_name_for_metrics_;
 
@@ -70,6 +73,7 @@ private:
   void close_card();
   void ConfigureDAQ(const data_t& args);
   void ConfigureDevice(const data_t& args);
+  void process_SSP();
 
   //module_conf_t m_cfg;
 
