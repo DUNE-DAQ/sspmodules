@@ -68,6 +68,8 @@ private:
   // Card
   void open_card();
   void close_card();
+  void ConfigureDAQ(const data_t& args);
+  void ConfigureDevice(const data_t& args);
 
   //module_conf_t m_cfg;
 
