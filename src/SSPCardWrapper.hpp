@@ -11,8 +11,7 @@
 #include "readout/utils/ReusableThread.hpp"
 //#include "dune-raw-data/Overlays/SSPFragment.hh"
 #include "anlBoard/DeviceInterface.h"
-
-//#include "packetformat/block_format.hpp"
+#include "logging/Logging.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -20,6 +19,15 @@
 #include <memory>
 #include <mutex>
 #include <string>
+
+enum
+{
+  TLVL_ENTER_EXIT_METHODS = 5,
+  TLVL_WORK_STEPS = 10,
+  TLVL_BOOKKEEPING = 15,
+  TLVL_FULL_DEBUG = 63
+};
+
 
 namespace dunedaq::sspmodules {
 

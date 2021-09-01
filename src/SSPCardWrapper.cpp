@@ -28,6 +28,7 @@ namespace sspmodules {
     m_ssp_processor(0)
 {
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor called.";
   //instance_name_for_metrics_ = "SSP " + boost::lexical_cast<std::string>(board_id_);
   //unsigned int partitionNumber=ps.get<unsigned int>("partition_number",0);
   /*if(partitionNumber>3){
@@ -86,66 +87,69 @@ namespace sspmodules {
   device_interface_->SetPartitionNumber(partitionNumber);
   device_interface_->SetTimingAddress(timingAddress);
   device_interface_->Initialize();
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor complete.";
   
 }
 
 SSPCardWrapper::~SSPCardWrapper() 
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor called.";
   close_card();
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor complete.";
 }
 
 void
 SSPCardWrapper::init(const data_t& /*args*/)
 {
-
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper init called.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper init complete.";
 }
 
 void
 SSPCardWrapper::configure(const data_t& args)
 {
-
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper configure called.";
   this->ConfigureDAQ(args);
   this->ConfigureDevice(args);
-
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper configure complete.";
 }
 
 void
 SSPCardWrapper::start(const data_t& /*args*/)
 {
-  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << m_card_id_str << "...";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << board_id_ << "...";
   if (!m_run_marker.load()) {
     set_running(true);
     m_ssp_processor.set_work(&SSPCardWrapper::process_SSP, this);
-    //TLOG_DEBUG(TLVL_WORK_STEPS) << "Started CardWrapper of card " << m_card_id_str << "...";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Started CardWrapper of card " << board_id_ << "...";
   } else {
-    //TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << m_card_id_str << " is already running!";
-    std::cout << "CardWrapper of card " << board_id_ << " is already running!\n";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << board_id_ << " is already running!";
   }
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << board_id_ << " complete.";
 }
 
 void
 SSPCardWrapper::stop(const data_t& /*args*/)
 {
-  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping CardWrapper of card " << m_card_id_str << "...";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping SSPCardWrapper of card " << board_id_ << "...";
   if (m_run_marker.load()) {
     set_running(false);
     while (!m_ssp_processor.get_readiness()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    //TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped CardWrapper of card " << m_card_id_str << "!";
-    std::cout  << "Stopped CardWrapper of card " << board_id_ << "!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped CardWrapper of card " << board_id_ << "!";
   } else {
-    //TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << m_card_id_str << " is already stopped!";
-    std::cout << "CardWrapper of card " << board_id_ << " is already stopped!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << board_id_ << " is already stopped!";
   } 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stoping SSPCardWrapper of card " << board_id_ << " complete.";
 }
 
 void
 SSPCardWrapper::set_running(bool should_run)
 {
   bool was_running = m_run_marker.exchange(should_run);
-  //TLOG_DEBUG(TLVL_WORK_STEPS) << "Active state was toggled from " << was_running << " to " << should_run;
-  std::cout << "Active state was toggled from " << was_running << " to " << should_run;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Active state was toggled from " << was_running << " to " << should_run;
 }
 
 void
@@ -380,7 +384,7 @@ SSPCardWrapper::ConfigureDAQ(const data_t& args)
 void
 SSPCardWrapper::process_SSP()
 {
-  //TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper starts processing blocks...";
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper starts processing blocks...";
   while (m_run_marker.load()) {
 
     bool hasSeenSlice = false;
@@ -394,7 +398,7 @@ SSPCardWrapper::process_SSP()
       if (device_interface_->exception())
 	{
 	  //set_exception(true);
-	  std::cout << "dune::SSP::getNext_ : found device interface thread in exception state";
+	  TLOG_DEBUG(TLVL_WORK_STEPS) << "dune::SSP::getNext_ : found device interface thread in exception state";
 	}
       
       static size_t ncalls = 1;
@@ -414,7 +418,7 @@ SSPCardWrapper::process_SSP()
       }
       hasSeenSlice=true;
 
-      std::cout <<device_interface_->GetIdentifier()
+      TLOG_DEBUG(TLVL_FULL_DEBUG) <<device_interface_->GetIdentifier()
                          <<"Generator sending fragment "<<fNFragmentsSent_
                          <<", calls to GetNext "<<fNReadEventCalls_
                          <<", of which returned null "<<fNNoFragments_<<std::endl;                         
@@ -424,7 +428,7 @@ SSPCardWrapper::process_SSP()
       //SSPFragment::Metadata metadata;
       //metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());
       //auto timestamp = (metadata.sliceHeader.triggerTime + fFragmentTimestampOffset_) / 3 ;
-      //std::cout << "SSP millislice w/ timestamp is " << timestamp
+      //TLOG_DEBUG(TLVL_WORK_STEPS) << "SSP millislice w/ timestamp is " << timestamp
       //                                     << " millislice counter is "<< std::to_string(ncalls_with_millislice);
       
     }

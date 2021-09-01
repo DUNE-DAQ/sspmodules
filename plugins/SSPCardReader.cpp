@@ -30,13 +30,6 @@
 /**
  * @brief TRACE debug levels used in this source file
  */
-enum
-{
-  TLVL_ENTER_EXIT_METHODS = 5,
-  TLVL_WORK_STEPS = 10,
-  TLVL_BOOKKEEPING = 15
-};
-
 namespace dunedaq {
 namespace sspmodules {
 
@@ -50,11 +43,12 @@ SSPCardReader::SSPCardReader(const std::string& name)
 //, block_ptr_sinks_{ }
 
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader constructor called.";
   m_card_wrapper = std::make_unique<SSPCardWrapper>();
-
   register_command("conf", &SSPCardReader::do_configure);
   register_command("start", &SSPCardReader::do_start);
   register_command("stop", &SSPCardReader::do_stop);
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader constructor complete.";
 }
 
 inline void
@@ -71,6 +65,7 @@ tokenize(std::string const& str, const char delim, std::vector<std::string>& out
 void
 SSPCardReader::init(const data_t& args)
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader init called.";
   auto ini = args.get<appfwk::app::ModInit>();
   m_card_wrapper->init(args);
   for (const auto& qi : ini.qinfos) {
@@ -82,6 +77,7 @@ SSPCardReader::init(const data_t& args)
     }
   };
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader init complete.";
   // Set function for the CardWrapper's block processor.
   //m_card_wrapper->set_block_addr_handler(m_block_router);
 }
@@ -89,18 +85,26 @@ SSPCardReader::init(const data_t& args)
 void
 SSPCardReader::do_configure(const data_t& args)
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_configure called.";
+  m_card_wrapper->configure(args);
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_configure complete.";
 }
 
 void
 SSPCardReader::do_start(const data_t& args)
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_start called.";
   m_card_wrapper->start(args);
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_start complete.";
+
 }
 
 void
 SSPCardReader::do_stop(const data_t& args)
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_stop called.";
   m_card_wrapper->stop(args);
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_stop complete.";
 }
 
 void
