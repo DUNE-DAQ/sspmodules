@@ -7,7 +7,7 @@
 #include "SafeQueue.h"
 #include "EventPacket.h"
 #include <string>
-//#include "dune-artdaq/Generators/Felix/RequestReceiver.hh"
+#include "logging/Logging.hpp"
 
 namespace SSPDAQ{
 

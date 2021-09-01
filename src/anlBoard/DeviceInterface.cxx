@@ -6,6 +6,15 @@
 #include <utility>
 #include "boost/asio.hpp"
 
+enum
+{
+  TLVL_ENTER_EXIT_METHODS = 5,
+  TLVL_WORK_STEPS = 10,
+  TLVL_BOOKKEEPING = 15,
+  TLVL_FULL_DEBUG = 63
+};
+
+
 SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
   : fCommType(commType), fDeviceId(deviceId), fState(SSPDAQ::DeviceInterface::kUninitialized),
     fUseExternalTimestamp(false), fHardwareClockRateInMHz(128), fPreTrigLength(1E8), 
@@ -16,50 +25,54 @@ SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long 
 }
 
 void SSPDAQ::DeviceInterface::OpenSlowControl(){
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface OpenSlowControl called.";
   //Ask device manager for a pointer to the specified device
   SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
-
   SSPDAQ::Device* device=0;
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Opening "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
-  //<<" device #"<<fDeviceId<<" for slow control only..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Opening "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
+			      <<" device #"<<fDeviceId<<" for slow control only..."<<std::endl;
   
   device=devman.OpenDevice(fCommType,fDeviceId,true);
   
   if(!device){
     try {
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Unable to get handle to device; giving up!"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
     } catch (...) {}
       throw(ENoSuchDevice());
   }
 
   fDevice=device;
   fSlowControlOnly=true;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface OpenSlowControl completed.";
+
 }
 
 void SSPDAQ::DeviceInterface::Initialize(){
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initialize called.";
   //Ask device manager for a pointer to the specified device
   SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
-
   SSPDAQ::Device* device=0;
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Initializing "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
-  //<<" device #"<<fDeviceId<<"..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Initializing "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
+  <<" device #"<<fDeviceId<<"..."<<std::endl;
   
   device=devman.OpenDevice(fCommType,fDeviceId);
   
   if(!device){
     try {
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Unable to get handle to device; giving up!"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
     } catch (...) {}
       throw(ENoSuchDevice());
   }
 
   fDevice=device;
-
+  TLOG_DEBUG(TLVL_FULL_DEBUG) <<"Device Interface sending stop."<<std::endl;
   //Put device into sensible state
   this->Stop();
+  TLOG_DEBUG(TLVL_FULL_DEBUG) <<"Device Interface sending stop."<<std::endl;
 
   //Reset timing endpoint
   SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
@@ -75,21 +88,22 @@ void SSPDAQ::DeviceInterface::Initialize(){
   unsigned int presentTimingAddress=(pdts_control>>16)&0xFF;
   unsigned int presentTimingPartition=pdts_control&0x3;
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"SSP HW presently on partition "<< presentTimingPartition
-  //<<", address "<<std::hex<<presentTimingAddress<<" with endpoint status "
-  //<<(pdts_status&0xF)<<" and dsp_clock_control at "<<dsp_clock_control
-  //<<std::dec<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"SSP HW presently on partition "<< presentTimingPartition
+			      <<", address "<<std::hex<<presentTimingAddress<<" with endpoint status "
+			      <<(pdts_status&0xF)<<" and dsp_clock_control at "<<dsp_clock_control
+			      <<std::dec<<std::endl;
 
   if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 && presentTimingAddress==fTimingAddress && presentTimingPartition==fPartitionNumber
      && dsp_clock_control==0x31){
 
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Clock already looks ok... skipping endpoint reset."<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
 
   }
   else{
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Syncing SSP to PDTS (partition "<<fPartitionNumber
-    //<<", endpoint address "<<std::hex<<fTimingAddress
-    //<<std::dec<<")"<<std::endl;
+
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
+				<<", endpoint address "<<std::hex<<fTimingAddress
+				<<std::dec<<")"<<std::endl;
 
     unsigned int nTries=0;
     
@@ -102,46 +116,49 @@ void SSPDAQ::DeviceInterface::Initialize(){
       usleep(2000000);
       fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
       if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
-      //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
       ++nTries;
     }
    
     if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
-      //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Timing endpoint synced!"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
     }
     else{
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
-      //<<std::hex<<pdts_status<<std::dec<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
+				  <<std::hex<<pdts_status<<std::dec<<std::endl;
     } 
   }
 
   //Wait until pdts_status reaches exactly 0x8 before resolving.
   if((pdts_status&0xF)!=0x8){
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Waiting for endpoint to reach status 0x8..."<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS)<<"Waiting for endpoint to reach status 0x8..."<<std::endl;
   }
   while((pdts_status&0xF)!=0x8){
     usleep(2000000);
     fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
   }
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS)<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initailize complete.";
 }
 
 void SSPDAQ::DeviceInterface::Stop(){
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Stop called.";
+
   if(fState!=SSPDAQ::DeviceInterface::kRunning&&
      fState!=SSPDAQ::DeviceInterface::kUninitialized){
-    //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<"Running stop command for non-running device!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Running stop command for non-running device!"<<std::endl;
   }
 
   if(fState==SSPDAQ::DeviceInterface::kRunning){
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Device interface stopping run"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Device interface stopping run"<<std::endl;
     fShouldStop=true;
     //if(fRequestReceiver){
     //fRequestReceiver->stop();
     //}
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Signalling read thread to end..."<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Signalling read thread to end..."<<std::endl;
     fDataThread->join();
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Read thread terminated!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Read thread terminated!"<<std::endl;
   }
 
 
@@ -156,37 +173,40 @@ void SSPDAQ::DeviceInterface::Stop(){
   fDevice->DeviceWrite(duneReg.event_data_control, 0x00020001);
   // Flush RX buffer
   fDevice->DevicePurgeData();
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Hardware set to stopped state"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Hardware set to stopped state"<<std::endl;
 
   if(fState==SSPDAQ::DeviceInterface::kRunning){
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"DeviceInterface stop transition complete!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "DeviceInterface stop transition complete!"<<std::endl;
   }
 
   fState=SSPDAQ::DeviceInterface::kStopped;
-
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Stop complete.";
 }
 
 /*void SSPDAQ::DeviceInterface::StartRequestReceiver(std::string address){
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Subscribing to software triggers at "<<address<<" and ignoring hardware triggers."<<std::endl;
+  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Subscribing to software triggers at "<<address<<" and ignoring hardware triggers."<<std::endl;
   fRequestReceiver=new RequestReceiver(address);
   }*/
 
 void SSPDAQ::DeviceInterface::Start(){
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Start called.";
+
   if(fState!=kStopped){
-    //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<"Attempt to start acquisition on non-stopped device refused!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to start acquisition on non-stopped device refused!"<<std::endl;
     return;
   }
  
   if(fSlowControlOnly){
     try {
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Naughty Zoot! Attempt to start run on slow control interface refused!"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Naughty Zoot! Attempt to start run on slow control interface refused!"<<std::endl;
     } catch (...) {}
     return;
   }
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Device interface starting hardware run..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Device interface starting hardware run..."<<std::endl;
   SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
   // This script enables all logic and FIFOs and starts data acquisition in the device
   // Operations MUST be performed in this order
@@ -213,18 +233,22 @@ void SSPDAQ::DeviceInterface::Start(){
   fState=SSPDAQ::DeviceInterface::kRunning;
   fShouldStop=false;
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Starting read thread..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Starting read thread..."<<std::endl;
   fDataThread=new std::thread(&SSPDAQ::DeviceInterface::HardwareReadLoop,this);
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Read thread is up!"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Read thread is up!"<<std::endl;
 
   //if(fRequestReceiver){
   //fRequestReceiver->start();
   //}
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Run started!"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Run started!"<<std::endl;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Start complete.";
+
 }
 
 void SSPDAQ::DeviceInterface::HardwareReadLoop(){
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface HardwareReadLoop called.";
 
   while(!fShouldStop){
 
@@ -242,9 +266,9 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
     }
 
     //newPacket.DumpHeader();
-    ////dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"HWRead getting mutex..."<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead getting mutex..."<<std::endl;
     std::unique_lock<std::mutex> mlock(fBufferMutex);
-    ////dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"HWRead got mutex!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead got mutex!"<<std::endl;
     /////////////////////////////////////////////////////////
     // Push event onto deque.                              //
     /////////////////////////////////////////////////////////
@@ -310,16 +334,20 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
       fPacketBuffer.pop_front();
     }
 
-    //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"HWRead releasing mutex..."<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead releasing mutex..."<<std::endl;
     mlock.unlock();
   }
-  //  dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"HWRead thread ending"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead thread ending"<<std::endl;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface HardwareReadLoop complete.";
+
 }
 
 void SSPDAQ::DeviceInterface::ReadEvents(std::vector<unsigned int>& fragment){
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvents called.";
+
   if(fState!=kRunning){
-    //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<"Attempt to get data from non-running device refused!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to get data from non-running device refused!"<<std::endl;
     return;
   }
 
@@ -328,25 +356,28 @@ void SSPDAQ::DeviceInterface::ReadEvents(std::vector<unsigned int>& fragment){
   // If so, pass trigger to fragment builder method.                     //
   /////////////////////////////////////////////////////////////////////////
 
-  //  dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"getNext thread getting mutex..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "getNext thread getting mutex..."<<std::endl;
   std::unique_lock<std::mutex> mlock(fBufferMutex);
 
   if(!fTriggers.size()) return;
-  //  dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"getNext thread got mutex!"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "getNext thread got mutex!"<<std::endl;
   unsigned long packetTime=GetTimestamp(fPacketBuffer.back().header);
 
   if(packetTime>fTriggers.front().endTime+fTriggerWriteDelay){
     this->BuildFragment(fTriggers.front(),fragment);
     fTriggers.pop();
   }
-  //  dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"getNext thread releasing mutex..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "getNext thread releasing mutex..."<<std::endl;
   mlock.unlock();
+  
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvents complete.";
   
 }
 
 
 bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SSPDAQ::TriggerInfo& newTrigger){
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface GetTriggerInfo called.";
   static unsigned long currentTriggerTime=0;
   static bool channelsSeen[12]={false};
 
@@ -356,7 +387,7 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
   unsigned long packetTime=GetTimestamp(event.header);
 
   if(fDummyPeriod>0&&(lastDummyTrigger!=packetTime/fDummyPeriod)){
-    //    dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Generating dummy trigger for packet around "<<packetTime<<"!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Generating dummy trigger for packet around "<<packetTime<<"!"<<std::endl;
     lastDummyTrigger=packetTime/fDummyPeriod;
     currentTriggerTime=packetTime;
     newTrigger.startTime=currentTriggerTime-fPreTrigLength;
@@ -374,7 +405,7 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
     
     if(!channelsSeen[channel]&&packetTime<currentTriggerTime+1000){
       channelsSeen[channel]=true;
-      //      dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Packet contains trigger word but this trigger was already generated from another channel"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Packet contains trigger word but this trigger was already generated from another channel"<<std::endl;
     }
     else{
       currentTriggerTime=packetTime;
@@ -383,7 +414,7 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
       newTrigger.endTime=currentTriggerTime+fPostTrigLength;
       newTrigger.triggerType=event.header.group1&0xFFFF;
       auto globalTimestamp = (packetTime + fFragmentTimestampOffset) / 3 ;
-      //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Seen packet containing global trigger, timestamp "<<packetTime<<" / "<<globalTimestamp<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Seen packet containing global trigger, timestamp "<<packetTime<<" / "<<globalTimestamp<<std::endl;
       for(unsigned int i=0;i<12;++i){
 	channelsSeen[i]=false;
       }
@@ -391,11 +422,15 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
     return true;
     }
   }
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Packet contains no trigger... trigger logic will ignore it."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Packet contains no trigger... trigger logic will ignore it."<<std::endl;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface GetTriggerInfo complete.";
+
   return false;
 }
   
 void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigger,std::vector<unsigned int>& fragmentData){
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface BuildFragment called.";
 
   std::vector<SSPDAQ::EventPacket> eventsToPutBack;
   std::vector<SSPDAQ::EventPacket*> eventsToWrite;
@@ -478,14 +513,14 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
     sliceDataPtr+=(*ev)->header.length-headerSizeInWords;
   }
   
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"Building fragment with "<<eventsToWrite.size()<<" packets"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Building fragment with "<<eventsToWrite.size()<<" packets"<<std::endl;
 
   //=======================//
   //Add millislice to queue//
   //=======================//
 
   //This log message is too verbose...
-  //dune::DAQLogger::LogDebug("SSP_DeviceInterface")<<this->GetIdentifier()<<"Pushing slice with "<<events.size()<<" triggers, starting at "<<startTime<<" onto queue!"<<std::endl;
+  //TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Pushing slice with "<<events.size()<<" triggers, starting at "<<startTime<<" onto queue!"<<std::endl;
   ++fMillislicesBuilt;
 
   unsigned int nDropped=0;
@@ -506,6 +541,9 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   for(auto packetIter=eventsToPutBack.rbegin();packetIter!=eventsToPutBack.rend();++packetIter){
     fPacketBuffer.push_front(std::move(*packetIter));
   }
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface BuildFragment complete.";
+
 }
 
 //void SSPDAQ::DeviceInterface::BuildEmptyMillislice(unsigned long startTime, unsigned long endTime){
@@ -526,9 +564,11 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   }*/
 
 void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
-  
+ 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice called.";
+
   if(fState!=kRunning){
-    //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<"Attempt to get data from non-running device refused!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Attempt to get data from non-running device refused!"<<std::endl;
     event.SetEmpty();
     return;
   }
@@ -553,7 +593,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
     //without filling packet
     if(data.size()==0){
       if(skippedWords){
-	//dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<this->GetIdentifier()<<"Warning: GetEvent skipped "<<skippedWords<<"words and has not seen header for next event!"<<std::endl;
+	TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: GetEvent skipped "<<skippedWords<<"words and has not seen header for next event!"<<std::endl;
       }
       event.SetEmpty();
       return;
@@ -568,13 +608,13 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
     if(data.size()>0){
       if(!skippedWords)firstSkippedWord=data[0];
       ++skippedWords;
-      //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<this->GetIdentifier()<<"Warning: GetEvent skipping over word "<<data[0]<<" ("<<std::hex<<data[0]<<std::dec<<")"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: GetEvent skipping over word "<<data[0]<<" ("<<std::hex<<data[0]<<std::dec<<")"<<std::endl;
     }
   }
 
   if(skippedWords){
-    //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<this->GetIdentifier()<<"Warning: GetEvent skipped "<<skippedWords<<"words before finding next event header!"<<std::endl
-    //<<"First skipped word was "<<std::hex<<firstSkippedWord<<std::dec<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: GetEvent skipped "<<skippedWords<<"words before finding next event header!"<<std::endl
+				<<"First skipped word was "<<std::hex<<firstSkippedWord<<std::dec<<std::endl;
   }
     
   unsigned int* headerBlock=(unsigned int*)&event.header;
@@ -589,13 +629,12 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
     fDevice->DeviceQueueStatus(&queueLengthInUInts);
     if(queueLengthInUInts<headerReadSize){
       usleep(100); //100us
-      //      dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<this->GetIdentifier()<<"Warning: we slept after finding pattern word while waiting for header."<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: we slept after finding pattern word while waiting for header."<<std::endl;
 
       timeWaited+=100;
       if(timeWaited>10000000){ //10s
 	try {
-	  //dune::DAQLogger::LogError("SSP_DeviceInterface")<<this->GetIdentifier()<<"SSP delayed 10s between issuing header word and full header; giving up"
-	  //<<std::endl;
+	  TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP delayed 10s between issuing header word and full header; giving up" <<std::endl;
 	} catch(...) {}
 	event.SetEmpty();
 	throw(EEventReadError());
@@ -607,8 +646,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   fDevice->DeviceReceive(data,headerReadSize);
   if(data.size()!=headerReadSize){
     try {
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<this->GetIdentifier()<<"SSP returned truncated header even though FIFO queue is of sufficient length!"
-      //<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP returned truncated header even though FIFO queue is of sufficient length!" <<std::endl;
     } catch (...) {}
     event.SetEmpty();
     throw(EEventReadError());
@@ -626,12 +664,11 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
     fDevice->DeviceQueueStatus(&queueLengthInUInts);
     if(queueLengthInUInts<bodyReadSize){
       usleep(100); //100us
-      //      dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<this->GetIdentifier()<<"Warning: we slept after finding header before reading full event."<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: we slept after finding header before reading full event." << std::endl;
       timeWaited+=100;
       if(timeWaited>10000000){ //10s
 	try {
-	//dune::DAQLogger::LogError("SSP_DeviceInterface")<<this->GetIdentifier()<<"SSP delayed 10s between issuing header and full event; giving up"
-	  //<<std::endl;
+	  TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP delayed 10s between issuing header and full event; giving up" << std::endl;
 	} catch(...) {}
 	event.DumpHeader();
 	event.SetEmpty();
@@ -645,8 +682,8 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
 
   if(data.size()!=bodyReadSize){
     try {
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<this->GetIdentifier()<<"SSP returned truncated event even though FIFO queue is of sufficient length!"
-      //<<std::endl;
+       TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP returned truncated event even though FIFO queue is of sufficient length!"
+				   << std::endl;
     } catch (...) {}
     event.SetEmpty();
     throw(EEventReadError());
@@ -655,12 +692,17 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   //Copy event data into event packet
   event.data=std::move(data);
   //event.DumpHeader();
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice complete.";
+
   return;
 }
 
 void SSPDAQ::DeviceInterface::Shutdown(){
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Shutdown called.";
+
   fDevice->Close();
   fState=kUninitialized;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Shutdown complete.";
 }
 
 void SSPDAQ::DeviceInterface::SetRegister(unsigned int address, unsigned int value,
@@ -728,8 +770,8 @@ void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, std::vect
   SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
   if(reg.Size()!=values.size()){
     try {
-      //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Request to set named register array "<<name<<", length "<<reg.Size()
-      //<<"with vector of "<<values.size()<<" values!"<<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Request to set named register array "<<name<<", length "<<reg.Size()
+				  <<"with vector of "<<values.size()<<" values!"<<std::endl;
     } catch (...) {}
     throw(std::invalid_argument(""));
   }
@@ -756,9 +798,10 @@ void SSPDAQ::DeviceInterface::ReadRegisterArrayByName(std::string name, std::vec
 
 
 void SSPDAQ::DeviceInterface::Configure(){
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configure called.";
 
   if(fState!=kStopped){
-    //dune::DAQLogger::LogWarning("SSP_DeviceInterface")<<"Attempt to reconfigure non-stopped device refused!"<<std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to reconfigure non-stopped device refused!"<<std::endl;
     return;
   }
 
@@ -921,6 +964,7 @@ void SSPDAQ::DeviceInterface::Configure(){
 	//fDevice->DeviceWrite(duneReg.dsp_clock_control,0x00000000);
 
 	// Load the window settings - This MUST be the last operation
+	TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configured complete.";
 
 }
 
@@ -965,20 +1009,20 @@ unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const SSPDAQ::EventHeader& h
 
 void SSPDAQ::DeviceInterface::PrintHardwareState(){
 
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"===SSP DIAGNOSTIC REGISTERS==="<<std::endl;
+ TLOG_DEBUG(TLVL_WORK_STEPS) << "===SSP DIAGNOSTIC REGISTERS==="<<std::endl;
 
   SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
   unsigned int val;
 
   fDevice->DeviceRead(duneReg.dp_clock_status, &val);
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"dsp_clock_status: "<<std::hex<<val<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"dsp_clock_status: "<<std::hex<<val<<std::endl;
   fDevice->DeviceRead(duneReg.live_timestamp_msb, &val);
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"live_timestamp_msb: "<<val<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "live_timestamp_msb: "<<val<<std::endl;
   fDevice->DeviceRead(duneReg.live_timestamp_lsb, &val);
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"live_timestamp_lsb: "<<val<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "live_timestamp_lsb: "<<val<<std::endl;
   fDevice->DeviceRead(duneReg.sync_delay, &val);
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"sync_delay: "<<val<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "sync_delay: "<<val<<std::endl;
   fDevice->DeviceRead(duneReg.sync_count, &val);
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<"sync_count: "<<val<<std::dec<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "sync_count: "<<val<<std::dec<<std::endl;
   
 }
