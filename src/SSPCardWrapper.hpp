@@ -20,15 +20,6 @@
 #include <mutex>
 #include <string>
 
-enum
-{
-  TLVL_ENTER_EXIT_METHODS = 5,
-  TLVL_WORK_STEPS = 10,
-  TLVL_BOOKKEEPING = 15,
-  TLVL_FULL_DEBUG = 63
-};
-
-
 namespace dunedaq::sspmodules {
 
 class SSPCardWrapper

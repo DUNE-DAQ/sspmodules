@@ -135,6 +135,7 @@ void SSPDAQ::DeviceInterface::Initialize(){
   }
   while((pdts_status&0xF)!=0x8){
     usleep(2000000);
+    TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
     fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
   }
 
