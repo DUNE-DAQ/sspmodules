@@ -34,7 +34,7 @@ endif()
 # Note that when the ers library is linked in, it uses a "::" because
 # it's in an external package, not a local CMake target. The semantics
 # are <namespace>::<shared library / executable>
-daq_add_library(SSPCardWrapper.cpp anlBoard/*.cxx LINK_LIBRARIES appfwk::appfwk ${SSP_DEPENDENCIES} ${DUNEDAQ_DEPENDENCIES})
+daq_add_library(anlBoard/*.cxx SSPCardWrapper.cpp LINK_LIBRARIES appfwk::appfwk ${SSP_DEPENDENCIES} ${DUNEDAQ_DEPENDENCIES})
 #daq_add_library(IntPrinter.cpp LINK_LIBRARIES ers::ers)
 
 if(WITH_FTD2XX_AS_PACKAGE)

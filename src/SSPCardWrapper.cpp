@@ -19,6 +19,16 @@
 /**
  * @brief TRACE debug levels used in this source file
  */
+#define TRACE_NAME "SSPCardWrapper" // NOLINT
+
+enum
+{
+  TLVL_ENTER_EXIT_METHODS = 5,
+  TLVL_WORK_STEPS = 10,
+  TLVL_BOOKKEEPING = 15,
+  TLVL_FULL_DEBUG = 63
+};
+
 
 namespace dunedaq {
 namespace sspmodules {
