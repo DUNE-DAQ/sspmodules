@@ -82,12 +82,12 @@ SSPCardReader::init(const data_t& args)
       // ers::error(InitializationError(ERS_HERE, "Only output queues are supported in this module!"));
       continue;
     } else {
-      TLOG_DEBUG(TLVL_WORK_STEPS) << ": CardReader output queue is " << qi.inst;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPCardReader output queue is " << qi.inst;
     }
   };
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader init complete.";
-  // Set function for the CardWrapper's block processor.
+  // Set function for the SSPCardWrapper's block processor.
   //m_card_wrapper->set_block_addr_handler(m_block_router);
 }
 

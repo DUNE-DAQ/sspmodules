@@ -61,7 +61,7 @@ namespace SSPDAQ{
     void Configure();
 
     //Generate fragment from the data available on the buffer, if possible
-    void ReadEvents(std::vector<unsigned int>& fragment);
+    void ReadEvent(std::vector<unsigned int>& fragment);
 
     //Actually read from the hardware. Thread spawned here at Start
     void HardwareReadLoop();

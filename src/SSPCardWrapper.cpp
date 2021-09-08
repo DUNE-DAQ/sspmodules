@@ -91,7 +91,7 @@ namespace sspmodules {
   //I think in the old artdaq module there was a bad hack that changed the board_id_ value to be board_ip_ if the Comm_t was kEthernet, so that the board_id_ value wasn't actually used?
   board_id_=inet_network("10.73.137.56");
   interface_type_ = SSPDAQ::kEthernet;
-  partitionNumber=999; //I think this should be less than 4, but I'm using what Giovanna sent me
+  partitionNumber=3; //I think this should be less than 4, but I'm using what Giovanna sent me
   unsigned int timingAddress= 0x20;
   device_interface_=new SSPDAQ::DeviceInterface(interface_type_,board_id_);//board_id_);
   device_interface_->SetPartitionNumber(partitionNumber);
@@ -112,17 +112,17 @@ SSPCardWrapper::~SSPCardWrapper()
 void
 SSPCardWrapper::init(const data_t& /*args*/)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper init called.";
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper init complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init called.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init complete.";
 }
 
 void
 SSPCardWrapper::configure(const data_t& args)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper configure called.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::configure called.";
   this->ConfigureDAQ(args);
   this->ConfigureDevice(args);
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper configure complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::configure complete.";
 }
 
 void
@@ -130,11 +130,15 @@ SSPCardWrapper::start(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << board_id_ << "...";
   if (!m_run_marker.load()) {
+    fNNoFragments_=0;
+    fNFragmentsSent_=0;
+    fNReadEventCalls_=0;
     set_running(true);
+    device_interface_->Start();
     m_ssp_processor.set_work(&SSPCardWrapper::process_SSP, this);
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "Started CardWrapper of card " << board_id_ << "...";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Started SSPCardWrapper of card " << board_id_ << "...";
   } else {
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << board_id_ << " is already running!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << board_id_ << " is already running!";
   }
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << board_id_ << " complete.";
 }
@@ -145,12 +149,13 @@ SSPCardWrapper::stop(const data_t& /*args*/)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping SSPCardWrapper of card " << board_id_ << "...";
   if (m_run_marker.load()) {
     set_running(false);
+    device_interface_->Stop();
     while (!m_ssp_processor.get_readiness()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped CardWrapper of card " << board_id_ << "!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped SSPCardWrapper of card " << board_id_ << "!";
   } else {
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "CardWrapper of card " << board_id_ << " is already stopped!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << board_id_ << " is already stopped!";
   } 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stoping SSPCardWrapper of card " << board_id_ << " complete.";
 }
@@ -159,7 +164,7 @@ void
 SSPCardWrapper::set_running(bool should_run)
 {
   bool was_running = m_run_marker.exchange(should_run);
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "Active state was toggled from " << was_running << " to " << should_run;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper Active state was toggled from " << std::boolalpha << was_running << " to " << should_run;
 }
 
 void
@@ -175,6 +180,7 @@ SSPCardWrapper::close_card()
 void
 SSPCardWrapper::ConfigureDevice(const data_t& args)
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice called.";
   //fhicl::ParameterSet hardwareConfig( ps.get<fhicl::ParameterSet>("HardwareConfig") );
   //std::vector<std::string> hcKeys=hardwareConfig.get_names();
   //Special case for channel_control register - first we
@@ -309,11 +315,15 @@ SSPCardWrapper::ConfigureDevice(const data_t& args)
   device_interface_->SetRegisterByName("external_gate_width", 0x00008000);
   device_interface_->SetRegisterByName("gpio_output_width", 0x00001000);
 
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice complete.";
+
 }
 
 void
 SSPCardWrapper::ConfigureDAQ(const data_t& args)
 {
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ called.";
+
   //fhicl::ParameterSet daqConfig( ps.get<fhicl::ParameterSet>("DAQConfig") );
   //unsigned int preTrigLength=daqConfig.get<unsigned int>("PreTrigLength",0);
   unsigned int preTrigLength=337500; //Window length in ticks for packets to be included in a fragment. This is the length of the window before the trigger timestamp. look for @local::ssp_pretrigger_interval_6p67ns_ticks from important_parameters.fcl
@@ -388,7 +398,7 @@ SSPCardWrapper::ConfigureDAQ(const data_t& args)
   //if(triggerRequestAddress.length()){
   //device_interface_->StartRequestReceiver(triggerRequestAddress);
   //} //I believe that this is all taken care of by the new framework
-  
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ complete.";  
 }  
 
 void
@@ -404,7 +414,7 @@ SSPCardWrapper::process_SSP()
       std::vector<unsigned int> millislice;
       // JCF, Mar-8-2016
       // Could I just wrap this in a try-catch block?
-      device_interface_->ReadEvents(millislice);
+      device_interface_->ReadEvent(millislice);
       if (device_interface_->exception())
 	{
 	  //set_exception(true);
