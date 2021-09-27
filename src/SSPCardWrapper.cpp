@@ -34,85 +34,114 @@ namespace dunedaq {
 namespace sspmodules {
 
   SSPCardWrapper::SSPCardWrapper():
+    m_device_interface(0),
     m_run_marker{ false },
-    m_ssp_processor(0)
+    m_ssp_processor(0),
+    m_board_id(0),
+    m_interface_type(SSPDAQ::kEthernet),
+    m_partition_number(0),
+    m_timing_address(0),
+    m_pre_trig_length(0),
+    m_post_trig_length(0),
+    m_use_external_timestamp(2),
+    m_trigger_write_delay(0),
+    m_trigger_latency(0),
+    m_dummy_period(-1),
+    m_hardware_clock_rate_in_MHz(0),
+    m_trigger_mask(0),
+    m_fragment_timestamp_offset(0)
 {
 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor called.";
-  //instance_name_for_metrics_ = "SSP " + boost::lexical_cast<std::string>(board_id_);
-  //unsigned int partitionNumber=ps.get<unsigned int>("partition_number",0);
-  /*if(partitionNumber>3){
-    try {
-      DAQLogger::LogError("SSP_SSP_generator")<<"Error: Invalid partition number set ("<<partitionNumber<<")!"<<std::endl;
-    } catch (...) {}
-      throw SSPDAQ::EDAQConfigError("");
-  }
-  unsigned int timingAddress=ps.get<unsigned int>("timing_address",0);
-  if(timingAddress>0xff){
-    try {
-      DAQLogger::LogError("SSP_SSP_generator")<<"Error: Invalid timing system address set ("<<timingAddress<<")!"<<std::endl;
-    } catch (...) {}
-    throw SSPDAQ::EDAQConfigError("");
-  }
-  unsigned int interfaceTypeCode(ps.get<unsigned int>("interface_type",999));
-  switch(interfaceTypeCode){
-  case 0:
-    interface_type_=SSPDAQ::kUSB;
-    break;
-  case 1:
-    interface_type_=SSPDAQ::kEthernet;
-    break;
-  case 2:
-    interface_type_=SSPDAQ::kEmulated;
-    break;
-  case 999:
-    throw art::Exception(art::errors::Configuration)
-      <<"Interface type not defined in configuration fhicl file!\n";
-  default:
-    throw art::Exception(art::errors::Configuration)
-      <<"Unknown interface type code "
-      <<interfaceTypeCode
-      <<".\n";
-  }
-  //Awful hack to get two devices to work together for now
-  if(interface_type_!=1){
-    board_id_=0;//std::stol(board_id_str);
-  }
-  else{
-    board_id_=inet_network(ps.get<std::string>("board_ip").c_str());
-    }*/
-  
-  //Right now we're just going to go ahead and try to hardcode the configuration of the board to be over ethernet and hardcode the board_id to be a specific ip address
-  //device_interface_=new SSPDAQ::DeviceInterface(interface_type_,board_id_);//board_id_);
-  //interface_type_ => SSPDAQ::kEthernet
-  //board_id_ => 10.73.137.56 which is ssp101
-  //10.73.137.79 is ssp304
-  //10.73.137.74 is ssp603
-  //I think in the old artdaq module there was a bad hack that changed the board_id_ value to be board_ip_ if the Comm_t was kEthernet, so that the board_id_ value wasn't actually used?
-  board_id_=inet_network("10.73.137.56");
-  interface_type_ = SSPDAQ::kEthernet;
-  partitionNumber=3; //I think this should be less than 4, but I'm using what Giovanna sent me
-  unsigned int timingAddress= 0x20;
-  device_interface_=new SSPDAQ::DeviceInterface(interface_type_,board_id_);//board_id_);
-  device_interface_->SetPartitionNumber(partitionNumber);
-  device_interface_->SetTimingAddress(timingAddress);
-  device_interface_->Initialize();
-
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor called."<<std::endl;
+  TLOG_DEBUG(TLVL_FULL_DEBUG) << "Constructor doesn't actually do anything but initialize conf paramters to none function values."<<std::endl;
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor complete."<<std::endl;
   
 }
 
 SSPCardWrapper::~SSPCardWrapper() 
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor called.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor called."<<std::endl;
   close_card();
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor complete."<<std::endl;
 }
 
 void
-SSPCardWrapper::init(const data_t& /*args*/)
+SSPCardWrapper::init(const data_t& args)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init called.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init called."<<std::endl;
+  m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
+  m_instance_name_for_metrics = "SSP " + m_cfg.board_id;
+  unsigned int interfaceTypeCode= m_cfg.interface_type; //SSPDAQ::kEthernet;
+  m_partition_number = m_cfg.partition_number;  //3; //I think this should be less than 4, but I'm using what Giovanna sent me
+  m_timing_address = m_cfg.timing_address;
+
+  if(m_partition_number>3){
+    try {
+      TLOG_DEBUG(TLVL_FULL_DEBUG) << "Error: Invalid partition number set ("<<m_partition_number<<")!"<<std::endl;
+    } catch (...) {
+      
+      //throw SSPDAQ::EDAQConfigError("");
+      //catch (FlxException& ex) {
+      //ers::error(flxlibs::CardError(ERS_HERE, ex.what()));
+      //exit(EXIT_FAILURE);
+      exit(424);
+    }
+  }
+
+  if(m_timing_address>0xff){
+    try {
+      TLOG_DEBUG(TLVL_FULL_DEBUG) << "Error: Invalid timing address set ("<<m_timing_address<<")!"<<std::endl;
+    } catch (...) {
+      //throw SSPDAQ::EDAQConfigError("");
+      exit(424);
+    }
+  }
+  switch(interfaceTypeCode){
+  case 0:
+    m_interface_type=SSPDAQ::kUSB;
+    break;
+  case 1:
+    m_interface_type=SSPDAQ::kEthernet;
+    break;
+  case 2:
+    m_interface_type=SSPDAQ::kEmulated;
+    break;
+  case 999:
+    try {
+      TLOG_DEBUG(TLVL_FULL_DEBUG) << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+    } catch (...) {
+      exit(424);
+    }
+    //throw art::Exception(art::errors::Configuration) <<"Interface type not defined in configuration fhicl file!\n";
+  default:
+    try {
+      TLOG_DEBUG(TLVL_FULL_DEBUG) << "Error: Unknown interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+    } catch (...) {
+      exit(424);
+    }
+    //throw art::Exception(art::errors::Configuration) <<"Unknown interface type code " <<interfaceTypeCode <<".\n";
+  }
+  //Awful hack to get two devices to work together for now
+  if(m_interface_type!=1){
+    m_board_id=0;//std::stol(m_board_idstr);
+  }
+  else{
+    m_board_id= inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");
+    //m_board_id=inet_network(ps.get<std::string>("board_ip").c_str());
+  }
+  
+  //Right now we're just going to go ahead and try to hardcode the configuration of the board to be over ethernet and hardcode the board_id to be a specific ip address
+  //m_device_interface=new SSPDAQ::DeviceInterface(m_interface_type,m_board_id);//m_board_id);
+  //m_interface_type => SSPDAQ::kEthernet
+  //m_board_id => 10.73.137.56 which is ssp101
+  //10.73.137.79 is ssp304
+  //10.73.137.74 is ssp603
+  //I think in the old artdaq module there was a bad hack that changed the m_board_id value to be board_ip_ if the Comm_t was kEthernet, so that the m_board_id value wasn't actually used?
+  m_device_interface=new SSPDAQ::DeviceInterface(m_interface_type, m_board_id);//m_board_id);
+  m_device_interface->SetPartitionNumber(m_partition_number);
+  m_device_interface->SetTimingAddress(m_timing_address);
+  m_device_interface->Initialize();
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init complete.";
 }
 
@@ -120,44 +149,44 @@ void
 SSPCardWrapper::configure(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::configure called.";
-  this->ConfigureDAQ(args);
-  this->ConfigureDevice(args);
+  this->configure_daq(args);
+  this->configure_device(args);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::configure complete.";
 }
 
 void
 SSPCardWrapper::start(const data_t& /*args*/)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << board_id_ << "...";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << m_board_id << "...";
   if (!m_run_marker.load()) {
-    fNNoFragments_=0;
-    fNFragmentsSent_=0;
-    fNReadEventCalls_=0;
+    m_num_zero_fragments=0;
+    m_num_fragments_sent=0;
+    m_num_read_event_calls=0;
     set_running(true);
-    device_interface_->Start();
-    m_ssp_processor.set_work(&SSPCardWrapper::process_SSP, this);
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "Started SSPCardWrapper of card " << board_id_ << "...";
+    m_device_interface->Start();
+    m_ssp_processor.set_work(&SSPCardWrapper::process_ssp, this);
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Started SSPCardWrapper of card " << m_board_id << "...";
   } else {
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << board_id_ << " is already running!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << m_board_id << " is already running!";
   }
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << board_id_ << " complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPCardWrapper of card " << m_board_id << " complete.";
 }
 
 void
 SSPCardWrapper::stop(const data_t& /*args*/)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping SSPCardWrapper of card " << board_id_ << "...";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping SSPCardWrapper of card " << m_board_id << "...";
   if (m_run_marker.load()) {
     set_running(false);
-    device_interface_->Stop();
+    m_device_interface->Stop();
     while (!m_ssp_processor.get_readiness()) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped SSPCardWrapper of card " << board_id_ << "!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped SSPCardWrapper of card " << m_board_id << "!";
   } else {
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << board_id_ << " is already stopped!";
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << m_board_id << " is already stopped!";
   } 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stoping SSPCardWrapper of card " << board_id_ << " complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stoping SSPCardWrapper of card " << m_board_id << " complete.";
 }
 
 void
@@ -178,231 +207,289 @@ SSPCardWrapper::close_card()
 }
 
 void
-SSPCardWrapper::ConfigureDevice(const data_t& args)
+SSPCardWrapper::configure_device(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice called.";
-  //fhicl::ParameterSet hardwareConfig( ps.get<fhicl::ParameterSet>("HardwareConfig") );
-  //std::vector<std::string> hcKeys=hardwareConfig.get_names();
-  //Special case for channel_control register - first we
-  //will get the literal register values, and then look
-  //for logical settings in the .fcl and replace bits as appropriate.
-  //std::vector<unsigned int> chControlReg(12,0);
 
-  /*  bool haveChannelControl=false;
-  for(auto hcIter=hcKeys.begin();hcIter!=hcKeys.end();++hcIter){
-    
-    //Deal with this later on
-    if(!hcIter->compare("ChannelControl")){
+  std::vector<dunedaq::sspmodules::sspcardreader::RegisterValues> m_hardware_configuration = m_cfg.hardware_configuration;
+  std::vector<unsigned int> chControlReg(12,0);
+  bool haveChannelControl=false;
+  std::vector< std::pair<std::string,unsigned int>> channelControlEntries;
+
+  for (auto regValuesIter=m_hardware_configuration.begin();regValuesIter!=m_hardware_configuration.end();++regValuesIter){
+    std::string name = regValuesIter->regname;
+    std::vector<unsigned int> hexvalues = regValuesIter->hexvalues;
+
+    if (!name.compare(0,14,"ChannelControl")) {
+      channelControlEntries.push_back(make_pair(name,hexvalues[0]));
       haveChannelControl=true;
-    }
-    //Expect to see a Literals section; parse these literal registers
-    else if(!hcIter->compare("Literals")){
-      fhicl::ParameterSet literalRegisters( hardwareConfig.get<fhicl::ParameterSet>("Literals") );
-      std::vector<std::string> lrKeys=literalRegisters.get_names();
-      for(auto lrIter=lrKeys.begin();lrIter!=lrKeys.end();++lrIter){
-        std::vector<unsigned int> vals=literalRegisters.get<std::vector<unsigned int> >(*lrIter);
-        unsigned int regVal=vals[0];
-        unsigned int regMask=vals.size()>1?vals[1]:0xFFFFFFFF;
-        unsigned int regAddress=0;
-        std::istringstream(*lrIter)>>regAddress;
-        
-        device_interface_->SetRegister(regAddress,regVal,regMask);
-      }
+    }      
+    //Expect to see a Literals section; take any name starting with "Literal" and parse as hex values: regAddress, regValue, regMask
+    else if(!name.compare(0,7,"Literal")){
+      unsigned int regAddress=hexvalues[0];
+      unsigned int regVal=hexvalues[1];
+      unsigned int regMask=hexvalues.size()>2?hexvalues[2]:0xFFFFFFFF;
+      m_device_interface->SetRegister(regAddress,regVal,regMask);
     }//End Processing of Literals
     //Intercept channel_control setting so that we can replace bits with logical values later...
-    else if(!hcIter->substr(4).compare("channel_control")){
-      if(!hcIter->substr(0,4).compare("ELE_")){
-        std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-        chControlReg[vals[0]]=vals[1];
+    else if(!name.substr(4).compare("channel_control")){
+      if(!name.substr(0,4).compare("ELE_")){ //The format expected is ELE_channel_control: register_number, regsiter_value
+        //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
+        chControlReg[hexvalues[0]]=hexvalues[1];
       }
-      else if(!hcIter->substr(0,4).compare("ALL_")){ //All array elements set to same value
-        unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
+      else if(!name.substr(0,4).compare("ALL_")){ //All array elements set to same value e.g. ALL_channel_control: 0xDEADBEEF and the register must be one with 12 entries
         for(unsigned int i=0;i<12;++i){
-          chControlReg[i]=val;
+          chControlReg[i]=hexvalues[i];
         }
       }
-      else if(!hcIter->substr(0,4).compare("ARR_")){ //All array elements individually
-        std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
+      else if(!name.substr(0,4).compare("ARR_")){ //All array elements individually e.g. ARR_channel_control: 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc
         for(unsigned int i=0;i<12;++i){
-          chControlReg[i]=vals[i];
+          chControlReg[i]=hexvalues[i];
         }
       }
     }
-    else if(!hcIter->substr(0,4).compare("ELE_")){ //Single array element
-      std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-      device_interface_->SetRegisterElementByName(hcIter->substr(4,std::string::npos),vals[0],vals[1]);
+    else if(!name.substr(0,4).compare("ELE_")){ //Single array element
+      //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
+      m_device_interface->SetRegisterElementByName(name.substr(4,std::string::npos),hexvalues[0],hexvalues[1]);
     }
-    else if(!hcIter->substr(0,4).compare("ALL_")){ //All array elements set to same value
-      unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-      device_interface_->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),val);
+    else if(!name.substr(0,4).compare("ALL_")){ //All array elements set to same value
+      unsigned int val=hexvalues[0];
+      m_device_interface->SetRegisterArrayByName(name.substr(4,std::string::npos),val);
     }
-    else if(!hcIter->substr(0,4).compare("ARR_")){ //All array elements individually
-      std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-      device_interface_->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals);
+    else if(!name.substr(0,4).compare("ARR_")){ //All array elements individually
+      std::vector<unsigned int> vals;
+      for (unsigned int i=0; i<hexvalues.size(); ++i){
+	vals[i]=hexvalues[i];
+      }
+      m_device_interface->SetRegisterArrayByName(name.substr(4,std::string::npos),vals);
     }
     else{ //Individual register not in an array
-      unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-      device_interface_->SetRegisterByName(*hcIter,val);
+      m_device_interface->SetRegisterByName(name,hexvalues[0]);
     }
   }
   //Modify channel control registers and send to hardware
   if(haveChannelControl){
-    fhicl::ParameterSet channelControl( hardwareConfig.get<fhicl::ParameterSet>("ChannelControl"));
-    this->BuildChannelControlRegisters(channelControl,chControlReg);
+    this->build_channel_control_registers(channelControlEntries,chControlReg);
   }
-  device_interface_->SetRegisterArrayByName("channel_control",chControlReg);
-  */
+  m_device_interface->SetRegisterArrayByName("channel_control",chControlReg);
+  
   //JTH: Bit clumsy putting this here, but for now, configure the timing endpoint
   //and configure and reset dsp clock PLL...
   //Note this is hardcoding using the timing system clock. Using the internal clock
   //will be broken until this is cleaned up.
   //usleep(1000000);
-  //device_interface_->SetRegisterByName("dsp_clock_control",0x31);
-  //device_interface_->SetRegisterByName("dsp_clock_phase_control",0x4);
+  //m_device_interface->SetRegisterByName("dsp_clock_control",0x31);
+  //m_device_interface->SetRegisterByName("dsp_clock_phase_control",0x4);
   
   //usleep(1000000);
-  //device_interface_->SetRegisterByName("pdts_control",0x00080000);
-  //device_interface_->SetRegisterByName("pdts_control",0x00000000);
+  //m_device_interface->SetRegisterByName("pdts_control",0x00080000);
+  //m_device_interface->SetRegisterByName("pdts_control",0x00000000);
 
   //this is all just doing it hardcoded
 
   //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-  //device_interface_->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),val);// for ALL configs not channel_control
+  //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),val);// for ALL configs not channel_control
   //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-  //device_interface_->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals); //for ARR configs not channel_control
+  //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals); //for ARR configs not channel_control
   //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-  //device_interface_->SetRegisterByName(*hcIter,val); //for things without ARR, ALL, or ELE
+  //m_device_interface->SetRegisterByName(*hcIter,val); //for things without ARR, ALL, or ELE
 
-
-  std::vector<unsigned int> chControlReg(12,0);
+  //std::vector<unsigned int> chControlReg(12,0);
   for(unsigned int i=0;i<12;++i){
     chControlReg[i]=0x00000401;
   }
-  device_interface_->SetRegisterArrayByName("channel_control",chControlReg); //set all channel control to 0x00000410
-  device_interface_->SetRegisterArrayByName( "channel_control", 0x00000401);
-  device_interface_->SetRegisterArrayByName(  "readout_window", 2000);
-  device_interface_->SetRegisterArrayByName(  "readout_pretrigger", 50);
-  device_interface_->SetRegisterArrayByName(  "cfd_parameters", 0x1800 );
-  device_interface_->SetRegisterArrayByName(  "p_window", 0x20 );
-  device_interface_->SetRegisterArrayByName(  "i2_window", 1200 );
-  device_interface_->SetRegisterArrayByName(  "m1_window", 10 );
-  device_interface_->SetRegisterArrayByName(  "m2_window", 10 );
-  device_interface_->SetRegisterArrayByName(  "d_window", 20 );
-  device_interface_->SetRegisterArrayByName(  "i1_window", 40 );
-  device_interface_->SetRegisterArrayByName("disc_width", 10 );
-  device_interface_->SetRegisterArrayByName("baseline_start", 0x0000); 
+  m_device_interface->SetRegisterArrayByName("channel_control",chControlReg); //set all channel control to 0x00000401
+  m_device_interface->SetRegisterArrayByName("channel_control", 0x00000401);
+  m_device_interface->SetRegisterArrayByName("readout_window", 2000);
+  m_device_interface->SetRegisterArrayByName("readout_pretrigger", 50);
+  m_device_interface->SetRegisterArrayByName("cfd_parameters", 0x1800 );
+  m_device_interface->SetRegisterArrayByName("p_window", 0x20 );
+  m_device_interface->SetRegisterArrayByName("i2_window", 1200 );
+  m_device_interface->SetRegisterArrayByName("m1_window", 10 );
+  m_device_interface->SetRegisterArrayByName("m2_window", 10 );
+  m_device_interface->SetRegisterArrayByName("d_window", 20 );
+  m_device_interface->SetRegisterArrayByName("i1_window", 40 );
+  m_device_interface->SetRegisterArrayByName("disc_width", 10 );
+  m_device_interface->SetRegisterArrayByName("baseline_start", 0x0000); 
   //end of the ALL register sets from fcl file
 
   std::vector<unsigned int> vals;
   vals = {0xFF000000, 0x00000000, 0x00000FFF};
-  device_interface_->SetRegisterArrayByName("pdts_cmd_control",vals);
+  m_device_interface->SetRegisterArrayByName("pdts_cmd_control",vals);
   vals.clear();
 
   vals = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
-  device_interface_->SetRegisterArrayByName("led_threshold",vals);
+  m_device_interface->SetRegisterArrayByName("led_threshold",vals);
   vals.clear();
   //end of the ARR register sets from fcl file
 
 
-  device_interface_->SetRegisterByName(  "eventDataInterfaceSelect", 0x00000001);
-  device_interface_->SetRegisterByName("module_id", 0x00000001);
-  device_interface_->SetRegisterByName("trigger_input_delay", 0x00000020);
-  device_interface_->SetRegisterByName("baseline_delay", 5);
-  device_interface_->SetRegisterByName("qi_config", 0x0FFF1300);
-  device_interface_->SetRegisterByName("qi_delay", 0x00000000);
-  device_interface_->SetRegisterByName("qi_pulse_width", 0x00008000);
-  device_interface_->SetRegisterByName("qi_dac_config", 0x00000000);
-  device_interface_->SetRegisterByName("external_gate_width", 0x00008000);
-  device_interface_->SetRegisterByName("gpio_output_width", 0x00001000);
+  m_device_interface->SetRegisterByName(  "eventDataInterfaceSelect", 0x00000001);
+  m_device_interface->SetRegisterByName("module_id", 0x00000001);
+  m_device_interface->SetRegisterByName("trigger_input_delay", 0x00000020);
+  m_device_interface->SetRegisterByName("baseline_delay", 5);
+  m_device_interface->SetRegisterByName("qi_config", 0x0FFF1300);
+  m_device_interface->SetRegisterByName("qi_delay", 0x00000000);
+  m_device_interface->SetRegisterByName("qi_pulse_width", 0x00008000);
+  m_device_interface->SetRegisterByName("qi_dac_config", 0x00000000);
+  m_device_interface->SetRegisterByName("external_gate_width", 0x00008000);
+  m_device_interface->SetRegisterByName("gpio_output_width", 0x00001000);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice complete.";
+}
 
+void 
+SSPCardWrapper::build_channel_control_registers(const std::vector< std::pair<std::string,unsigned int>> entries, std::vector<unsigned int>& reg)
+{
+  for(auto ccIter=entries.begin();ccIter!=entries.end();++ccIter){
+      //External trigger mode
+      if(!ccIter->first.compare("ChannelControl_ExtTriggerMode")){
+	unsigned int val = ccIter->second;
+	switch(val){
+	case 0:                          //No external trigger
+	  for(unsigned int i=0;i<12;++i){
+	    reg[i]=reg[i]&0xFFFF0FFF;
+	  }
+	  break;
+	case 1:                          //Edge trigger on front panel
+	  for(unsigned int i=0;i<12;++i){
+	    reg[i]=(reg[i]&0xFFFF0FFF)+0x00006000;
+	  }
+	  break;
+	case 2:                          //Use front panel as gate
+	  for(unsigned int i=0;i<12;++i){
+	    reg[i]=(reg[i]&0xFFFF0FFF)+0x00005000;
+	  }
+	  break;
+	case 3:                          //Timestamp trigger
+	  for(unsigned int i=0;i<12;++i){
+	    reg[i]=(reg[i]&0xFFFF0FFF)+0x0000E000;
+	  }
+	  break;
+	default:
+	  try {
+	    //DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for external trigger source setting!"<<std::endl;
+	  } catch (...) {}
+	  //throw SSPDAQ::EDAQConfigError("");
+	}
+      }
+      else if(!ccIter->first.compare("ChannelControl_LEDTrigger")){
+	unsigned int val=ccIter->second;
+	switch(val){
+	case 1:                          //Negative edge
+	  for(unsigned int i=0;i<12;++i){
+	    reg[i]=(reg[i]&0x7FFFF3FF)+0x80000800;
+	  }
+	  break;
+	case 2:                          //Positive edge
+	  for(unsigned int i=0;i<12;++i){
+	    reg[i]=(reg[i]&0x7FFFF3FF)+0x80000400;
+	  }
+	  break;
+	case 0:
+	  for(unsigned int i=0;i<12;++i){//Disabled
+	    reg[i]=reg[i]&0x7FFFF3FF;
+	  }
+	  break;
+	default:
+	  try {
+	    //DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for trigger polarity setting!"<<std::endl;
+	  } catch (...) {}
+	  //throw SSPDAQ::EDAQConfigError("");
+	}
+      }
+      else if(!ccIter->first.compare("ChannelControl_TimestampRate")){
+	unsigned int val=ccIter->second;
+	if(val>7){
+	  try {
+	    //DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for timestamp rate setting!"<<std::endl;
+	  } catch (...) {}
+	  //throw SSPDAQ::EDAQConfigError("");
+	}
+	for(unsigned int i=0;i<12;++i){
+	  reg[i]=(reg[i]&0xFFFFFF1F)+0x20*val;
+	}
+      }
+    }
 }
 
 void
-SSPCardWrapper::ConfigureDAQ(const data_t& args)
+SSPCardWrapper::configure_daq(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ called.";
-
-  //fhicl::ParameterSet daqConfig( ps.get<fhicl::ParameterSet>("DAQConfig") );
-  //unsigned int preTrigLength=daqConfig.get<unsigned int>("PreTrigLength",0);
-  unsigned int preTrigLength=337500; //Window length in ticks for packets to be included in a fragment. This is the length of the window before the trigger timestamp. look for @local::ssp_pretrigger_interval_6p67ns_ticks from important_parameters.fcl
-  if(preTrigLength==0){
-    
+  m_cfg = args.get<sspcardreader::Conf>();
+  m_pre_trig_length = m_cfg.pre_trig_length; //unsigned int preTrigLength=337500; 
+  if(m_pre_trig_length==0){
     try {
-      //DAQLogger::LogError("SSP_SSP_generator")<<"Error: Pretrigger sample length not defined in SSP DAQ configuration!"<<std::endl;
-    } catch (...) {}
-    //throw SSPDAQ::EDAQConfigError("");
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
+    } catch (...) {
+      exit(424);
+      //throw SSPDAQ::EDAQConfigError("");
+    }
   }
-  //unsigned int postTrigLength=daqConfig.get<unsigned int>("PostTrigLength",0);
-  unsigned int postTrigLength=412500; //Length of the window after the trigger timestamp. Look for @local::ssp_posttrigger_interval_6p67ns_ticks from important_parameters.fcl
-
-  if(postTrigLength==0){
-    
+  m_post_trig_length = m_cfg.post_trig_length; //unsigned int postTrigLength=412500;
+  if(m_post_trig_length==0){
     try {
-      //DAQLogger::LogError("SSP_SSP_generator")<<"Error: Posttrigger sample length not defined in SSP DAQ configuration!"<<std::endl;
-    } catch (...) {}
-    //throw SSPDAQ::EDAQConfigError("");
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!" << std::endl;
+    } catch (...) {
+      exit(424);
+      //throw SSPDAQ::EDAQConfigError("");
+    }
   }
-  //unsigned int useExternalTimestamp=daqConfig.get<unsigned int>("UseExternalTimestamp",2);
-  unsigned int useExternalTimestamp=1;//Whether to use the external timestamp to determine whether to include packets in fragment. Both timestamps are stored in the packets anyway. 0 is front panel, 1 is NOvA style
-  if(useExternalTimestamp>1){
+  m_use_external_timestamp=m_cfg.use_external_timestamp; //unsigned int useExternalTimestamp=1;
+  if(m_use_external_timestamp>1){
     try{
-      //DAQLogger::LogError("SSP_SSP_generator")<<"Error: Timestamp source not defined, or invalidly defined, in SSP DAQ configuration!"<<std::endl;
-    } catch(...) {}
-    //throw SSPDAQ::EDAQConfigError("");
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!" << std::endl;
+    } catch(...) {
+      exit(424);
+      //throw SSPDAQ::EDAQConfigError("");
+    }
   }
-  //unsigned int triggerWriteDelay=daqConfig.get<unsigned int>("TriggerWriteDelay",0);
-  unsigned int triggerWriteDelay=1000;
-  if(triggerWriteDelay==0){
+  m_trigger_write_delay=m_cfg.trigger_write_delay; //unsigned int triggerWriteDelay=1000;
+  if(m_trigger_write_delay==0){
     try {
-      //DAQLogger::LogError("SSP_SSP_generator")<<"TriggerWriteDelay not defined in SSP DAQ configuration!"<<std::endl;
-    } catch(...) {}
-    //throw SSPDAQ::EDAQConfigError("");
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!" << std::endl;
+    } catch(...) {
+      exit(424);
+      //throw SSPDAQ::EDAQConfigError("");
+    }
   }
-  //unsigned int trigLatency=daqConfig.get<unsigned int>("TriggerLatency",0);
-  //int dummyPeriod=daqConfig.get<int>("DummyTriggerPeriod",-1);
-  //unsigned int hardwareClockRate=daqConfig.get<unsigned int>("HardwareClockRate",0);
-  unsigned int trigLatency=0; //not sure about this.
-  int dummyPeriod=-1;//default to off which is set with a value of -1
-  unsigned int hardwareClockRate=150; //in MHz
+  m_trigger_latency=m_cfg.trigger_latency;//unsigned int trigLatency=0; //not sure about this.
+  m_dummy_period=m_cfg.dummy_period;//int dummyPeriod=-1;//default to off which is set with a value of -1
+  m_hardware_clock_rate_in_MHz = m_cfg.hardware_clock_rate_in_MHz; //unsigned int hardwareClockRate=150; //in MHz
 
-  if(hardwareClockRate==1){
+  if(m_hardware_clock_rate_in_MHz==1){
     try {
-      //DAQLogger::LogError("SSP_SSP_generator")<<"Error: Hardware clock rate not defined in SSP DAQ configuration!"<<std::endl;
-    } catch (...) {}
-    //throw SSPDAQ::EDAQConfigError("");
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!"<<std::endl;
+    } catch (...) {
+      exit(424);
+      //throw SSPDAQ::EDAQConfigError("");
+    }
   }
-  //unsigned int triggerMask=daqConfig.get<unsigned int>("TriggerMask",0);
-  //fFragmentTimestampOffset=daqConfig.get<int>("FragmentTimestampOffset",0);
-  unsigned int triggerMask=0x2000;
-  fFragmentTimestampOffset_=988;
+  m_trigger_mask = m_cfg.trigger_mask; //unsigned int triggerMask=0x2000;
+  m_fragment_timestamp_offset = m_cfg.fragment_timestamp_offset;//m_fragment_timestamp_offset=988;
 
-  std::string triggerRequestAddress;
-  // PAR 2019-08-21 TODO: It would be nice to use a more descriptive
-  // parameter name here, but this is the parameter name that the RC
-  // sets to the connection in our partition, so we have to use it
-  // (for now)
+  //std::string triggerRequestAddress;
   //triggerRequestAddress=daqConfig.get<std::string>("zmq_fragment_connection_out","");
-  triggerRequestAddress="tcp://10.73.136.32:7123";
+  //triggerRequestAddress="tcp://10.73.136.32:7123";
 
-  device_interface_->SetPreTrigLength(preTrigLength);
-  device_interface_->SetPostTrigLength(postTrigLength);
-  device_interface_->SetUseExternalTimestamp(useExternalTimestamp);
-  device_interface_->SetTriggerWriteDelay(triggerWriteDelay);
-  device_interface_->SetTriggerLatency(trigLatency);
-  device_interface_->SetDummyPeriod(dummyPeriod);
-  device_interface_->SetHardwareClockRateInMHz(hardwareClockRate);
-  device_interface_->SetTriggerMask(triggerMask);
-  device_interface_->SetFragmentTimestampOffset(fFragmentTimestampOffset_);
+  m_device_interface->SetPreTrigLength(m_pre_trig_length);
+  m_device_interface->SetPostTrigLength(m_post_trig_length);
+  m_device_interface->SetUseExternalTimestamp(m_use_external_timestamp);
+  m_device_interface->SetTriggerWriteDelay(m_trigger_write_delay);
+  m_device_interface->SetTriggerLatency(m_trigger_latency);
+  m_device_interface->SetDummyPeriod(m_dummy_period);
+  m_device_interface->SetHardwareClockRateInMHz(m_hardware_clock_rate_in_MHz);
+  m_device_interface->SetTriggerMask(m_trigger_mask);
+  m_device_interface->SetFragmentTimestampOffset(m_fragment_timestamp_offset);
   //if(triggerRequestAddress.length()){
-  //device_interface_->StartRequestReceiver(triggerRequestAddress);
+  //m_device_interface->StartRequestReceiver(triggerRequestAddress);
   //} //I believe that this is all taken care of by the new framework
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ complete.";  
 }  
 
 void
-SSPCardWrapper::process_SSP()
+SSPCardWrapper::process_ssp()
 {
   TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper starts processing blocks...";
   while (m_run_marker.load()) {
@@ -414,8 +501,8 @@ SSPCardWrapper::process_SSP()
       std::vector<unsigned int> millislice;
       // JCF, Mar-8-2016
       // Could I just wrap this in a try-catch block?
-      device_interface_->ReadEvent(millislice);
-      if (device_interface_->exception())
+      m_device_interface->ReadEvent(millislice);
+      if (m_device_interface->exception())
 	{
 	  //set_exception(true);
 	  TLOG_DEBUG(TLVL_WORK_STEPS) << "dune::SSP::getNext_ : found device interface thread in exception state";
@@ -431,17 +518,17 @@ SSPCardWrapper::process_SSP()
 
       if (millislice.size()==0) {
 	if (!hasSeenSlice){
-	  ++fNNoFragments_;
+	  ++m_num_zero_fragments;
 	  usleep(100000);
 	}
 	break;
       }
       hasSeenSlice=true;
 
-      TLOG_DEBUG(TLVL_FULL_DEBUG) <<device_interface_->GetIdentifier()
-                         <<"Generator sending fragment "<<fNFragmentsSent_
-                         <<", calls to GetNext "<<fNReadEventCalls_
-                         <<", of which returned null "<<fNNoFragments_<<std::endl;                         
+      TLOG_DEBUG(TLVL_FULL_DEBUG) <<m_device_interface->GetIdentifier()
+                         <<"Generator sending fragment "<<m_num_fragments_sent
+                         <<", calls to GetNext "<<m_num_read_event_calls
+                         <<", of which returned null "<<m_num_zero_fragments<<std::endl;                         
       
       std::size_t dataLength = millislice.size()-SSPDAQ::MillisliceHeader::sizeInUInts;
 

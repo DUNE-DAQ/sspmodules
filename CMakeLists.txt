@@ -15,6 +15,9 @@ find_package(logging REQUIRED)
 find_package(dataformats REQUIRED)
 find_package(readout REQUIRED)
 
+daq_codegen(sspcardreader.jsonnet TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
+daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
+
 set(DUNEDAQ_DEPENDENCIES readout::readout dataformats::dataformats)
 
 # Provide override functionality for SSP dependencies

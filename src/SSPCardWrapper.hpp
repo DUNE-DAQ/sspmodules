@@ -8,6 +8,8 @@
 #ifndef SSPMODULES_SRC_CARDWRAPPER_HPP_
 #define SSPMODULES_SRC_CARDWRAPPER_HPP_
 
+#include "sspmodules/sspcardreader/Nljs.hpp"
+
 #include "readout/utils/ReusableThread.hpp"
 //#include "dune-raw-data/Overlays/SSPFragment.hh"
 #include "anlBoard/DeviceInterface.h"
@@ -45,36 +47,51 @@ public:
 
 private:
   // Types
-  //using module_conf_t = dunedaq::sspmodules::sspcardreader::Conf;
+  using module_conf_t = dunedaq::sspmodules::sspcardreader::Conf;
 
   //these are SSP configurations for this instance of the SSP Card Wrapper
   //dune::detail::FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh), //KIRBY this is something I don't know how to transition to the new framework
+  SSPDAQ::DeviceInterface* m_device_interface; //instance of the SSP device interface class
+  readout::ReusableThread m_ssp_processor; //reusable thread used to start the work done by the device interface
 
-  unsigned int board_id_;
-  SSPDAQ::Comm_t  interface_type_; //is this ethernet or USB or emulated, note that USB is needed for interfacing with the board registers
-  unsigned int partitionNumber;
-
-  SSPDAQ::DeviceInterface* device_interface_;
-  readout::ReusableThread m_ssp_processor;
+  //module status booleans for transition like init, conf, start, etc
   std::atomic<bool> m_run_marker;
+  std::atomic<bool> m_configure;
 
-  //sspmodules::DeviceInterface* device_interface_; //KIRBY this is the thing in artdaq that did all of the heavy lifting
+  //all of the configure variables for the SSP
+  module_conf_t m_cfg;
+
+  //Initialization configuration variables
+  unsigned long m_board_id; //this is the ip address of the SSP board
+  SSPDAQ::Comm_t  m_interface_type; //is this ethernet or USB or emulated, note that USB is needed for interfacing with the board registers
+  unsigned int m_partition_number;
+  unsigned int m_timing_address;
+
+  //DAQ configuration variables first
+  unsigned int m_pre_trig_length; //Window length in ticks for packets to be included in a fragment. This is the length of the window before the trigger timestamp.
+  unsigned int m_post_trig_length; //Length of the window after the trigger timestamp.
+  unsigned int m_use_external_timestamp; //Whether to use the external timestamp to determine whether to include packets in fragment. Both timestamps are stored in the packets anyway. 0 is front panel, 1 is NOvA style
+  unsigned int m_trigger_write_delay;
+  unsigned int m_trigger_latency;
+  int m_dummy_period;
+  unsigned int m_hardware_clock_rate_in_MHz; //clock rate on the hardware in MHz
+  unsigned int m_trigger_mask; //this is normally given as a hex number for what triggers to mask on or off
+  int m_fragment_timestamp_offset; //offset for the timestamp put into the data stream of this SSP
+ 
 
   // Tracking metrics for debugging and checking consistency
-  unsigned long fNNoFragments_;
-  unsigned long fNFragmentsSent_;
-  unsigned long fNReadEventCalls_;
-  int fFragmentTimestampOffset_;
-  //std::string instance_name_for_metrics_;
+  unsigned long m_num_zero_fragments;
+  unsigned long m_num_fragments_sent;
+  unsigned long m_num_read_event_calls;
+  std::string m_instance_name_for_metrics;
 
   // Card
   void open_card();
   void close_card();
-  void ConfigureDAQ(const data_t& args);
-  void ConfigureDevice(const data_t& args);
-  void process_SSP();
-
-  //module_conf_t m_cfg;
+  void configure_daq(const data_t& args);
+  void configure_device(const data_t& args);
+  void build_channel_control_registers(const std::vector< std::pair<std::string,unsigned int>> entries, std::vector<unsigned int>& reg);
+  void process_ssp();
 
 };
 

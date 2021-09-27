@@ -54,13 +54,10 @@ public:
 
 private:
   // Types
-  //using module_conf_t = dunedaq::sspmodules::sspcardreader::Conf;
+  using module_conf_t = dunedaq::sspmodules::sspcardreader::Conf;
 
   // Constants
-  //static constexpr int m_elink_multiplier = 64;
-  //static constexpr size_t m_block_queue_capacity = 1000000;
-  //static constexpr size_t m_1kb_block_size = 1024;
-  //static constexpr int m_32b_trailer_size = 32;
+  //static constexpr int s_elink_multiplier = 64;
 
   // Commands
   void do_configure(const data_t& args);
@@ -69,23 +66,13 @@ private:
   void get_info(opmonlib::InfoCollector& ci, int level);
 
   // Configuration
+  module_conf_t m_cfg;
   bool m_configured;
-  //module_conf_t m_cfg;
-
   int m_card_id;
-  int m_logical_unit;
-  unsigned m_num_links;
-  std::size_t m_block_size;
-  int m_chunk_trailer_size;
 
   // SSP Cards
   std::unique_ptr<SSPCardWrapper> m_card_wrapper;
 
-  // ElinkConcept
-  //std::map<int, std::unique_ptr<ElinkConcept>> m_elinks;
-
-  // Function for routing block addresses from card to elink handler
-  //std::function<void(uint64_t)> m_block_router; // NOLINT
 };
 
 } // namespace dunedaq::sspmodules

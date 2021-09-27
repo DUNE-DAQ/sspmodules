@@ -5,7 +5,7 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-//#include "ssplibs/sspcardreader/Nljs.hpp"
+#include "sspmodules/sspcardreader/Nljs.hpp"
 
 //#include "CreateElink.hpp"
 #include "SSPCardReader.hpp"
@@ -46,17 +46,14 @@ SSPCardReader::SSPCardReader(const std::string& name)
   : DAQModule(name)
   , m_configured(false)
   , m_card_id(0)
-  , m_logical_unit(0)
-  , m_num_links(0)
-  , m_block_size(0)
-//, block_ptr_sinks_{ }
-
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader constructor called.";
   m_card_wrapper = std::make_unique<SSPCardWrapper>();
+
   register_command("conf", &SSPCardReader::do_configure);
   register_command("start", &SSPCardReader::do_start);
   register_command("stop", &SSPCardReader::do_stop);
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader constructor complete.";
 }
 
@@ -94,8 +91,19 @@ SSPCardReader::init(const data_t& args)
 void
 SSPCardReader::do_configure(const data_t& args)
 {
+  
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_configure called.";
-  m_card_wrapper->configure(args);
+  if (!m_configured) {
+    TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPCardReader not yet configured so digging in.";
+    m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
+    m_card_id = m_cfg.card_id;
+    m_card_wrapper->configure(args);
+    TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPCardReader do_configure coming back from SSPCardWrapper configure.";
+    m_configured=true;
+  } else {
+    TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPCardReader is already configured so not going to configure again.";
+  }
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader do_configure complete.";
 }
 
