@@ -1,5 +1,5 @@
 #include "DeviceManager.h"
-#include "ftd2xx.h"
+//#include "ftd2xx.h"
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "anlExceptions.h"
 #include "dune-raw-data/Overlays/anlTypes.hh"
@@ -21,22 +21,25 @@ SSPDAQ::DeviceManager& SSPDAQ::DeviceManager::Get(){
 SSPDAQ::DeviceManager::DeviceManager(){
 }
 
+/*
 unsigned int SSPDAQ::DeviceManager::GetNUSBDevices(){
   if(!fHaveLookedForDevices){
     this->RefreshDevices();
   }
   return fUSBDevices.size();
 }
+*/
 
 void SSPDAQ::DeviceManager::RefreshDevices()
 {
-
+/*
   for(auto device=fUSBDevices.begin();device!=fUSBDevices.end();++device){
     if(device->IsOpen()){
       //dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
       //<<"due to USB devices still open"<<std::endl;
     }
   }
+*/
   for(auto device=fEthernetDevices.begin();device!=fEthernetDevices.end();++device){
     if((device->second)->IsOpen()){
       //dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
@@ -51,10 +54,11 @@ void SSPDAQ::DeviceManager::RefreshDevices()
   }
 
   // Clear Device List
-  fUSBDevices.clear();
+  //fUSBDevices.clear();
   fEthernetDevices.clear();
   fEmulatedDevices.clear();
 
+/*
   //===========================//
   //==Find USB devices=========//
   //===========================//
@@ -148,7 +152,7 @@ void SSPDAQ::DeviceManager::RefreshDevices()
   }
 
   delete[] deviceInfoNodes;
-
+*/
 }
 
 SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
@@ -160,6 +164,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsig
 
   Device* device=0;
   switch(commType){
+  /*
   case SSPDAQ::kUSB:
     device=&fUSBDevices[deviceNum];
     if(device->IsOpen()){
@@ -187,6 +192,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsig
       device->Open(slowControlOnly);
     }
     break;
+*/
   case SSPDAQ::kEmulated:
     while(fEmulatedDevices.size()<=deviceNum){
       fEmulatedDevices.push_back(std::move(std::unique_ptr<SSPDAQ::EmulatedDevice>(new SSPDAQ::EmulatedDevice(fEmulatedDevices.size()))));

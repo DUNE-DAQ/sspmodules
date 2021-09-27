@@ -18,17 +18,17 @@ find_package(readout REQUIRED)
 set(DUNEDAQ_DEPENDENCIES readout::readout dataformats::dataformats)
 
 # Provide override functionality for SSP dependencies
-option(WITH_FTD2XX_AS_PACKAGE "SSP external (ftd2xx) as a dunedaq package" OFF)
+#option(WITH_FTD2XX_AS_PACKAGE "SSP external (ftd2xx) as a dunedaq package" OFF)
 
-if(WITH_FTD2XX_AS_PACKAGE)
-  set(SSP_DEPENDENCIES
-    ftd2xx::ftd2xx
-  )
-else()
-  set(SSP_DEPENDENCIES
-    $ENV{FTD2XX_LIB}/libftd2xx.so
-  )
-endif()
+#if(WITH_FTD2XX_AS_PACKAGE)
+#  set(SSP_DEPENDENCIES
+#    ftd2xx::ftd2xx
+#  )
+#else()
+#  set(SSP_DEPENDENCIES
+#    $ENV{FTD2XX_LIB}/libftd2xx.so
+#  )
+#endif()
 
 ##############################################################################
 # Note that when the ers library is linked in, it uses a "::" because
@@ -37,12 +37,12 @@ endif()
 daq_add_library(anlBoard/*.cxx SSPCardWrapper.cpp LINK_LIBRARIES appfwk::appfwk ${SSP_DEPENDENCIES} ${DUNEDAQ_DEPENDENCIES})
 #daq_add_library(IntPrinter.cpp LINK_LIBRARIES ers::ers)
 
-if(WITH_FTD2XX_AS_PACKAGE)
+#if(WITH_FTD2XX_AS_PACKAGE)
   # All good
-else()
+#else()
   # Hack target
-  target_include_directories(sspmodules PUBLIC $ENV{FTD2XX_INC})
-endif()
+#  target_include_directories(sspmodules PUBLIC $ENV{FTD2XX_INC})
+#endif()
 
 ##############################################################################
 #daq_add_python_bindings(ssp_wrapper.cpp LINK_LIBRARIES ${PROJECT_NAME})
