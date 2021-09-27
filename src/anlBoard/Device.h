@@ -1,7 +1,7 @@
 #ifndef DEVICE_H__
 #define DEVICE_H__
 
-#include "ftd2xx.h"
+//#include "ftd2xx.h"
 
 #include <iostream>
 #include <iomanip>

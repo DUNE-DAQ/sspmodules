@@ -1,9 +1,9 @@
 #ifndef DEVICEMANAGER_H
 #define DEVICEMANAGER_H
 
-#include "ftd2xx.h"
+//#include "ftd2xx.h"
 #include "dune-raw-data/Overlays/anlTypes.hh"
-#include "USBDevice.h"
+//#include "USBDevice.h"
 #include "EmulatedDevice.h"
 #include "EthernetDevice.h"
 
@@ -28,7 +28,7 @@ class DeviceManager{
   //Get reference to instance of DeviceManager singleton
   static DeviceManager& Get();
 
-  unsigned int GetNUSBDevices();
+  //unsigned int GetNUSBDevices();
 
   //Open a device and return a pointer containing a handle to it
   Device* OpenDevice(Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
@@ -46,7 +46,7 @@ class DeviceManager{
   void operator=(DeviceManager const&); //Don't implement
 
   //List of USB devices on FTDI link
-  std::vector<USBDevice> fUSBDevices;
+  //std::vector<USBDevice> fUSBDevices;
 
   //Ethernet devices keyed by IP address
   std::map<unsigned long,std::unique_ptr<EthernetDevice> > fEthernetDevices;
