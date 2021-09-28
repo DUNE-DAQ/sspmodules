@@ -70,12 +70,16 @@ SSPCardWrapper::init(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init called."<<std::endl;
   m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
-  m_instance_name_for_metrics = "SSP " + m_cfg.board_id;
-  unsigned int interfaceTypeCode= m_cfg.interface_type; //SSPDAQ::kEthernet;
-  m_partition_number = m_cfg.partition_number;  //3; //I think this should be less than 4, but I'm using what Giovanna sent me
-  m_timing_address = m_cfg.timing_address;
+  //m_board_id = m_cfg.board_id;
+  m_instance_name_for_metrics = "SSP 11";// + m_cfg.board_id;
+  //unsigned int interfaceTypeCode= m_cfg.interface_type; //SSPDAQ::kEthernet;
+  unsigned int interfaceTypeCode=1;//SSPDAQ::kEthernet;
+  //m_partition_number = m_cfg.partition_number;  //3; //I think this should be less than 4, but I'm using what Giovanna sent me
+  m_partition_number = 999; //I think this should be less than 4, but I'm using what Giovanna sent me
+  //m_timing_address = m_cfg.timing_address; //0x20
+  m_timing_address = 0x20;
 
-  if(m_partition_number>3){
+  /*if(m_partition_number>3){
     try {
       TLOG_DEBUG(TLVL_FULL_DEBUG) << "Error: Invalid partition number set ("<<m_partition_number<<")!"<<std::endl;
     } catch (...) {
@@ -86,7 +90,7 @@ SSPCardWrapper::init(const data_t& args)
       //exit(EXIT_FAILURE);
       exit(424);
     }
-  }
+    }*/
 
   if(m_timing_address>0xff){
     try {
@@ -123,11 +127,12 @@ SSPCardWrapper::init(const data_t& args)
   }
   //Awful hack to get two devices to work together for now
   if(m_interface_type!=1){
-    m_board_id=0;//std::stol(m_board_idstr);
+    m_board_ip=0;//std::stol(m_board_idstr);
   }
   else{
-    m_board_id= inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");
-    //m_board_id=inet_network(ps.get<std::string>("board_ip").c_str());
+    //m_board_ip= inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");
+    m_board_ip= inet_network("10.73.137.56");
+    //m_board_ip=inet_network(ps.get<std::string>("board_ip").c_str());
   }
   
   //Right now we're just going to go ahead and try to hardcode the configuration of the board to be over ethernet and hardcode the board_id to be a specific ip address
@@ -137,7 +142,7 @@ SSPCardWrapper::init(const data_t& args)
   //10.73.137.79 is ssp304
   //10.73.137.74 is ssp603
   //I think in the old artdaq module there was a bad hack that changed the m_board_id value to be board_ip_ if the Comm_t was kEthernet, so that the m_board_id value wasn't actually used?
-  m_device_interface=new SSPDAQ::DeviceInterface(m_interface_type, m_board_id);//m_board_id);
+  m_device_interface=new SSPDAQ::DeviceInterface(m_interface_type, m_board_ip);//m_board_id);
   m_device_interface->SetPartitionNumber(m_partition_number);
   m_device_interface->SetTimingAddress(m_timing_address);
   m_device_interface->Initialize();
@@ -216,7 +221,7 @@ SSPCardWrapper::configure_device(const data_t& args)
   bool haveChannelControl=false;
   std::vector< std::pair<std::string,unsigned int>> channelControlEntries;
 
-  for (auto regValuesIter=m_hardware_configuration.begin();regValuesIter!=m_hardware_configuration.end();++regValuesIter){
+  /*for (auto regValuesIter=m_hardware_configuration.begin();regValuesIter!=m_hardware_configuration.end();++regValuesIter){
     std::string name = regValuesIter->regname;
     std::vector<unsigned int> hexvalues = regValuesIter->hexvalues;
 
@@ -293,6 +298,7 @@ SSPCardWrapper::configure_device(const data_t& args)
   //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals); //for ARR configs not channel_control
   //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
   //m_device_interface->SetRegisterByName(*hcIter,val); //for things without ARR, ALL, or ELE
+  */
 
   //std::vector<unsigned int> chControlReg(12,0);
   for(unsigned int i=0;i<12;++i){
@@ -418,7 +424,7 @@ SSPCardWrapper::configure_daq(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ called.";
   m_cfg = args.get<sspcardreader::Conf>();
-  m_pre_trig_length = m_cfg.pre_trig_length; //unsigned int preTrigLength=337500; 
+  m_pre_trig_length = 337500;//m_cfg.pre_trig_length; //unsigned int preTrigLength=337500; 
   if(m_pre_trig_length==0){
     try {
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
@@ -427,7 +433,7 @@ SSPCardWrapper::configure_daq(const data_t& args)
       //throw SSPDAQ::EDAQConfigError("");
     }
   }
-  m_post_trig_length = m_cfg.post_trig_length; //unsigned int postTrigLength=412500;
+  m_post_trig_length = 412500;//m_cfg.post_trig_length; //unsigned int postTrigLength=412500;
   if(m_post_trig_length==0){
     try {
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!" << std::endl;
@@ -436,7 +442,7 @@ SSPCardWrapper::configure_daq(const data_t& args)
       //throw SSPDAQ::EDAQConfigError("");
     }
   }
-  m_use_external_timestamp=m_cfg.use_external_timestamp; //unsigned int useExternalTimestamp=1;
+  m_use_external_timestamp=1;//m_cfg.use_external_timestamp; //unsigned int useExternalTimestamp=1;
   if(m_use_external_timestamp>1){
     try{
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!" << std::endl;
@@ -445,7 +451,7 @@ SSPCardWrapper::configure_daq(const data_t& args)
       //throw SSPDAQ::EDAQConfigError("");
     }
   }
-  m_trigger_write_delay=m_cfg.trigger_write_delay; //unsigned int triggerWriteDelay=1000;
+  m_trigger_write_delay=1000;//m_cfg.trigger_write_delay; //unsigned int triggerWriteDelay=1000;
   if(m_trigger_write_delay==0){
     try {
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Error: trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!" << std::endl;
@@ -454,9 +460,9 @@ SSPCardWrapper::configure_daq(const data_t& args)
       //throw SSPDAQ::EDAQConfigError("");
     }
   }
-  m_trigger_latency=m_cfg.trigger_latency;//unsigned int trigLatency=0; //not sure about this.
-  m_dummy_period=m_cfg.dummy_period;//int dummyPeriod=-1;//default to off which is set with a value of -1
-  m_hardware_clock_rate_in_MHz = m_cfg.hardware_clock_rate_in_MHz; //unsigned int hardwareClockRate=150; //in MHz
+  m_trigger_latency=0;//m_cfg.trigger_latency;//unsigned int trigLatency=0; //not sure about this.
+  m_dummy_period=-1;//m_cfg.dummy_period;//int dummyPeriod=-1;//default to off which is set with a value of -1
+  m_hardware_clock_rate_in_MHz = 150;//m_cfg.hardware_clock_rate_in_MHz; //unsigned int hardwareClockRate=150; //in MHz
 
   if(m_hardware_clock_rate_in_MHz==1){
     try {
@@ -466,8 +472,8 @@ SSPCardWrapper::configure_daq(const data_t& args)
       //throw SSPDAQ::EDAQConfigError("");
     }
   }
-  m_trigger_mask = m_cfg.trigger_mask; //unsigned int triggerMask=0x2000;
-  m_fragment_timestamp_offset = m_cfg.fragment_timestamp_offset;//m_fragment_timestamp_offset=988;
+  m_trigger_mask = 0x2000;//m_cfg.trigger_mask; //unsigned int triggerMask=0x2000;
+  m_fragment_timestamp_offset = 988;//m_cfg.fragment_timestamp_offset;//m_fragment_timestamp_offset=988;
 
   //std::string triggerRequestAddress;
   //triggerRequestAddress=daqConfig.get<std::string>("zmq_fragment_connection_out","");

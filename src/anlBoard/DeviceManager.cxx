@@ -177,6 +177,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsig
       device->Open(slowControlOnly);
     }
     break;
+  */
   case SSPDAQ::kEthernet:
     if(fEthernetDevices.find(deviceNum)==fEthernetDevices.end()){
       fEthernetDevices[deviceNum]=(std::move(std::unique_ptr<SSPDAQ::EthernetDevice>(new SSPDAQ::EthernetDevice(deviceNum))));
@@ -192,7 +193,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsig
       device->Open(slowControlOnly);
     }
     break;
-*/
+
   case SSPDAQ::kEmulated:
     while(fEmulatedDevices.size()<=deviceNum){
       fEmulatedDevices.push_back(std::move(std::unique_ptr<SSPDAQ::EmulatedDevice>(new SSPDAQ::EmulatedDevice(fEmulatedDevices.size()))));
