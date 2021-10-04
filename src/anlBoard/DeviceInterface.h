@@ -1,6 +1,9 @@
 #ifndef DEVICEINTERFACE_H__
 #define DEVICEINTERFACE_H__
 
+#include "appfwk/app/Nljs.hpp"
+#include "readout/ReadoutTypes.hpp"
+
 #include "DeviceManager.h"
 #include "Device.h"
 #include "dune-raw-data/Overlays/anlTypes.hh"
@@ -8,6 +11,7 @@
 #include "EventPacket.h"
 #include <string>
 #include "logging/Logging.hpp"
+#include <memory>
 
 namespace SSPDAQ{
 
@@ -21,6 +25,11 @@ namespace SSPDAQ{
   class DeviceInterface{
     
   public:
+
+    // RS: queues here... I know...
+    using sink_t = dunedaq::appfwk::DAQSink<dunedaq::readout::types::SSP_FRAME_STRUCT>;
+    std::map<unsigned, std::unique_ptr<sink_t>> m_sink_queues;
+
 
     enum State_t{kUninitialized,kRunning,kStopping,kStopped,kBad};
 
@@ -37,7 +46,7 @@ namespace SSPDAQ{
     void OpenSlowControl();
 
     //Does all the real work in connecting to and setting up the device
-    void Initialize();
+    void Initialize(const nlohmann::json& args);
 
     //void StartRequestReceiver(std::string address);
 

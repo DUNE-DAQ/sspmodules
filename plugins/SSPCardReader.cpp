@@ -125,7 +125,7 @@ SSPCardReader::do_stop(const data_t& args)
 }
 
 void
-SSPCardReader::get_info(opmonlib::InfoCollector& ci, int level)
+SSPCardReader::get_info(opmonlib::InfoCollector& /*ci*/, int /*level*/)
 {
 }
 

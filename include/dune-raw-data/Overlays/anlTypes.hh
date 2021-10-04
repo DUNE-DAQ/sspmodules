@@ -85,6 +85,7 @@ struct EventHeader {	// NOTE: Group fields are listed from MSB to LSB
 								// Word 0 = Reserved for interpolation
 								// Words 1-3 = 48 bit Timestamp
 };
+//static_assert(sizeof(struct EventHeader) == 12, "Check your assumptions on SSP EventHeader size");
 
   //byte-level structure of command header to send to SSP
 struct CtrlHeader {

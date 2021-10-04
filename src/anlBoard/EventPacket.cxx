@@ -1,5 +1,6 @@
 #include "EventPacket.h"
-//#include "dune-artdaq/DAQLogger/DAQLogger.hh"
+
+#include "logging/Logging.hpp"
 
 void SSPDAQ::EventPacket::SetEmpty(){
   data.clear();
@@ -13,7 +14,8 @@ void SSPDAQ::EventPacket::DumpHeader(){
     peaksum |= 0xFF000000;
   }
 
-  /*  dune::DAQLogger::LogInfo("SSP_EventPacket")
+  //dune::DAQLogger::LogInfo("SSP_EventPacket")
+  TLOG_DEBUG(10) 
     << "=====HEADER=======================================" << std::endl
     << "Header:                             " << header.header   << std::endl
     << "Length:                             " << header.length   << std::endl
@@ -37,7 +39,7 @@ void SSPDAQ::EventPacket::DumpHeader(){
     << "Internal interpolation point:       " << header.intTimestamp[0] << std::endl
     << "Internal timestamp:                 " << ((uint64_t)((uint64_t)header.intTimestamp[3] << 32)) + ((uint64_t)((uint64_t)header.intTimestamp[2]) << 16) + ((uint64_t)((uint64_t)header.intTimestamp[1])) <<" ("<<header.intTimestamp[3]<<" "<<header.intTimestamp[2]<<" "<<header.intTimestamp[1]<<")"<<std::endl 
     << "=================================================="<< std::endl
-    << std::endl;*/
+    << std::endl;
 }
 
 void SSPDAQ::EventPacket::DumpEvent(){

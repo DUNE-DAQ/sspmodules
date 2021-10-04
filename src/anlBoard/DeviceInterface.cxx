@@ -1,3 +1,7 @@
+#include "appfwk/app/Nljs.hpp"
+
+#include "readout/ReadoutTypes.hpp"
+
 #include "DeviceInterface.h"
 #include "anlExceptions.h"
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
@@ -26,7 +30,7 @@ SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long 
 
 void SSPDAQ::DeviceInterface::OpenSlowControl(){
 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface OpenSlowControl called.";
+  TLOG_DEBUG(TLVL_FULL_DEBUG) << "SSP Device Interface OpenSlowControl called.";
   //Ask device manager for a pointer to the specified device
   SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
   SSPDAQ::Device* device=0;
@@ -49,9 +53,47 @@ void SSPDAQ::DeviceInterface::OpenSlowControl(){
 
 }
 
-void SSPDAQ::DeviceInterface::Initialize(){
+inline void
+tokenize(std::string const& str, const char delim, std::vector<std::string>& out)
+{
+  std::size_t start;
+  std::size_t end = 0;
+  while ((start = str.find_first_not_of(delim, end)) != std::string::npos) {
+    end = str.find(delim, start);
+    out.push_back(str.substr(start, end - start));
+  }
+}
+
+void SSPDAQ::DeviceInterface::Initialize(const nlohmann::json& args){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initialize called.";
+
+  // init queues here.... I know...
+  auto ini = args.get<dunedaq::appfwk::app::ModInit>();
+  for (const auto& qi : ini.qinfos) {
+    if (qi.dir != "output") {
+      continue;
+    } else {
+      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPReader output queue is " << qi.inst;
+      const char delim = '_';
+      std::string target = qi.inst;
+      std::vector<std::string> words;
+      tokenize(target, delim, words);
+      int linkid = -1;
+
+      try {
+        linkid = std::stoi(words.back());
+        m_sink_queues[linkid] = std::make_unique<sink_t>(qi.inst);
+      } catch (const std::exception& ex) {
+        TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
+        //ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
+      }
+    }
+
+
+  }
+
+
   //Ask device manager for a pointer to the specified device
   SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
   SSPDAQ::Device* device=0;
@@ -264,7 +306,7 @@ void SSPDAQ::DeviceInterface::Start(){
   //}
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Run started!"<<std::endl;
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Start complete.";
+  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Start complete.";
 
 }
 
@@ -287,13 +329,23 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
       continue;
     }
 
-    //newPacket.DumpHeader();
+    newPacket.DumpHeader();
+
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead getting mutex..."<<std::endl;
     std::unique_lock<std::mutex> mlock(fBufferMutex);
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead got mutex!"<<std::endl;
     /////////////////////////////////////////////////////////
     // Push event onto deque.                              //
     /////////////////////////////////////////////////////////
+
+
+    dunedaq::readout::types::SSP_FRAME_STRUCT sspfs;
+    sspfs.header = newPacket.header; 
+    //memcpy();
+    memcpy(sspfs.data, newPacket.data.data(), newPacket.data.size());
+
+    auto chid = ((newPacket.header.group2 & 0x000F) >> 0);
+    m_sink_queues[chid]->push(std::move(sspfs)); 
 
     fPacketBuffer.emplace_back(std::move(newPacket));
 
@@ -342,19 +394,30 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
     //Cull old packets which are not associated with a trigger//
     ////////////////////////////////////////////////////////////
 
-    unsigned long packetTime=GetTimestamp(fPacketBuffer.back().header);
+    unsigned long packetTime = GetTimestamp(fPacketBuffer.back().header);
     unsigned long firstInterestingTime;
 
-    if(fTriggers.size()){
-      firstInterestingTime=fTriggers.front().startTime-fTriggerWriteDelay;
-    }
-    else{
-      firstInterestingTime=packetTime-fPreTrigLength-fTriggerLatency-fTriggerWriteDelay;
+    if (fTriggers.size()){
+      firstInterestingTime = fTriggers.front().startTime - fTriggerWriteDelay;
+    } else {
+      firstInterestingTime = packetTime - fPreTrigLength - fTriggerLatency - fTriggerWriteDelay;
     }
 
-    while(GetTimestamp(fPacketBuffer.front().header)<firstInterestingTime){
+    //auto frontTS = GetTimestamp(fPacketBuffer.front().header);
+
+    auto dropCount = 0;
+    while ( GetTimestamp(fPacketBuffer.front().header) < firstInterestingTime ) {
       fPacketBuffer.pop_front();
+      dropCount++;
     }
+
+    auto globalTimestamp = (packetTime + fFragmentTimestampOffset) / 3;
+
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime 
+      << " firstInterestingTime: " << firstInterestingTime 
+      //<< " frontTS: " << frontTS
+      << " globalTS: " << globalTimestamp
+      << " dropped: " << dropCount;
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead releasing mutex..."<<std::endl;
     mlock.unlock();
@@ -366,9 +429,9 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
 
 void SSPDAQ::DeviceInterface::ReadEvent(std::vector<unsigned int>& fragment){
 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvent called.";
+  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvent called.";
 
-  if(fState!=kRunning){
+  if (fState != kRunning) {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to get data from non-running device refused!"<<std::endl;
     return;
   }
@@ -378,18 +441,22 @@ void SSPDAQ::DeviceInterface::ReadEvent(std::vector<unsigned int>& fragment){
   // If so, pass trigger to fragment builder method.                     //
   /////////////////////////////////////////////////////////////////////////
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread getting mutex..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread getting mutex..." << std::endl;
   std::unique_lock<std::mutex> mlock(fBufferMutex);
 
-  if(!fTriggers.size()) return;
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread got mutex!"<<std::endl;
-  unsigned long packetTime=GetTimestamp(fPacketBuffer.back().header);
+  if ( !fTriggers.size() ) {
+    return;
+  }
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread got mutex!" << std::endl;
+  unsigned long packetTime = GetTimestamp(fPacketBuffer.back().header);
 
-  if(packetTime>fTriggers.front().endTime+fTriggerWriteDelay){
-    this->BuildFragment(fTriggers.front(),fragment);
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime;
+
+  if (packetTime > fTriggers.front().endTime + fTriggerWriteDelay) {
+    this->BuildFragment(fTriggers.front(), fragment);
     fTriggers.pop();
   }
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread releasing mutex..."<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread releasing mutex..." << std::endl;
   mlock.unlock();
   
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvent complete.";
@@ -457,14 +524,15 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   std::vector<SSPDAQ::EventPacket> eventsToPutBack;
   std::vector<SSPDAQ::EventPacket*> eventsToWrite;
 
-  auto lastPacket=fPacketBuffer.begin();
+  auto lastPacket = fPacketBuffer.begin();
 
-  for(auto packetIter=fPacketBuffer.begin();packetIter!=fPacketBuffer.end();++packetIter){
+  for (auto packetIter=fPacketBuffer.begin(); packetIter != fPacketBuffer.end(); ++packetIter) {
+    unsigned long packetTime = GetTimestamp(packetIter->header);
 
-    unsigned long packetTime=GetTimestamp(packetIter->header);
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime=" << packetTime 
+      << " triggerTime=[" << theTrigger.startTime << " to " << theTrigger.endTime << "]";
 
-    if(packetTime>=theTrigger.startTime&&packetTime<theTrigger.endTime){
-      
+    if (packetTime >= theTrigger.startTime && packetTime < theTrigger.endTime) { 
       lastPacket=packetIter;
     }
   }
@@ -490,8 +558,8 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   unsigned int dataSizeInWords=0;
 
   dataSizeInWords+=SSPDAQ::MillisliceHeader::sizeInUInts;
-  for(auto ev=eventsToWrite.begin();ev!=eventsToWrite.end();++ev){
-    dataSizeInWords+=(*ev)->header.length;
+  for (auto ev=eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
+    dataSizeInWords += (*ev)->header.length;
   }
 
   //==================//
@@ -517,25 +585,24 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
 
   //Put millislice header at front of vector
   auto sliceDataPtr=fragmentData.begin();
-  unsigned int* millisliceHeaderPtr=(unsigned int*)((void*)(&sliceHeader));
-  std::copy(millisliceHeaderPtr,millisliceHeaderPtr+SSPDAQ::MillisliceHeader::sizeInUInts,sliceDataPtr);
+  unsigned int* millisliceHeaderPtr = (unsigned int*)((void*)(&sliceHeader));
+  std::copy(millisliceHeaderPtr, millisliceHeaderPtr + SSPDAQ::MillisliceHeader::sizeInUInts, sliceDataPtr);
 
   //Fill rest of vector with event data
-  sliceDataPtr+=SSPDAQ::MillisliceHeader::sizeInUInts;
+  sliceDataPtr += SSPDAQ::MillisliceHeader::sizeInUInts;
 
-  for(auto ev=eventsToWrite.begin();ev!=eventsToWrite.end();++ev){
-
+  for (auto ev = eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     //DAQ event header
-    unsigned int* headerPtr=(unsigned int*)((void*)(&((*ev)->header)));
-    std::copy(headerPtr,headerPtr+headerSizeInWords,sliceDataPtr);
+    unsigned int* headerPtr = (unsigned int*)((void*)(&((*ev)->header)));
+    std::copy(headerPtr, headerPtr + headerSizeInWords, sliceDataPtr);
     
     //DAQ event payload
-    sliceDataPtr+=headerSizeInWords;
-    std::copy((*ev)->data.begin(),(*ev)->data.end(),sliceDataPtr);
-    sliceDataPtr+=(*ev)->header.length-headerSizeInWords;
+    sliceDataPtr += headerSizeInWords;
+    std::copy((*ev)->data.begin(), (*ev)->data.end(), sliceDataPtr);
+    sliceDataPtr += (*ev)->header.length - headerSizeInWords;
   }
   
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Building fragment with "<<eventsToWrite.size()<<" packets"<<std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Building fragment with " << eventsToWrite.size() << " packets" << std::endl;
 
   //=======================//
   //Add millislice to queue//
@@ -587,7 +654,7 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
 
 void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
  
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice called.";
+  //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice called.";
 
   if(fState!=kRunning){
     TLOG_DEBUG(TLVL_WORK_STEPS) <<"Attempt to get data from non-running device refused!"<<std::endl;
@@ -607,15 +674,17 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
 
     fDevice->DeviceQueueStatus(&queueLengthInUInts);
     data.clear();
-    if(queueLengthInUInts){
+    if (queueLengthInUInts) {
       fDevice->DeviceReceive(data,1);
     }
 
     //If no data is available in pipe then return
     //without filling packet
-    if(data.size()==0){
-      if(skippedWords){
-	TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: GetEvent skipped "<<skippedWords<<"words and has not seen header for next event!"<<std::endl;
+    if (data.size() == 0) {
+      if (skippedWords) {
+	TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()
+          << "Warning: GetEvent skipped " << skippedWords 
+          << "words and has not seen header for next event!" << std::endl;
       }
       event.SetEmpty();
       return;
@@ -713,6 +782,11 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
 
   //Copy event data into event packet
   event.data=std::move(data);
+
+  auto ehsize = sizeof(struct EventHeader);
+  auto ehlength = event.header.length;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Event data size: " << event.data.size() << " ehsize: " << ehsize << " ehl: " << ehlength;
+
   //event.DumpHeader();
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice complete.";
 

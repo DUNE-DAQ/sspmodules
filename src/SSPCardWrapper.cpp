@@ -146,7 +146,7 @@ SSPCardWrapper::init(const data_t& args)
   m_device_interface=new SSPDAQ::DeviceInterface(m_interface_type, m_board_ip);//m_board_id);
   m_device_interface->SetPartitionNumber(m_partition_number);
   m_device_interface->SetTimingAddress(m_timing_address);
-  m_device_interface->Initialize();
+  m_device_interface->Initialize(args);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init complete.";
 }
@@ -509,11 +509,10 @@ SSPCardWrapper::process_ssp()
       // JCF, Mar-8-2016
       // Could I just wrap this in a try-catch block?
       m_device_interface->ReadEvent(millislice);
-      if (m_device_interface->exception())
-	{
-	  //set_exception(true);
-	  TLOG_DEBUG(TLVL_WORK_STEPS) << "dune::SSP::getNext_ : found device interface thread in exception state";
-	}
+      if (m_device_interface->exception()) {
+        //set_exception(true);
+        TLOG_DEBUG(TLVL_WORK_STEPS) << "dune::SSP::getNext_ : found device interface thread in exception state";
+      }
       
       static size_t ncalls = 1;
       static size_t ncalls_with_millislice = 0;
@@ -523,8 +522,8 @@ SSPCardWrapper::process_ssp()
       }
       ncalls++;
 
-      if (millislice.size()==0) {
-	if (!hasSeenSlice){
+      if (millislice.size() == 0) {
+	if (!hasSeenSlice) {
 	  ++m_num_zero_fragments;
 	  usleep(100000);
 	}
@@ -532,7 +531,7 @@ SSPCardWrapper::process_ssp()
       }
       hasSeenSlice=true;
 
-      TLOG_DEBUG(TLVL_FULL_DEBUG) <<m_device_interface->GetIdentifier()
+      TLOG_DEBUG(5) <<m_device_interface->GetIdentifier()
                          <<"Generator sending fragment "<<m_num_fragments_sent
                          <<", calls to GetNext "<<m_num_read_event_calls
                          <<", of which returned null "<<m_num_zero_fragments<<std::endl;                         
@@ -554,7 +553,7 @@ SSPCardWrapper::process_ssp()
     //  fragment_id_t fragment_id, type_t type, const T & metadata)
     // which will then return a unique_ptr to an artdaq::Fragment
     // object.
-    std::this_thread::sleep_for(std::chrono::microseconds(5000)); // fix 5ms initial poll
+    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // fix 5ms initial poll
   }
 }
 
