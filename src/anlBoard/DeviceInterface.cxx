@@ -1,4 +1,5 @@
 #include "appfwk/app/Nljs.hpp"
+#include "sspmodules/sspcardreader/Nljs.hpp"
 
 #include "readout/ReadoutTypes.hpp"
 
@@ -19,9 +20,10 @@ enum
 };
 
 
-SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
-  : fCommType(commType), fDeviceId(deviceId), fState(SSPDAQ::DeviceInterface::kUninitialized),
-    fUseExternalTimestamp(false), fHardwareClockRateInMHz(128), fPreTrigLength(1E8), 
+//SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
+SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType)
+  : fCommType(commType), fDeviceId(0), fState(SSPDAQ::DeviceInterface::kUninitialized),
+    fUseExternalTimestamp(true), fHardwareClockRateInMHz(128), fPreTrigLength(1E8), 
     fPostTrigLength(1E7), fTriggerWriteDelay(1000), fTriggerLatency(0), fTriggerMask(0),
     fDummyPeriod(-1), fSlowControlOnly(false), fPartitionNumber(0), fTimingAddress(0), exception_(false),
     fDataThread(0){
@@ -90,119 +92,8 @@ void SSPDAQ::DeviceInterface::Initialize(const nlohmann::json& args){
       }
     }
 
-
   }
-
-
-  //Ask device manager for a pointer to the specified device
-  SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
-  SSPDAQ::Device* device=0;
-
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Initializing "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
-  <<" device #"<<fDeviceId<<"..."<<std::endl;
-  
-  device=devman.OpenDevice(fCommType,fDeviceId);
-  
-  if(!device){
-    try {
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
-    } catch (...) {}
-      throw(ENoSuchDevice());
-  }
-
-  fDevice=device;
-  TLOG_DEBUG(TLVL_FULL_DEBUG) <<"SSP Device Interface sending stop."<<std::endl;
-  //Put device into sensible state
-  this->Stop();
-  TLOG_DEBUG(TLVL_FULL_DEBUG) <<"SSP Device Interface stop sent."<<std::endl;
-
-  //Reset timing endpoint
-  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
-
-  unsigned int pdts_status=0;
-  unsigned int pdts_control=0;
-  unsigned int dsp_clock_control=0;
-
-  fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-  TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-  fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
-  TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
-  fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
-  TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
-
-  unsigned int presentTimingAddress=(pdts_control>>16)&0xFF;
-  unsigned int presentTimingPartition=pdts_control&0x3;
-
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"SSP HW presently on partition "<< presentTimingPartition
-			      <<", address "<<std::hex<<presentTimingAddress<<" with endpoint status "
-			      <<(pdts_status&0xF)<<" and dsp_clock_control at "<<dsp_clock_control
-			      <<std::dec<<std::endl;
-
-  if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 && presentTimingAddress==fTimingAddress && presentTimingPartition==fPartitionNumber
-     && dsp_clock_control==0x31){
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
-
-  }
-  else{
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
-				<<", endpoint address "<<std::hex<<fTimingAddress
-				<<std::dec<<")"<<std::endl;
-
-    unsigned int nTries=0;
-    
-    while(nTries<5){
-      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl;
-      fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress*0x10000);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
-
-      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-      fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
-      fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
-      
-      fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
-      usleep(2000000);
-      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x31);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x31 << std::dec <<std::endl;
-      usleep(2000000);
-      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-      if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
-      ++nTries;
-    }
-   
-    if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-      TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
-    }
-    else{
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
-				  <<std::hex<<pdts_status<<std::dec<<std::endl;
-    } 
-  }
-
-  TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
-  //Wait until pdts_status reaches exactly 0x8 before resolving.
-  if((pdts_status&0xF)!=0x8){
-    TLOG_DEBUG(TLVL_WORK_STEPS)<<"Waiting for endpoint to reach status 0x8..."<<std::endl;
-    TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-  }
-  while((pdts_status&0xF)!=0x8){
-    usleep(2000000);
-    TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
-    fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-    TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-  }
-
-  TLOG_DEBUG(TLVL_WORK_STEPS)<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
+  fState=kInitialized;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initailize complete.";
 }
 
@@ -331,13 +222,34 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
 
     newPacket.DumpHeader();
 
+    /*unsigned long m_external_packetTime = 0;
+    for(unsigned int iWord=0;iWord<=3;++iWord){
+      m_external_packetTime += ((unsigned long)(newPacket.header.timestamp[iWord]))<<16*iWord;
+    }
+    unsigned long m_internal_packetTime = 0;
+    for (unsigned int iWord = 1; iWord <= 3; ++iWord){
+      m_internal_packetTime += ((unsigned long)(newPacket.header.intTimestamp[iWord]))<<16*(iWord-1);
+    }
+
+    unsigned long m_internal_pretrig_time = m_internal_packetTime - fPreTrigLength;
+    unsigned long m_internal_posttrig_time = m_internal_packetTime + fPostTrigLength;
+
+    TLOG_DEBUG(TLVL_WORK_STEPS) << std::endl << " GetTimestamp return value: " << GetTimestamp(newPacket.header) << std::endl
+                                << " external packetTime: " << m_external_packetTime << std::endl
+				<< " raw internal packetTime: " << m_internal_packetTime
+                                << " raw internal pretrig Time: " << m_internal_pretrig_time
+                                << " raw internal posttrig Time: " << m_internal_posttrig_time << std::endl
+				<< " scaled internal packetTime: " << m_internal_packetTime/3
+                                << " scaled internal pretrig Time: " << m_internal_pretrig_time/3
+                                << " scaled internal posttrig Time: " << m_internal_posttrig_time/3;*/
+
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead getting mutex..."<<std::endl;
     std::unique_lock<std::mutex> mlock(fBufferMutex);
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead got mutex!"<<std::endl;
+
     /////////////////////////////////////////////////////////
     // Push event onto deque.                              //
     /////////////////////////////////////////////////////////
-
 
     dunedaq::readout::types::SSP_FRAME_STRUCT sspfs;
     sspfs.header = newPacket.header; 
@@ -345,9 +257,11 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
     memcpy(sspfs.data, newPacket.data.data(), newPacket.data.size());
 
     auto chid = ((newPacket.header.group2 & 0x000F) >> 0);
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Getting ready to write newPacket to chid: " << chid <<std::endl;
     m_sink_queues[chid]->push(std::move(sspfs)); 
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Guess it wasn't writing to the sink_queues... " << chid <<std::endl;
 
-    fPacketBuffer.emplace_back(std::move(newPacket));
+    //fPacketBuffer.emplace_back(std::move(newPacket));
 
     ///////////////////////////////////////////////////////////////
     // Pass event to trigger finder method. If it contains       //
@@ -388,7 +302,6 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
 	fTriggers.push(newTrigger);
       }
     }
-    */
 
     ////////////////////////////////////////////////////////////
     //Cull old packets which are not associated with a trigger//
@@ -403,21 +316,22 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
       firstInterestingTime = packetTime - fPreTrigLength - fTriggerLatency - fTriggerWriteDelay;
     }
 
-    //auto frontTS = GetTimestamp(fPacketBuffer.front().header);
+    auto globalTimestamp = (packetTime + fFragmentTimestampOffset) / 3;
 
+
+    auto frontTS = GetTimestamp(fPacketBuffer.front().header);
     auto dropCount = 0;
     while ( GetTimestamp(fPacketBuffer.front().header) < firstInterestingTime ) {
       fPacketBuffer.pop_front();
       dropCount++;
-    }
-
-    auto globalTimestamp = (packetTime + fFragmentTimestampOffset) / 3;
+      }
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime 
-      << " firstInterestingTime: " << firstInterestingTime 
-      //<< " frontTS: " << frontTS
-      << " globalTS: " << globalTimestamp
-      << " dropped: " << dropCount;
+				<< " firstInterestingTime: " << firstInterestingTime 
+				<< " frontTS: " << frontTS
+				<< " globalTS: " << globalTimestamp
+				<< " dropped: " << dropCount;
+    */
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead releasing mutex..."<<std::endl;
     mlock.unlock();
@@ -893,15 +807,166 @@ void SSPDAQ::DeviceInterface::ReadRegisterArrayByName(std::string name, std::vec
 
 
 
-void SSPDAQ::DeviceInterface::Configure(){
+void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configure called.";
 
-  if(fState!=kStopped){
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to reconfigure non-stopped device refused!"<<std::endl;
+  if( (fState == kRunning)  || (fState == kUninitialized) ) {
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to reconfigure uninitialized or running device refused!"<<std::endl;
     return;
   }
 
-  SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
+  auto m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
+  int interfaceTypeCode = m_cfg.interface_type; //SSPDAQ::kEthernet;
+  switch(interfaceTypeCode){
+  case 0:
+    fCommType=SSPDAQ::kUSB;
+    break;
+  case 1:
+    fCommType=SSPDAQ::kEthernet;
+    break;
+  case 2:
+    fCommType=SSPDAQ::kEmulated;
+    break;
+  case 999:
+    try {
+      TLOG() << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+    } catch (...) {
+      exit(424);
+    }
+  default:
+    try {
+      TLOG() << "Error: Unknown interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+    } catch (...) {
+      exit(424);
+    }
+  }
+  //
+  if(fCommType!=SSPDAQ::kEthernet){
+    fDeviceId = 0;
+    try {
+      TLOG() << "Error: Non-functioning interface type set: "<< fCommType 
+	     << "so forcing an exit and having none of this USB based SSP crap." << std::endl;
+    } catch (...) {
+      exit(424);
+   }
+  }
+  else{
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Board IP is listed as: " << m_cfg.board_ip << std::endl;
+      fDeviceId = inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");
+  }
+  
+  //Ask device manager for a pointer to the specified device
+  SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
+  SSPDAQ::Device* device=0;
+
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Configuring "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
+  <<" device #"<<fDeviceId<<"..."<<std::endl;
+  
+  device=devman.OpenDevice(fCommType,fDeviceId);
+  
+  if(!device){
+    try {
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
+    } catch (...) {}
+      throw(ENoSuchDevice());
+  }
+
+  fDevice=device;
+  TLOG_DEBUG(TLVL_FULL_DEBUG) <<"SSP Device Interface sending stop."<<std::endl;
+  //Put device into sensible state
+  this->Stop();
+  TLOG_DEBUG(TLVL_FULL_DEBUG) <<"SSP Device Interface stop sent."<<std::endl;
+
+  //Reset timing endpoint
+  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
+
+  unsigned int pdts_status=0;
+  unsigned int pdts_control=0;
+  unsigned int dsp_clock_control=0;
+
+  fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+  TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+  fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
+  TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
+  fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
+  TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
+
+  unsigned int presentTimingAddress=(pdts_control>>16)&0xFF;
+  unsigned int presentTimingPartition=pdts_control&0x3;
+
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"SSP HW presently on partition "<< presentTimingPartition
+			      <<", address "<<std::hex<<presentTimingAddress<<" with endpoint status "
+			      <<(pdts_status&0xF)<<" and dsp_clock_control at "<<dsp_clock_control
+			      <<std::dec<<std::endl;
+
+  if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 && presentTimingAddress==fTimingAddress && presentTimingPartition==fPartitionNumber
+     && dsp_clock_control==0x31){
+
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
+
+  }
+  else{
+
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
+				<<", endpoint address "<<std::hex<<fTimingAddress
+				<<std::dec<<")"<<std::endl;
+
+    unsigned int nTries=0;
+    
+    while(nTries<5){
+      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl; //setting the lowest bit to 0 sets the DSP clock to internal.
+      fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress*0x10000);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl; //setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
+
+      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+      fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
+      fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
+      
+      fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x00000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
+      usleep(2000000); //setting the highest bit (0x80000000) to zero puts the SSP in run mode for the PDTS.
+      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x31); //setting the lowest bit to 1 sets the DSP clock to external.
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x31 << std::dec <<std::endl;
+      usleep(2000000);
+      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+      if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
+      ++nTries;
+    }
+   
+    if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
+    }
+    else{
+      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
+				  <<std::hex<<pdts_status<<std::dec<<std::endl;
+    } 
+  }
+
+  TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
+  //Wait until pdts_status reaches exactly 0x8 before resolving.
+  if((pdts_status&0xF)!=0x8){
+    TLOG_DEBUG(TLVL_WORK_STEPS)<<"Waiting for endpoint to reach status 0x8..."<<std::endl;
+    TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+  }
+  while((pdts_status&0xF)!=0x8){
+    usleep(2000000);
+    TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
+    fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+    TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+  }
+
+  TLOG_DEBUG(TLVL_WORK_STEPS)<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
+
+  /*  SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
 
   	// Setting up some constants to use during initialization
 	const uint	module_id		= 0xABC;	// This value is reported in the event header
@@ -1059,7 +1124,8 @@ void SSPDAQ::DeviceInterface::Configure(){
 	fDevice->DeviceWrite(duneReg.external_gate_width,0x00008000);
 	//fDevice->DeviceWrite(duneReg.dsp_clock_control,0x00000000);
 
-	// Load the window settings - This MUST be the last operation
+	// Load the window settings - This MUST be the last operation */
+
 	TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configured complete.";
 
 }
@@ -1090,6 +1156,8 @@ std::string SSPDAQ::DeviceInterface::GetIdentifier(){
 
 unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const SSPDAQ::EventHeader& header){
   unsigned long packetTime=0;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp << std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "fPreTrigLength value: " << fPreTrigLength << std::endl;
   if(fUseExternalTimestamp){
     for(unsigned int iWord=0;iWord<=3;++iWord){
       packetTime+=((unsigned long)(header.timestamp[iWord]))<<16*iWord;

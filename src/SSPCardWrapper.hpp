@@ -62,11 +62,11 @@ private:
   module_conf_t m_cfg;
 
   //Initialization configuration variables
-  unsigned long m_board_id; //this is the ID of the SSP board
+  unsigned int m_board_id; //this is the ID of the SSP board
   unsigned long m_board_ip; //this is the ip address of the SSP board
-  SSPDAQ::Comm_t  m_interface_type; //is this ethernet or USB or emulated, note that USB is needed for interfacing with the board registers
   unsigned int m_partition_number;
   unsigned int m_timing_address;
+  unsigned long m_module_id;
 
   //DAQ configuration variables first
   unsigned int m_pre_trig_length; //Window length in ticks for packets to be included in a fragment. This is the length of the window before the trigger timestamp.

@@ -43,13 +43,16 @@ local sspcardreader = {
         //s.field("", self.count, 0, doc=""),
         //s.field("", self.choice, 0, doc=""),
 
- 	s.field("board_id", self.name, "",
+ 	s.field("board_id", self.count, 0,
 		doc="Board ID used for configuration and metric tracking"),
 
-        s.field("interface_type", self.count, 0,
+ 	s.field("module_id", self.count, 0,
+		doc="Board ID used for configuration and metric tracking"),
+
+        s.field("interface_type", self.id, 1,
                 doc="connection interface type, 0 is USB, 1 is ethernet, 2 is emulated"),
 
- 	s.field("board_ip", self.name, "",
+ 	s.field("board_ip", self.name, "default",
 		doc="For ethernet interfaces the IP address of the board, otherwise 0"),
 
         s.field("partition_number", self.count, 0,

@@ -31,11 +31,11 @@ namespace SSPDAQ{
     std::map<unsigned, std::unique_ptr<sink_t>> m_sink_queues;
 
 
-    enum State_t{kUninitialized,kRunning,kStopping,kStopped,kBad};
+    enum State_t{kUninitialized,kInitialized,kRunning,kStopping,kStopped,kBad};
 
     //Just sets the fields needed to request the device.
     //Real work is done in Initialize which is called manually.
-    DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId);
+    DeviceInterface(SSPDAQ::Comm_t commType);
 
     ~DeviceInterface(){
       //if(fRequestReceiver){
@@ -67,7 +67,7 @@ namespace SSPDAQ{
     //Build a sensible default configuration (What I got from Michael
     //along with Ethernet interface code). Artdaq should do everything
     //in fhicl - this method is for convenience when running test code.
-    void Configure();
+    void Configure(const nlohmann::json& args);
 
     //Generate fragment from the data available on the buffer, if possible
     void ReadEvent(std::vector<unsigned int>& fragment);
@@ -126,19 +126,19 @@ namespace SSPDAQ{
     //Read all elements of an array into values vector
     void ReadRegisterArrayByName(std::string name, std::vector<unsigned int>& values);
 
-    void SetHardwareClockRateInMHz(unsigned int rate){fHardwareClockRateInMHz=rate;}
+    void SetHardwareClockRateInMHz(unsigned int rate){fHardwareClockRateInMHz = rate;}
 
-    void SetPreTrigLength(unsigned int len){fPreTrigLength=len;}
+    void SetPreTrigLength(unsigned int len){fPreTrigLength = len;}
 
-    void SetPostTrigLength(unsigned int len){fPostTrigLength=len;}
+    void SetPostTrigLength(unsigned int len){fPostTrigLength = len;}
 
-    void SetTriggerWriteDelay(unsigned long delay){fTriggerWriteDelay=delay;}
+    void SetTriggerWriteDelay(unsigned long delay){fTriggerWriteDelay = delay;}
 
-    void SetTriggerLatency(unsigned long latency){fTriggerLatency=latency;}
+    void SetTriggerLatency(unsigned long latency){fTriggerLatency = latency;}
 
     void SetDummyPeriod(int period){fDummyPeriod=period;}
 
-    void SetUseExternalTimestamp(bool val){fUseExternalTimestamp=val;}
+    void SetUseExternalTimestamp(bool val){fUseExternalTimestamp = val;}
 
     void SetTriggerMask(unsigned int val){fTriggerMask=val;}
 
@@ -195,7 +195,7 @@ namespace SSPDAQ{
 
     unsigned long fMillislicesBuilt;
 
-    unsigned int fUseExternalTimestamp;
+    bool fUseExternalTimestamp;
     
     unsigned int fHardwareClockRateInMHz;
 
