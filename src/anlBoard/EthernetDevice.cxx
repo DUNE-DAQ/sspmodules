@@ -21,7 +21,7 @@ void SSPDAQ::EthernetDevice::Open(bool slowControlOnly){
   boost::asio::ip::tcp::resolver::query commQuery(fIP.to_string(), slowControlOnly?"55002":"55001");
   boost::asio::ip::tcp::resolver::iterator commEndpointIterator = resolver.resolve(commQuery);
   boost::asio::connect(fCommSocket, commEndpointIterator);
-  
+
   if(slowControlOnly){
     //dune::DAQLogger::LogInfo("SSP_EthernetDevice")<<"Connected to SSP Ethernet device at "<<fIP.to_string()<<std::endl;
     return;
@@ -29,7 +29,7 @@ void SSPDAQ::EthernetDevice::Open(bool slowControlOnly){
 
   boost::asio::ip::tcp::resolver::query dataQuery(fIP.to_string(), "55010");
   boost::asio::ip::tcp::resolver::iterator dataEndpointIterator = resolver.resolve(dataQuery);
-  
+
   boost::asio::connect(fDataSocket, dataEndpointIterator);
 
   //Set limited receive buffer size to avoid taxing switch
@@ -44,7 +44,7 @@ void SSPDAQ::EthernetDevice::Open(bool slowControlOnly){
 void SSPDAQ::EthernetDevice::Close(){
   isOpen=false;
   //dune::DAQLogger::LogInfo("SSP_EthernetDevice")<<"Device closed"<<std::endl;
-} 
+}
 
 void SSPDAQ::EthernetDevice::DevicePurgeComm (void){
   DevicePurge(fCommSocket);
@@ -56,7 +56,7 @@ void SSPDAQ::EthernetDevice::DevicePurgeData (void){
 
 void SSPDAQ::EthernetDevice::DeviceQueueStatus(unsigned int* numWords){
   unsigned int numBytes=fDataSocket.available();
-  (*numWords)=numBytes/sizeof(unsigned int);  
+  (*numWords)=numBytes/sizeof(unsigned int);
 }
 
 void SSPDAQ::EthernetDevice::DeviceReceive(std::vector<unsigned int>& data, unsigned int size){
@@ -72,18 +72,18 @@ void SSPDAQ::EthernetDevice::DeviceReceive(std::vector<unsigned int>& data, unsi
 //==============================================================================
 
 void SSPDAQ::EthernetDevice::DeviceRead (unsigned int address, unsigned int* value){
- 	SSPDAQ::CtrlPacket tx;
-	SSPDAQ::CtrlPacket rx;
+ 	dunedaq::dataformats::CtrlPacket tx;
+	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
 	unsigned int rxSizeExpected;
 
-	tx.header.length	= sizeof(CtrlHeader);
+	tx.header.length	= sizeof(dunedaq::dataformats::CtrlHeader);
 	tx.header.address	= address;
-	tx.header.command	= SSPDAQ::cmdRead;
+	tx.header.command	= dunedaq::dataformats::cmdRead;
 	tx.header.size		= 1;
-	tx.header.status	= SSPDAQ::statusNoError;
-	txSize			= sizeof(SSPDAQ::CtrlHeader);
-	rxSizeExpected		= sizeof(SSPDAQ::CtrlHeader) + sizeof(unsigned int);
+	tx.header.status	= dunedaq::dataformats::statusNoError;
+	txSize			= sizeof(dunedaq::dataformats::CtrlHeader);
+	rxSizeExpected		= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(unsigned int);
 
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 	*value = rx.data[0];
@@ -91,60 +91,60 @@ void SSPDAQ::EthernetDevice::DeviceRead (unsigned int address, unsigned int* val
 
 void SSPDAQ::EthernetDevice::DeviceReadMask (unsigned int address, unsigned int mask, unsigned int* value)
 {
-	SSPDAQ::CtrlPacket tx;
-	SSPDAQ::CtrlPacket rx;
+	dunedaq::dataformats::CtrlPacket tx;
+	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
 	unsigned int rxSizeExpected;
 
-	tx.header.length	= sizeof(CtrlHeader) + sizeof(uint);
+	tx.header.length	= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(uint);
 	tx.header.address	= address;
-	tx.header.command	= SSPDAQ::cmdReadMask;
+	tx.header.command	= dunedaq::dataformats::cmdReadMask;
 	tx.header.size		= 1;
-	tx.header.status	= SSPDAQ::statusNoError;
+	tx.header.status	= dunedaq::dataformats::statusNoError;
 	tx.data[0]		= mask;
-	txSize			= sizeof(SSPDAQ::CtrlHeader) + sizeof(unsigned int);
-	rxSizeExpected		= sizeof(SSPDAQ::CtrlHeader) + sizeof(unsigned int);
-	
+	txSize			= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(unsigned int);
+	rxSizeExpected		= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(unsigned int);
+
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 	*value = rx.data[0];
 }
 
 void SSPDAQ::EthernetDevice::DeviceWrite (unsigned int address, unsigned int value)
 {
-	SSPDAQ::CtrlPacket tx;
-	SSPDAQ::CtrlPacket rx;
+	dunedaq::dataformats::CtrlPacket tx;
+	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
 	unsigned int rxSizeExpected;
 
-	tx.header.length	= sizeof(CtrlHeader) + sizeof(uint);
+	tx.header.length	= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(uint);
 	tx.header.address	= address;
-	tx.header.command	= SSPDAQ::cmdWrite;
+	tx.header.command	= dunedaq::dataformats::cmdWrite;
 	tx.header.size		= 1;
-	tx.header.status	= SSPDAQ::statusNoError;
+	tx.header.status	= dunedaq::dataformats::statusNoError;
 	tx.data[0]		= value;
-	txSize			= sizeof(SSPDAQ::CtrlHeader) + sizeof(unsigned int);
-	rxSizeExpected		= sizeof(SSPDAQ::CtrlHeader);
+	txSize			= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(unsigned int);
+	rxSizeExpected		= sizeof(dunedaq::dataformats::CtrlHeader);
 
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 }
 
 void SSPDAQ::EthernetDevice::DeviceWriteMask (unsigned int address, unsigned int mask, unsigned int value)
 {
-	SSPDAQ::CtrlPacket tx;
-	SSPDAQ::CtrlPacket rx;
+	dunedaq::dataformats::CtrlPacket tx;
+	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
 	unsigned int rxSizeExpected;
 
-	tx.header.length	= sizeof(CtrlHeader) + (sizeof(uint) * 2);
+	tx.header.length	= sizeof(dunedaq::dataformats::CtrlHeader) + (sizeof(uint) * 2);
 	tx.header.address	= address;
-	tx.header.command	= SSPDAQ::cmdWriteMask;
+	tx.header.command	= dunedaq::dataformats::cmdWriteMask;
 	tx.header.size		= 1;
-	tx.header.status	= SSPDAQ::statusNoError;
+	tx.header.status	= dunedaq::dataformats::statusNoError;
 	tx.data[0]		= mask;
 	tx.data[1]		= value;
-	txSize			= sizeof(SSPDAQ::CtrlHeader) + (sizeof(unsigned int) * 2);
-	rxSizeExpected		= sizeof(SSPDAQ::CtrlHeader) + sizeof(unsigned int); 
-	
+	txSize			= sizeof(dunedaq::dataformats::CtrlHeader) + (sizeof(unsigned int) * 2);
+	rxSizeExpected		= sizeof(dunedaq::dataformats::CtrlHeader) + sizeof(unsigned int);
+
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 }
 
@@ -161,41 +161,41 @@ void SSPDAQ::EthernetDevice::DeviceClear (unsigned int address, unsigned int mas
 void SSPDAQ::EthernetDevice::DeviceArrayRead (unsigned int address, unsigned int size, unsigned int* data)
 {
 	unsigned int i = 0;
-	SSPDAQ::CtrlPacket tx;
-	SSPDAQ::CtrlPacket rx;
+	dunedaq::dataformats::CtrlPacket tx;
+	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
 	unsigned int rxSizeExpected;
 
-	tx.header.length	= sizeof(CtrlHeader);
+	tx.header.length	= sizeof(dunedaq::dataformats::CtrlHeader);
 	tx.header.address	= address;
-	tx.header.command	= SSPDAQ::cmdArrayRead;
+	tx.header.command	= dunedaq::dataformats::cmdArrayRead;
 	tx.header.size		= size;
-	tx.header.status	= SSPDAQ::statusNoError;
-	txSize				= sizeof(SSPDAQ::CtrlHeader);
-	rxSizeExpected		= sizeof(SSPDAQ::CtrlHeader) + (sizeof(unsigned int) * size);
+	tx.header.status	= dunedaq::dataformats::statusNoError;
+	txSize				= sizeof(dunedaq::dataformats::CtrlHeader);
+	rxSizeExpected		= sizeof(dunedaq::dataformats::CtrlHeader) + (sizeof(unsigned int) * size);
 
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 	for (i = 0; i < rx.header.size; i++) {
 	  data[i] = rx.data[i];
-	}	
+	}
 }
 
 void SSPDAQ::EthernetDevice::DeviceArrayWrite (unsigned int address, unsigned int size, unsigned int* data)
 {
 	unsigned int i = 0;
- 	SSPDAQ::CtrlPacket tx;
-	SSPDAQ::CtrlPacket rx;
+ 	dunedaq::dataformats::CtrlPacket tx;
+	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
 	unsigned int rxSizeExpected;
 
-	tx.header.length	= sizeof(CtrlHeader) + (sizeof(uint) * size);
+	tx.header.length	= sizeof(dunedaq::dataformats::CtrlHeader) + (sizeof(uint) * size);
 	tx.header.address	= address;
-	tx.header.command	= SSPDAQ::cmdArrayWrite;
+	tx.header.command	= dunedaq::dataformats::cmdArrayWrite;
 	tx.header.size		= size;
-	tx.header.status	= SSPDAQ::statusNoError;
-	txSize				= sizeof(SSPDAQ::CtrlHeader) + (sizeof(unsigned int) * size);
-	rxSizeExpected		= sizeof(SSPDAQ::CtrlHeader);
-	
+	tx.header.status	= dunedaq::dataformats::statusNoError;
+	txSize				= sizeof(dunedaq::dataformats::CtrlHeader) + (sizeof(unsigned int) * size);
+	rxSizeExpected		= sizeof(dunedaq::dataformats::CtrlHeader);
+
 	for (i = 0; i < size; i++) {
 		tx.data[i] = data[i];
 	}
@@ -207,7 +207,7 @@ void SSPDAQ::EthernetDevice::DeviceArrayWrite (unsigned int address, unsigned in
 // Support Functions
 //==============================================================================
 
-void SSPDAQ::EthernetDevice::SendReceive(SSPDAQ::CtrlPacket& tx, SSPDAQ::CtrlPacket& rx,
+void SSPDAQ::EthernetDevice::SendReceive(dunedaq::dataformats::CtrlPacket& tx, dunedaq::dataformats::CtrlPacket& rx,
 				   unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount)
 {
   unsigned int timesTried=0;
@@ -235,19 +235,19 @@ void SSPDAQ::EthernetDevice::SendReceive(SSPDAQ::CtrlPacket& tx, SSPDAQ::CtrlPac
 	throw;
       }
     }
-  }   
+  }
 }
-	
-void SSPDAQ::EthernetDevice::SendEthernet(SSPDAQ::CtrlPacket& tx, unsigned int txSize)
+
+void SSPDAQ::EthernetDevice::SendEthernet(dunedaq::dataformats::CtrlPacket& tx, unsigned int txSize)
 {
   unsigned int txSizeWritten=fCommSocket.write_some(boost::asio::buffer((void*)(&tx),txSize));
   if(txSizeWritten!=txSize){
     throw(ETCPError(""));
   }
-  
+
 }
 
-void SSPDAQ::EthernetDevice::ReceiveEthernet(SSPDAQ::CtrlPacket& rx, unsigned int rxSizeExpected)
+void SSPDAQ::EthernetDevice::ReceiveEthernet(dunedaq::dataformats::CtrlPacket& rx, unsigned int rxSizeExpected)
 {
   unsigned int rxSizeReturned=fCommSocket.read_some(boost::asio::buffer((void*)(&rx),rxSizeExpected));
   if(rxSizeReturned!=rxSizeExpected){
@@ -271,7 +271,7 @@ void SSPDAQ::EthernetDevice::DevicePurge(boost::asio::ip::tcp::socket& socket){
       std::vector<char> junkBuf(bytesToGet);
       socket.read_some(boost::asio::buffer(junkBuf,bytesToGet));
     }
-    //If queue is empty, wait a bit and check that it hasn't filled up again, then return 
+    //If queue is empty, wait a bit and check that it hasn't filled up again, then return
     else{
       usleep(1000);	// 1ms
       sleepTime+=1000;
@@ -282,5 +282,5 @@ void SSPDAQ::EthernetDevice::DevicePurge(boost::asio::ip::tcp::socket& socket){
     }
   }
   while (!done);
-	
+
 }

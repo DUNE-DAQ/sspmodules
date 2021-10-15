@@ -10,6 +10,8 @@
 
 #include "sspmodules/sspcardreader/Nljs.hpp"
 
+#include "dataformats/ssp/SSPTypes.hpp"
+
 #include "readout/utils/ReusableThread.hpp"
 //#include "dune-raw-data/Overlays/SSPFragment.hh"
 #include "anlBoard/DeviceInterface.h"
@@ -78,7 +80,7 @@ private:
   unsigned int m_hardware_clock_rate_in_MHz; //clock rate on the hardware in MHz
   unsigned int m_trigger_mask; //this is normally given as a hex number for what triggers to mask on or off
   int m_fragment_timestamp_offset; //offset for the timestamp put into the data stream of this SSP
- 
+
 
   // Tracking metrics for debugging and checking consistency
   unsigned long m_num_zero_fragments;

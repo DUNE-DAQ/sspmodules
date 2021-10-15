@@ -55,10 +55,10 @@ namespace sspmodules {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor called."<<std::endl;
   TLOG_DEBUG(TLVL_FULL_DEBUG) << "Constructor doesn't actually do anything but initialize conf paramters to none function values."<<std::endl;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper constructor complete."<<std::endl;
-  
+
 }
 
-SSPCardWrapper::~SSPCardWrapper() 
+SSPCardWrapper::~SSPCardWrapper()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper destructor called."<<std::endl;
   close_card();
@@ -74,7 +74,7 @@ SSPCardWrapper::init(const data_t& args)
   //          configuration parameters that you're looking for in args aren't available since the args you're
   //          getting here is likely only *::Init data from the json file
 
-  m_device_interface=new SSPDAQ::DeviceInterface(SSPDAQ::kEthernet);
+  m_device_interface=new SSPDAQ::DeviceInterface(dunedaq::dataformats::kEthernet);
   m_device_interface->Initialize(args);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init complete.";
@@ -97,7 +97,7 @@ SSPCardWrapper::configure(const data_t& args)
     }
   }
 
-  m_board_id = m_cfg.board_id;  
+  m_board_id = m_cfg.board_id;
   m_instance_name_for_metrics = "SSP " + std::to_string(m_board_id);
   m_partition_number = m_cfg.partition_number;  //3 is default; //I think this should be less than 4, but I'm using what Giovanna sent me
 
@@ -114,7 +114,7 @@ SSPCardWrapper::configure(const data_t& args)
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Board ID is listed as: " << m_cfg.board_id << std::endl
 					<< "Partition Number is: " << m_cfg.partition_number << std::endl
 					<< "Timing Address is: " << m_cfg.timing_address << std::endl;
-  
+
   m_device_interface->SetPartitionNumber(m_partition_number);
   m_device_interface->SetTimingAddress(m_timing_address);
   m_device_interface->Configure(args);
@@ -155,7 +155,7 @@ SSPCardWrapper::stop(const data_t& /*args*/)
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Stopped SSPCardWrapper of card " << m_board_id << "!";
   } else {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPCardWrapper of card " << m_board_id << " is already stopped!";
-  } 
+  }
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stoping SSPCardWrapper of card " << m_board_id << " complete.";
 }
 
@@ -194,7 +194,7 @@ SSPCardWrapper::configure_device(const data_t& args)
     if (!name.compare(0,14,"ChannelControl")) {
       channelControlEntries.push_back(make_pair(name,hexvalues[0]));
       haveChannelControl=true;
-    }      
+    }
     //Expect to see a Literals section; take any name starting with "Literal" and parse as hex values: regAddress, regValue, regMask
     else if(!name.compare(0,7,"Literal")){
       unsigned int regAddress=hexvalues[0];
@@ -243,7 +243,7 @@ SSPCardWrapper::configure_device(const data_t& args)
     this->build_channel_control_registers(channelControlEntries,chControlReg);
   }
   m_device_interface->SetRegisterArrayByName("channel_control",chControlReg);
-  
+
   //this is all just doing it hardcoded
 
   //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
@@ -270,7 +270,7 @@ SSPCardWrapper::configure_device(const data_t& args)
   m_device_interface->SetRegisterArrayByName("d_window", 20 );
   m_device_interface->SetRegisterArrayByName("i1_window", 40 );
   m_device_interface->SetRegisterArrayByName("disc_width", 10 );
-  m_device_interface->SetRegisterArrayByName("baseline_start", 0x0000); 
+  m_device_interface->SetRegisterArrayByName("baseline_start", 0x0000);
   //end of the ALL register sets from fcl file
 
   std::vector<unsigned int> vals;
@@ -297,7 +297,7 @@ SSPCardWrapper::configure_device(const data_t& args)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice complete.";
 }
 
-void 
+void
 SSPCardWrapper::build_channel_control_registers(const std::vector< std::pair<std::string,unsigned int>> entries, std::vector<unsigned int>& reg)
 {
   for(auto ccIter=entries.begin();ccIter!=entries.end();++ccIter){
@@ -377,7 +377,7 @@ SSPCardWrapper::configure_daq(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ called.";
   m_cfg = args.get<sspcardreader::Conf>();
-  m_pre_trig_length = m_cfg.pre_trig_length; //unsigned int preTrigLength=337500; 
+  m_pre_trig_length = m_cfg.pre_trig_length; //unsigned int preTrigLength=337500;
   if(m_pre_trig_length == 0){
     try {
       TLOG() << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
@@ -438,8 +438,8 @@ SSPCardWrapper::configure_daq(const data_t& args)
   m_device_interface->SetTriggerMask(m_trigger_mask);
   m_device_interface->SetFragmentTimestampOffset(m_fragment_timestamp_offset);
 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ complete.";  
-}  
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDAQ complete.";
+}
 
 void
 SSPCardWrapper::process_ssp()
@@ -450,7 +450,7 @@ SSPCardWrapper::process_ssp()
     bool hasSeenSlice = false;
 
     while (!hasSeenSlice) {
-    
+
       std::vector<unsigned int> millislice;
       // JCF, Mar-8-2016
       // Could I just wrap this in a try-catch block?
@@ -459,10 +459,10 @@ SSPCardWrapper::process_ssp()
         //set_exception(true);
         TLOG_DEBUG(TLVL_WORK_STEPS) << "dune::SSP::getNext_ : found device interface thread in exception state";
       }
-      
+
       static size_t ncalls = 1;
       static size_t ncalls_with_millislice = 0;
-      
+
       if (millislice.size() > 0) {
 	ncalls_with_millislice++;
       }
@@ -480,21 +480,21 @@ SSPCardWrapper::process_ssp()
       TLOG_DEBUG(5) <<m_device_interface->GetIdentifier()
                          <<"Generator sending fragment "<<m_num_fragments_sent
                          <<", calls to GetNext "<<m_num_read_event_calls
-                         <<", of which returned null "<<m_num_zero_fragments<<std::endl;                         
-      
-      std::size_t dataLength = millislice.size()-SSPDAQ::MillisliceHeader::sizeInUInts;
+                         <<", of which returned null "<<m_num_zero_fragments<<std::endl;
+
+      std::size_t dataLength = millislice.size()-dunedaq::dataformats::MillisliceHeader::sizeInUInts;
 
       //SSPFragment::Metadata metadata;
       //metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());
       //auto timestamp = (metadata.sliceHeader.triggerTime + fFragmentTimestampOffset_) / 3 ;
       //TLOG_DEBUG(TLVL_WORK_STEPS) << "SSP millislice w/ timestamp is " << timestamp
       //                                     << " millislice counter is "<< std::to_string(ncalls_with_millislice);
-      
+
     }
-    
+
     //SSPFragment::Metadata metadata;
     //metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());
-    // We'll use the static factory function 
+    // We'll use the static factory function
     // artdaq::Fragment::FragmentBytes(std::size_t payload_size_in_bytes, sequence_id_t sequence_id,
     //  fragment_id_t fragment_id, type_t type, const T & metadata)
     // which will then return a unique_ptr to an artdaq::Fragment
@@ -506,26 +506,26 @@ SSPCardWrapper::process_ssp()
 } // namespace sspmodules
 } // namespace dunedaq
 
-/*ssp101_standard: @local::ssp_standard 
-ssp101_standard.fragment_receiver.fragment_id: 11 
-ssp101_standard.fragment_receiver.board_id: 11 
-ssp101_standard.fragment_receiver.timing_address: 0x20 
-ssp101_standard.fragment_receiver.board_ip: "10.73.137.56" 
-ssp101_standard.fragment_receiver.HardwareConfig.module_id: 11 
-ssp101_standard.metrics.dim.IDName: "ssp101" 
+/*ssp101_standard: @local::ssp_standard
+ssp101_standard.fragment_receiver.fragment_id: 11
+ssp101_standard.fragment_receiver.board_id: 11
+ssp101_standard.fragment_receiver.timing_address: 0x20
+ssp101_standard.fragment_receiver.board_ip: "10.73.137.56"
+ssp101_standard.fragment_receiver.HardwareConfig.module_id: 11
+ssp101_standard.metrics.dim.IDName: "ssp101"
 
-ssp304_standard: @local::ssp_standard 
-ssp304_standard.fragment_receiver.fragment_id: 34 
-ssp304_standard.fragment_receiver.board_id: 34 
-ssp304_standard.fragment_receiver.timing_address: 0x2B 
-ssp304_standard.fragment_receiver.board_ip: "10.73.137.79" 
-ssp304_standard.fragment_receiver.HardwareConfig.module_id: 34 
-ssp304_standard.metrics.dim.IDName: "ssp304" 
+ssp304_standard: @local::ssp_standard
+ssp304_standard.fragment_receiver.fragment_id: 34
+ssp304_standard.fragment_receiver.board_id: 34
+ssp304_standard.fragment_receiver.timing_address: 0x2B
+ssp304_standard.fragment_receiver.board_ip: "10.73.137.79"
+ssp304_standard.fragment_receiver.HardwareConfig.module_id: 34
+ssp304_standard.metrics.dim.IDName: "ssp304"
 
-ssp603_standard: @local::ssp_standard 
-ssp603_standard.fragment_receiver.fragment_id: 63 
-ssp603_standard.fragment_receiver.board_id: 63 
-ssp603_standard.fragment_receiver.timing_address: 0x36 
-ssp603_standard.fragment_receiver.board_ip: "10.73.137.74" 
-ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63 
+ssp603_standard: @local::ssp_standard
+ssp603_standard.fragment_receiver.fragment_id: 63
+ssp603_standard.fragment_receiver.board_id: 63
+ssp603_standard.fragment_receiver.timing_address: 0x36
+ssp603_standard.fragment_receiver.board_ip: "10.73.137.74"
+ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63
 ssp603_standard.metrics.dim.IDName: "ssp603" */

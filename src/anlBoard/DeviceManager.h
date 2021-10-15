@@ -1,6 +1,8 @@
 #ifndef DEVICEMANAGER_H
 #define DEVICEMANAGER_H
 
+#include "dataformats/ssp/SSPTypes.hpp"
+
 //#include "ftd2xx.h"
 #include "dune-raw-data/Overlays/anlTypes.hh"
 //#include "USBDevice.h"
@@ -24,14 +26,14 @@ namespace SSPDAQ{
 class DeviceManager{
 
  public:
-  
+
   //Get reference to instance of DeviceManager singleton
   static DeviceManager& Get();
 
   //unsigned int GetNUSBDevices();
 
   //Open a device and return a pointer containing a handle to it
-  Device* OpenDevice(Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
+  Device* OpenDevice(dunedaq::dataformats::Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
 
   //Interrogate FTDI for list of devices. GetNUSBDevices and OpenDevice will call this
   //if it has not yet been run, so it should not normally be necessary to call this directly.

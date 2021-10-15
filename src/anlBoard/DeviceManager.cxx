@@ -44,13 +44,13 @@ void SSPDAQ::DeviceManager::RefreshDevices()
     if((device->second)->IsOpen()){
       //dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
       //<<"due to ethernet devices still open"<<std::endl;
-    } 
+    }
   }
   for(auto device=fEmulatedDevices.begin();device!=fEmulatedDevices.end();++device){
     if((*device)->IsOpen()){
       //dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
       //<<"due to emulated devices still open"<<std::endl;
-    } 
+    }
   }
 
   // Clear Device List
@@ -85,7 +85,7 @@ void SSPDAQ::DeviceManager::RefreshDevices()
     } catch (...) {}
     throw(EFTDIError("Error in FT_GetDeviceInfoList"));
   }
-  
+
   //Search through all devices for compatible interfaces
   for (unsigned int i = 0; i < ftNumDevs; i++) {
       // NOTE 1: Each device is actually 2 FTDI devices. Device with "A" at the end of serial number is the
@@ -101,7 +101,7 @@ void SSPDAQ::DeviceManager::RefreshDevices()
       if (deviceInfoNodes[i].Type != FT_DEVICE_2232H) {
 	continue;	// Skip to next device
       }
-      
+
       // Add FTDI device to Device List using Serial number
       //If length is zero, then device is probably open in another process (though maybe we don't get type then either...)
       //===TODO: Should check flags for open devices and report the number open in other processes to cout
@@ -113,8 +113,8 @@ void SSPDAQ::DeviceManager::RefreshDevices()
       char serial[16];
 
       strncpy(serial, deviceInfoNodes[i].SerialNumber, length - 1);	// Copy base serial number
-      serial[length-1] = 0;					// Append NULL because strncpy() didn't!      
-      
+      serial[length-1] = 0;					// Append NULL because strncpy() didn't!
+
       // Update device list with FTDI device number
       switch (deviceInfoNodes[i].SerialNumber[length -1]) {
       case 'A':
@@ -130,7 +130,7 @@ void SSPDAQ::DeviceManager::RefreshDevices()
 
   //Check that device list is as expected, then construct USB device objects for each board
   if(dataChannels.size()!=commChannels.size()){
-    try { 
+    try {
       //dune::DAQLogger::LogError("SSP_DeviceManager")<<"Different number of data and comm channels on FTDI!"<<std::endl;
     } catch (...) {}
     delete deviceInfoNodes;
@@ -138,7 +138,7 @@ void SSPDAQ::DeviceManager::RefreshDevices()
   }
   std::map<std::string,FT_DEVICE_LIST_INFO_NODE*>::iterator dIter=dataChannels.begin();
   std::map<std::string,FT_DEVICE_LIST_INFO_NODE*>::iterator cIter=commChannels.begin();
- 
+
   for(;dIter!=dataChannels.end();++dIter,++cIter){
     if(dIter->first!=cIter->first){
       try {
@@ -155,10 +155,10 @@ void SSPDAQ::DeviceManager::RefreshDevices()
 */
 }
 
-SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
+SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
 {
   //Check for devices if this hasn't yet been done
-  if(!fHaveLookedForDevices&&commType!=SSPDAQ::kEmulated){
+  if(!fHaveLookedForDevices&&commType!=dunedaq::dataformats::kEmulated){
     this->RefreshDevices();
   }
 
@@ -178,7 +178,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsig
     }
     break;
   */
-  case SSPDAQ::kEthernet:
+  case dunedaq::dataformats::kEthernet:
     if(fEthernetDevices.find(deviceNum)==fEthernetDevices.end()){
       fEthernetDevices[deviceNum]=(std::move(std::unique_ptr<SSPDAQ::EthernetDevice>(new SSPDAQ::EthernetDevice(deviceNum))));
     }
@@ -194,7 +194,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(SSPDAQ::Comm_t commType, unsig
     }
     break;
 
-  case SSPDAQ::kEmulated:
+  case dunedaq::dataformats::kEmulated:
     while(fEmulatedDevices.size()<=deviceNum){
       fEmulatedDevices.push_back(std::move(std::unique_ptr<SSPDAQ::EmulatedDevice>(new SSPDAQ::EmulatedDevice(fEmulatedDevices.size()))));
     }

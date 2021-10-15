@@ -21,9 +21,9 @@ enum
 
 
 //SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
-SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType)
+SSPDAQ::DeviceInterface::DeviceInterface(dunedaq::dataformats::Comm_t commType)
   : fCommType(commType), fDeviceId(0), fState(SSPDAQ::DeviceInterface::kUninitialized),
-    fUseExternalTimestamp(true), fHardwareClockRateInMHz(128), fPreTrigLength(1E8), 
+    fUseExternalTimestamp(true), fHardwareClockRateInMHz(128), fPreTrigLength(1E8),
     fPostTrigLength(1E7), fTriggerWriteDelay(1000), fTriggerLatency(0), fTriggerMask(0),
     fDummyPeriod(-1), fSlowControlOnly(false), fPartitionNumber(0), fTimingAddress(0), exception_(false),
     fDataThread(0){
@@ -37,11 +37,11 @@ void SSPDAQ::DeviceInterface::OpenSlowControl(){
   SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
   SSPDAQ::Device* device=0;
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Opening "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Opening "<<((fCommType==dunedaq::dataformats::kUSB)?"USB":((fCommType==dunedaq::dataformats::kEthernet)?"Ethernet":"Emulated"))
 			      <<" device #"<<fDeviceId<<" for slow control only..."<<std::endl;
-  
+
   device=devman.OpenDevice(fCommType,fDeviceId,true);
-  
+
   if(!device){
     try {
       TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
@@ -118,13 +118,13 @@ void SSPDAQ::DeviceInterface::Stop(){
 
 
   SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
-      
+
   fDevice->DeviceWrite(duneReg.eventDataControl, 0x0013001F);
   fDevice->DeviceClear(duneReg.master_logic_control, 0x00000101);
   // Clear the FIFOs
   fDevice->DeviceWrite(duneReg.fifo_control, 0x08000000);
   fDevice->DeviceWrite(duneReg.PurgeDDR, 0x00000001);
-  // Reset the links and flags				
+  // Reset the links and flags
   fDevice->DeviceWrite(duneReg.event_data_control, 0x00020001);
   // Flush RX buffer
   fDevice->DevicePurgeData();
@@ -153,7 +153,7 @@ void SSPDAQ::DeviceInterface::Start(){
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Attempt to start acquisition on non-stopped device refused!"<<std::endl;
     return;
   }
- 
+
   if(fSlowControlOnly){
     try {
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Naughty Zoot! Attempt to start run on slow control interface refused!"<<std::endl;
@@ -165,7 +165,7 @@ void SSPDAQ::DeviceInterface::Start(){
   SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
   // This script enables all logic and FIFOs and starts data acquisition in the device
   // Operations MUST be performed in this order
-  
+
   //Load window settings, charge injection settings and bias voltage into channels
   fDevice->DeviceWrite(duneReg.channel_pulsed_control, 0x1);
   fDevice->DeviceWrite(duneReg.bias_control, 0x1);
@@ -173,9 +173,9 @@ void SSPDAQ::DeviceInterface::Start(){
   fDevice->DeviceWriteMask(duneReg.imon_control, 0x1, 0x1);
   fDevice->DeviceWriteMask(duneReg.qi_dac_control, 0x1, 0x1);
   fDevice->DeviceWriteMask(duneReg.qi_pulsed, 0x00030000, 0x00030000);
-  
+
   fDevice->DeviceWrite(duneReg.event_data_control, 0x00000000);
-  // Release the FIFO reset						
+  // Release the FIFO reset
   fDevice->DeviceWrite(duneReg.fifo_control, 0x00000000);
   // Registers in the Zynq FPGA (Comm)
   // Reset the links and flags (note eventDataControl!=event_data_control)
@@ -184,7 +184,7 @@ void SSPDAQ::DeviceInterface::Start(){
   // Release master logic reset & enable active channels
 
   fDevice->DeviceWrite(duneReg.master_logic_control, 0x00000041);
-  
+
   fState=SSPDAQ::DeviceInterface::kRunning;
   fShouldStop=false;
 
@@ -252,13 +252,13 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
     /////////////////////////////////////////////////////////
 
     dunedaq::readout::types::SSP_FRAME_STRUCT sspfs;
-    sspfs.header = newPacket.header; 
+    sspfs.header = newPacket.header;
     //memcpy();
     memcpy(sspfs.data, newPacket.data.data(), newPacket.data.size());
 
     auto chid = ((newPacket.header.group2 & 0x000F) >> 0);
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Getting ready to write newPacket to chid: " << chid <<std::endl;
-    m_sink_queues[chid]->push(std::move(sspfs)); 
+    m_sink_queues[chid]->push(std::move(sspfs));
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Guess it wasn't writing to the sink_queues... " << chid <<std::endl;
 
     //fPacketBuffer.emplace_back(std::move(newPacket));
@@ -278,9 +278,9 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
 	}
 
         auto localTimestamp = t.timestamp*3 - fFragmentTimestampOffset;
-	
+
 	SSPDAQ::TriggerInfo newTrigger;
-	
+
 	newTrigger.triggerTime=localTimestamp;
 	newTrigger.startTime=localTimestamp-fPreTrigLength;
 	newTrigger.endTime=localTimestamp+fPostTrigLength;
@@ -291,12 +291,12 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
     else{
 
       SSPDAQ::TriggerInfo newTrigger;
-    
+
       if(this->GetTriggerInfo(fPacketBuffer.back(),newTrigger)){
 	if(fTriggers.size()&&(newTrigger.startTime<fTriggers.back().endTime)){
-	  //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Seen trigger with start time overlapping with previous, falling over!"<<std::endl;	
+	  //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Seen trigger with start time overlapping with previous, falling over!"<<std::endl;
 	  throw(EEventReadError());
-	  //	set_exception(true);	
+	  //	set_exception(true);
 	  return;
 	}
 	fTriggers.push(newTrigger);
@@ -326,8 +326,8 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
       dropCount++;
       }
 
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime 
-				<< " firstInterestingTime: " << firstInterestingTime 
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime
+				<< " firstInterestingTime: " << firstInterestingTime
 				<< " frontTS: " << frontTS
 				<< " globalTS: " << globalTimestamp
 				<< " dropped: " << dropCount;
@@ -372,9 +372,9 @@ void SSPDAQ::DeviceInterface::ReadEvent(std::vector<unsigned int>& fragment){
   }
   TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread releasing mutex..." << std::endl;
   mlock.unlock();
-  
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvent complete.";
-  
+
 }
 
 
@@ -396,16 +396,16 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
     newTrigger.startTime=currentTriggerTime-fPreTrigLength;
     newTrigger.endTime=currentTriggerTime+fPostTrigLength;
     newTrigger.triggerType=event.header.group1&0xFFFF;
-    
+
     for(unsigned int i=0;i<12;++i){
       channelsSeen[i]=false;
     }
     channelsSeen[channel]=true;
-    return true; 
+    return true;
   }
-    
+
   if(((event.header.group1&0xFFFF)&fTriggerMask)!=0){
-    
+
     if(!channelsSeen[channel]&&packetTime<currentTriggerTime+1000){
       channelsSeen[channel]=true;
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Packet contains trigger word but this trigger was already generated from another channel"<<std::endl;
@@ -430,7 +430,7 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
 
   return false;
 }
-  
+
 void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigger,std::vector<unsigned int>& fragmentData){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface BuildFragment called.";
@@ -443,17 +443,17 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   for (auto packetIter=fPacketBuffer.begin(); packetIter != fPacketBuffer.end(); ++packetIter) {
     unsigned long packetTime = GetTimestamp(packetIter->header);
 
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime=" << packetTime 
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime=" << packetTime
       << " triggerTime=[" << theTrigger.startTime << " to " << theTrigger.endTime << "]";
 
-    if (packetTime >= theTrigger.startTime && packetTime < theTrigger.endTime) { 
+    if (packetTime >= theTrigger.startTime && packetTime < theTrigger.endTime) {
       lastPacket=packetIter;
     }
   }
 
   for(auto packetIter=fPacketBuffer.begin();;++packetIter){
     unsigned long packetTime=GetTimestamp(packetIter->header);
-    
+
     if(packetTime>=theTrigger.startTime){
       if(packetTime>=theTrigger.endTime){
 	eventsToPutBack.push_back(std::move(*packetIter));
@@ -464,14 +464,14 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
     }
     if(packetIter==lastPacket) break;
   }
-    
+
   //=====================================//
   //Calculate required size of millislice//
   //=====================================//
 
   unsigned int dataSizeInWords=0;
 
-  dataSizeInWords+=SSPDAQ::MillisliceHeader::sizeInUInts;
+  dataSizeInWords+=dunedaq::dataformats::MillisliceHeader::sizeInUInts;
   for (auto ev=eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     dataSizeInWords += (*ev)->header.length;
   }
@@ -480,7 +480,7 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   //Build slice header//
   //==================//
 
-  SSPDAQ::MillisliceHeader sliceHeader;
+  dunedaq::dataformats::MillisliceHeader sliceHeader;
   sliceHeader.length=dataSizeInWords;
   sliceHeader.nTriggers=eventsToWrite.size();
   sliceHeader.startTime=theTrigger.startTime;
@@ -495,27 +495,27 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   fragmentData.resize(dataSizeInWords);
 
   static unsigned int headerSizeInWords=
-    sizeof(SSPDAQ::EventHeader)/sizeof(unsigned int);   //Size of DAQ event header
+    sizeof(dunedaq::dataformats::EventHeader)/sizeof(unsigned int);   //Size of DAQ event header
 
   //Put millislice header at front of vector
   auto sliceDataPtr=fragmentData.begin();
   unsigned int* millisliceHeaderPtr = (unsigned int*)((void*)(&sliceHeader));
-  std::copy(millisliceHeaderPtr, millisliceHeaderPtr + SSPDAQ::MillisliceHeader::sizeInUInts, sliceDataPtr);
+  std::copy(millisliceHeaderPtr, millisliceHeaderPtr + dunedaq::dataformats::MillisliceHeader::sizeInUInts, sliceDataPtr);
 
   //Fill rest of vector with event data
-  sliceDataPtr += SSPDAQ::MillisliceHeader::sizeInUInts;
+  sliceDataPtr += dunedaq::dataformats::MillisliceHeader::sizeInUInts;
 
   for (auto ev = eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     //DAQ event header
     unsigned int* headerPtr = (unsigned int*)((void*)(&((*ev)->header)));
     std::copy(headerPtr, headerPtr + headerSizeInWords, sliceDataPtr);
-    
+
     //DAQ event payload
     sliceDataPtr += headerSizeInWords;
     std::copy((*ev)->data.begin(), (*ev)->data.end(), sliceDataPtr);
     sliceDataPtr += (*ev)->header.length - headerSizeInWords;
   }
-  
+
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Building fragment with " << eventsToWrite.size() << " packets" << std::endl;
 
   //=======================//
@@ -567,7 +567,7 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   }*/
 
 void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
- 
+
   //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice called.";
 
   if(fState!=kRunning){
@@ -597,7 +597,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
     if (data.size() == 0) {
       if (skippedWords) {
 	TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()
-          << "Warning: GetEvent skipped " << skippedWords 
+          << "Warning: GetEvent skipped " << skippedWords
           << "words and has not seen header for next event!" << std::endl;
       }
       event.SetEmpty();
@@ -621,11 +621,11 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
     TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: GetEvent skipped "<<skippedWords<<"words before finding next event header!"<<std::endl
 				<<"First skipped word was "<<std::hex<<firstSkippedWord<<std::dec<<std::endl;
   }
-    
+
   unsigned int* headerBlock=(unsigned int*)&event.header;
   headerBlock[0]=0xAAAAAAAA;
-  
-  static const unsigned int headerReadSize=(sizeof(SSPDAQ::EventHeader)/sizeof(unsigned int)-1);
+
+  static const unsigned int headerReadSize=(sizeof(dunedaq::dataformats::EventHeader)/sizeof(unsigned int)-1);
 
   //Wait for hardware queue to fill with full header data
   unsigned int timeWaited=0;//in us
@@ -661,7 +661,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   std::copy(data.begin(),data.end(),&(headerBlock[1]));
 
   //Wait for hardware queue to fill with full event data
-  unsigned int bodyReadSize=event.header.length-(sizeof(EventHeader)/sizeof(unsigned int));
+  unsigned int bodyReadSize=event.header.length-(sizeof(dunedaq::dataformats::EventHeader)/sizeof(unsigned int));
   queueLengthInUInts=0;
   timeWaited=0;//in us
 
@@ -681,7 +681,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
       }
     }
   }while(queueLengthInUInts<bodyReadSize);
-   
+
   //Get event from SSP and check that it is the right length
   fDevice->DeviceReceive(data,bodyReadSize);
 
@@ -697,7 +697,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   //Copy event data into event packet
   event.data=std::move(data);
 
-  auto ehsize = sizeof(struct EventHeader);
+  auto ehsize = sizeof(struct dunedaq::dataformats::EventHeader);
   auto ehlength = event.header.length;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Event data size: " << event.data.size() << " ehsize: " << ehsize << " ehl: " << ehlength;
 
@@ -759,13 +759,13 @@ void SSPDAQ::DeviceInterface::ReadRegisterArray(unsigned int address, unsigned i
 }
 void SSPDAQ::DeviceInterface::SetRegisterByName(std::string name, unsigned int value){
   SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
-  
+
   this->SetRegister(reg,value,reg.WriteMask());
 }
 
 void SSPDAQ::DeviceInterface::SetRegisterElementByName(std::string name, unsigned int index, unsigned int value){
   SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name][index];
-  
+
   this->SetRegister(reg,value,reg.WriteMask());
 }
 
@@ -790,13 +790,13 @@ void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, std::vect
 
 void SSPDAQ::DeviceInterface::ReadRegisterByName(std::string name, unsigned int& value){
   SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
-  
+
   this->ReadRegister(reg,value,reg.ReadMask());
 }
 
 void SSPDAQ::DeviceInterface::ReadRegisterElementByName(std::string name, unsigned int index, unsigned int& value){
   SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name][index];
-  
+
   this->ReadRegister(reg,value,reg.ReadMask());
 }
 
@@ -817,16 +817,16 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
   }
 
   auto m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
-  int interfaceTypeCode = m_cfg.interface_type; //SSPDAQ::kEthernet;
+  int interfaceTypeCode = m_cfg.interface_type; //dunedaq::dataformats::kEthernet;
   switch(interfaceTypeCode){
   case 0:
-    fCommType=SSPDAQ::kUSB;
+    fCommType=dunedaq::dataformats::kUSB;
     break;
   case 1:
-    fCommType=SSPDAQ::kEthernet;
+    fCommType=dunedaq::dataformats::kEthernet;
     break;
   case 2:
-    fCommType=SSPDAQ::kEmulated;
+    fCommType=dunedaq::dataformats::kEmulated;
     break;
   case 999:
     try {
@@ -842,10 +842,10 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
     }
   }
   //
-  if(fCommType!=SSPDAQ::kEthernet){
+  if(fCommType!=dunedaq::dataformats::kEthernet){
     fDeviceId = 0;
     try {
-      TLOG() << "Error: Non-functioning interface type set: "<< fCommType 
+      TLOG() << "Error: Non-functioning interface type set: "<< fCommType
 	     << "so forcing an exit and having none of this USB based SSP crap." << std::endl;
     } catch (...) {
       exit(424);
@@ -855,16 +855,16 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Board IP is listed as: " << m_cfg.board_ip << std::endl;
       fDeviceId = inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");
   }
-  
+
   //Ask device manager for a pointer to the specified device
   SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
   SSPDAQ::Device* device=0;
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Configuring "<<((fCommType==SSPDAQ::kUSB)?"USB":((fCommType==SSPDAQ::kEthernet)?"Ethernet":"Emulated"))
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Configuring "<<((fCommType==dunedaq::dataformats::kUSB)?"USB":((fCommType==dunedaq::dataformats::kEthernet)?"Ethernet":"Emulated"))
   <<" device #"<<fDeviceId<<"..."<<std::endl;
-  
+
   device=devman.OpenDevice(fCommType,fDeviceId);
-  
+
   if(!device){
     try {
       TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
@@ -913,7 +913,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
 				<<std::dec<<")"<<std::endl;
 
     unsigned int nTries=0;
-    
+
     while(nTries<5){
       fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl; //setting the lowest bit to 0 sets the DSP clock to internal.
@@ -926,7 +926,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
       fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
-      
+
       fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x00000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
       usleep(2000000); //setting the highest bit (0x80000000) to zero puts the SSP in run mode for the PDTS.
@@ -939,7 +939,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
       TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
       ++nTries;
     }
-   
+
     if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
       TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
@@ -948,7 +948,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
       TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
 				  <<std::hex<<pdts_status<<std::dec<<std::endl;
-    } 
+    }
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
@@ -970,14 +970,14 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
 
   	// Setting up some constants to use during initialization
 	const uint	module_id		= 0xABC;	// This value is reported in the event header
-	const uint	channel_control[12] = 
+	const uint	channel_control[12] =
 	//	Channel Control Bit Descriptions
 	//	31		cfd_enable
 	//	30		pileup_waveform_only
 	//	26		pileup_extend_enable
 	//	25:24	event_extend_mode
 	//	23		disc_counter_mode
-	//	22		ahit_counter_mode 
+	//	22		ahit_counter_mode
 	//	21		ACCEPTED_EVENT_COUNTER_MODE
 	//	20		dropped_event_counter_mode
 	//	15:14	external_disc_flag_sel
@@ -1012,14 +1012,14 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
 		0x00000000,		// disable channel #10
 		0x00000000,		// disable channel #11
 	};
-	const uint	led_threshold		= 25;	
+	const uint	led_threshold		= 25;
 	const uint	cfd_fraction		= 0x1800;
-	const uint	readout_pretrigger	= 100;	
-	const uint	event_packet_length	= 2046;	
-	const uint	p_window			= 0;	
+	const uint	readout_pretrigger	= 100;
+	const uint	event_packet_length	= 2046;
+	const uint	p_window			= 0;
 	const uint	i2_window			= 500;
-	const uint	m1_window			= 10;	
-	const uint	m2_window			= 10;	
+	const uint	m1_window			= 10;
+	const uint	m2_window			= 10;
 	const uint	d_window			= 20;
 	const uint  i1_window			= 500;
 	const uint	disc_width			= 10;
@@ -1134,19 +1134,19 @@ std::string SSPDAQ::DeviceInterface::GetIdentifier(){
 
   std::string ident;
   ident+="SSP@";
-  if(fCommType==SSPDAQ::kUSB){
+  if(fCommType==dunedaq::dataformats::kUSB){
     ident+="(USB";
     ident+=fDeviceId;
     ident+="):";
   }
-  else if(fCommType==SSPDAQ::kEthernet){
+  else if(fCommType==dunedaq::dataformats::kEthernet){
     boost::asio::ip::address ip=boost::asio::ip::address_v4(fDeviceId);
     std::string ipString=ip.to_string();
     ident+="(";
     ident+=ipString;
     ident+="):";
   }
-  else if(fCommType==SSPDAQ::kEmulated){
+  else if(fCommType==dunedaq::dataformats::kEmulated){
     ident+="(EMULATED";
     ident+=fDeviceId;
     ident+="):";
@@ -1154,7 +1154,7 @@ std::string SSPDAQ::DeviceInterface::GetIdentifier(){
   return ident;
 }
 
-unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const SSPDAQ::EventHeader& header){
+unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const dunedaq::dataformats::EventHeader& header){
   unsigned long packetTime=0;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp << std::endl;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fPreTrigLength value: " << fPreTrigLength << std::endl;
@@ -1167,7 +1167,7 @@ unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const SSPDAQ::EventHeader& h
     for(unsigned int iWord=1;iWord<=3;++iWord){
       packetTime+=((unsigned long)(header.intTimestamp[iWord]))<<16*(iWord-1);
     }
-  }    
+  }
   return packetTime;
 }
 
@@ -1188,5 +1188,5 @@ void SSPDAQ::DeviceInterface::PrintHardwareState(){
   TLOG_DEBUG(TLVL_WORK_STEPS) << "sync_delay: "<<val<<std::endl;
   fDevice->DeviceRead(duneReg.sync_count, &val);
   TLOG_DEBUG(TLVL_WORK_STEPS) << "sync_count: "<<val<<std::dec<<std::endl;
-  
+
 }

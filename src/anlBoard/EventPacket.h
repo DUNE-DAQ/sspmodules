@@ -1,6 +1,8 @@
 #ifndef EVENTPACKET_H__
 #define EVENTPACKET_H__
 
+#include "dataformats/ssp/SSPTypes.hpp"
+
 #include "dune-raw-data/Overlays/anlTypes.hh"
 #include <vector>
 #include <sstream>
@@ -13,7 +15,7 @@ namespace SSPDAQ{
   class EventPacket{
   public:
 
-    //Move constructor 
+    //Move constructor
     EventPacket(EventPacket&& rhs){
       data=std::move(rhs.data);
       header=rhs.header;
@@ -25,7 +27,7 @@ namespace SSPDAQ{
       header=rhs.header;
       return *this;
     }
-    
+
     //Copy constructor
     EventPacket(const EventPacket& rhs){
       data=rhs.data;
@@ -48,10 +50,10 @@ namespace SSPDAQ{
 
     void DumpEvent();
 
-    EventHeader header;
+    dunedaq::dataformats::EventHeader header;
 
     std::vector<unsigned int> data;
   };
-  
+
 }//namespace
 #endif

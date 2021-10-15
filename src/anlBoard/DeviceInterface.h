@@ -3,6 +3,7 @@
 
 #include "appfwk/app/Nljs.hpp"
 #include "readout/ReadoutTypes.hpp"
+#include "dataformats/ssp/SSPTypes.hpp"
 
 #include "DeviceManager.h"
 #include "Device.h"
@@ -23,7 +24,7 @@ namespace SSPDAQ{
   };
 
   class DeviceInterface{
-    
+
   public:
 
     // RS: queues here... I know...
@@ -35,7 +36,7 @@ namespace SSPDAQ{
 
     //Just sets the fields needed to request the device.
     //Real work is done in Initialize which is called manually.
-    DeviceInterface(SSPDAQ::Comm_t commType);
+    DeviceInterface(dunedaq::dataformats::Comm_t commType);
 
     ~DeviceInterface(){
       //if(fRequestReceiver){
@@ -110,10 +111,10 @@ namespace SSPDAQ{
 
     //Set single element of an array of registers
     void SetRegisterElementByName(std::string name, unsigned int index, unsigned int value);
-      
+
     //Set all elements of an array to a single value
     void SetRegisterArrayByName(std::string name, unsigned int value);
-      
+
     //Set all elements of an array using values vector
     void SetRegisterArrayByName(std::string name, std::vector<unsigned int> values);
 
@@ -122,7 +123,7 @@ namespace SSPDAQ{
 
     //Read single element of an array of registers
     void ReadRegisterElementByName(std::string name, unsigned int index, unsigned int& value);
-      
+
     //Read all elements of an array into values vector
     void ReadRegisterArrayByName(std::string name, std::vector<unsigned int>& values);
 
@@ -155,13 +156,13 @@ namespace SSPDAQ{
     bool exception() const { return exception_.load(); }
 
   private:
-    
+
     //Internal device object used for hardware operations.
     //Owned by the device manager, not this object.
     Device* fDevice;
 
     //Whether we are using USB or Ethernet to connect to the device
-    SSPDAQ::Comm_t fCommType;
+    dunedaq::dataformats::Comm_t fCommType;
 
     //Index of the device in the hardware-returned list
     unsigned long fDeviceId;
@@ -174,9 +175,9 @@ namespace SSPDAQ{
     //Build millislice from events in buffer and place in fQueue
     void BuildFragment(const TriggerInfo& theTrigger,std::vector<unsigned int>& fragmentData);
 
-    bool GetTriggerInfo(const SSPDAQ::EventPacket& event,SSPDAQ::TriggerInfo& newTrigger);
+    bool GetTriggerInfo(const EventPacket& event,SSPDAQ::TriggerInfo& newTrigger);
 
-    unsigned long GetTimestamp(const SSPDAQ::EventHeader& header);
+    unsigned long GetTimestamp(const dunedaq::dataformats::EventHeader& header);
 
     //Build a millislice containing only a header and place in fQueue
     //    void BuildEmptyMillislice(unsigned long startTime,unsigned long endTime);
@@ -196,7 +197,7 @@ namespace SSPDAQ{
     unsigned long fMillislicesBuilt;
 
     bool fUseExternalTimestamp;
-    
+
     unsigned int fHardwareClockRateInMHz;
 
     unsigned int fPreTrigLength;
@@ -234,6 +235,6 @@ namespace SSPDAQ{
     std::mutex fBufferMutex;
 
   };
-  
+
 }//namespace
 #endif

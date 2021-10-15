@@ -1,6 +1,8 @@
 #ifndef ETHERNETDEVICE_H__
 #define ETHERNETDEVICE_H__
 
+#include "dataformats/ssp/SSPTypes.hpp"
+
 #include "dune-raw-data/Overlays/anlTypes.hh"
 #include "Device.h"
 #include "boost/asio.hpp"
@@ -27,7 +29,7 @@ class EthernetDevice : public Device{
  EthernetDevice(unsigned long ipAddress);
 
  virtual ~EthernetDevice(){};
- 
+
  //Implementation of base class interface
 
  inline virtual bool IsOpen(){
@@ -61,12 +63,12 @@ class EthernetDevice : public Device{
   virtual void DeviceArrayWrite(unsigned int address, unsigned int size, unsigned int* data);
 
   //Internal functions - make public so debugging code can access them
-  
-  void SendReceive(CtrlPacket& tx, CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
 
-  void SendEthernet(CtrlPacket& tx, unsigned int txSize);
+  void SendReceive(dunedaq::dataformats::CtrlPacket& tx, dunedaq::dataformats::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
 
-  void ReceiveEthernet(CtrlPacket& rx, unsigned int rxSizeExpected);
+  void SendEthernet(dunedaq::dataformats::CtrlPacket& tx, unsigned int txSize);
+
+  void ReceiveEthernet(dunedaq::dataformats::CtrlPacket& rx, unsigned int rxSizeExpected);
 
   void DevicePurge(boost::asio::ip::tcp::socket& socket);
 
