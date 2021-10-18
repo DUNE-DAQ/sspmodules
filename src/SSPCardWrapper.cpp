@@ -36,8 +36,8 @@ namespace sspmodules {
 
   SSPCardWrapper::SSPCardWrapper():
     m_device_interface(0),
-    m_run_marker{ false },
     m_ssp_processor(0),
+    m_run_marker{ false },
     m_board_id(0),
     m_partition_number(0),
     m_timing_address(0),
@@ -87,14 +87,11 @@ SSPCardWrapper::configure(const data_t& args)
 
   m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
   if (m_cfg.board_ip == "default") {
-    try {
-      TLOG() << "SSPCardWrapper::configure: This Board IP value in the Conf is set to: default" << std::endl
+    TLOG() << "SSPCardWrapper::configure: This Board IP value in the Conf is set to: default" << std::endl
 	     << "As we currently only deal with SSPs on ethernet, this means that either the Board IP was " << std::endl
 	     << "NOT set, or the args.get<Conf> call failed to find parameters." <<std::endl ;
-    } catch (...) {
-      //throw SSPDAQ::EDAQConfigError("");
-      exit(424);
-    }
+    //throw SSPDAQ::EDAQConfigError("");
+    exit(424);
   }
 
   m_board_id = m_cfg.board_id;
@@ -103,12 +100,9 @@ SSPCardWrapper::configure(const data_t& args)
 
   m_timing_address = m_cfg.timing_address; //0x20 is default for 101, 0x2B for 304, and 0x36 for 603
   if(m_timing_address > 0xff){
-    try {
-      TLOG() << "Error: Invalid timing address set ("<<m_timing_address<<")!"<<std::endl;
-    } catch (...) {
-      //throw SSPDAQ::EDAQConfigError("");
-      exit(424);
-    }
+    TLOG() << "Error: Invalid timing address set ("<<m_timing_address<<")!"<<std::endl;
+    //throw SSPDAQ::EDAQConfigError("");
+    exit(424);
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Board ID is listed as: " << m_cfg.board_id << std::endl
@@ -177,14 +171,14 @@ SSPCardWrapper::close_card()
 }
 
 void
-SSPCardWrapper::configure_device(const data_t& args)
+SSPCardWrapper::configure_device(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice called.";
 
   m_module_id = m_cfg.module_id;
   std::vector<dunedaq::sspmodules::sspcardreader::RegisterValues> m_hardware_configuration = m_cfg.hardware_configuration;
   std::vector<unsigned int> chControlReg(12,0);
-  bool haveChannelControl=false;
+  // bool haveChannelControl=false;
   std::vector< std::pair<std::string,unsigned int>> channelControlEntries;
 
   /*for (auto regValuesIter=m_hardware_configuration.begin();regValuesIter!=m_hardware_configuration.end();++regValuesIter){
@@ -379,51 +373,35 @@ SSPCardWrapper::configure_daq(const data_t& args)
   m_cfg = args.get<sspcardreader::Conf>();
   m_pre_trig_length = m_cfg.pre_trig_length; //unsigned int preTrigLength=337500;
   if(m_pre_trig_length == 0){
-    try {
-      TLOG() << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
-    } catch (...) {
-      exit(424);
-      //throw SSPDAQ::EDAQConfigError("");
-    }
+    TLOG() << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
+    exit(424);
   }
   m_post_trig_length = m_cfg.post_trig_length; //unsigned int postTrigLength=412500;
   if(m_post_trig_length == 0){
-    try {
-      TLOG() << "Error: PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!" << std::endl;
-    } catch (...) {
-      exit(424);
-      //throw SSPDAQ::EDAQConfigError("");
-    }
+    TLOG() << "Error: PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!" << std::endl;
+    exit(424);
+    //throw SSPDAQ::EDAQConfigError("");
   }
   m_use_external_timestamp = m_cfg.use_external_timestamp; //unsigned int useExternalTimestamp=1;
   if(m_use_external_timestamp > 1){
-    try{
-      TLOG() << "Error: Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!" << std::endl;
-    } catch(...) {
-      exit(424);
-      //throw SSPDAQ::EDAQConfigError("");
-    }
+    TLOG() << "Error: Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!" << std::endl;
+    exit(424);
+    //throw SSPDAQ::EDAQConfigError("");
   }
   m_trigger_write_delay = m_cfg.trigger_write_delay; //unsigned int triggerWriteDelay=1000;
   if(m_trigger_write_delay == 0){
-    try {
-      TLOG() << "Error: trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!" << std::endl;
-    } catch(...) {
-      exit(424);
-      //throw SSPDAQ::EDAQConfigError("");
-    }
+    TLOG() << "Error: trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!" << std::endl;
+    exit(424);
+    //throw SSPDAQ::EDAQConfigError("");
   }
   m_trigger_latency = m_cfg.trigger_latency;//unsigned int trigLatency=0; //not sure about this.
   m_dummy_period = m_cfg.dummy_period;//int dummyPeriod=-1;//default to off which is set with a value of -1
   m_hardware_clock_rate_in_MHz = m_cfg.hardware_clock_rate_in_MHz; //unsigned int hardwareClockRate=150; //in MHz
 
   if(m_hardware_clock_rate_in_MHz == 0){
-    try {
-      TLOG() << "Error: Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!"<<std::endl;
-    } catch (...) {
-      exit(424);
-      //throw SSPDAQ::EDAQConfigError("");
-    }
+    TLOG() << "Error: Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!"<<std::endl;
+    exit(424);
+    //throw SSPDAQ::EDAQConfigError("");
   }
   m_trigger_mask = m_cfg.trigger_mask; //unsigned int triggerMask=0x2000;
   m_fragment_timestamp_offset = m_cfg.fragment_timestamp_offset;//m_fragment_timestamp_offset=988;
@@ -482,7 +460,7 @@ SSPCardWrapper::process_ssp()
                          <<", calls to GetNext "<<m_num_read_event_calls
                          <<", of which returned null "<<m_num_zero_fragments<<std::endl;
 
-      std::size_t dataLength = millislice.size()-dunedaq::dataformats::MillisliceHeader::sizeInUInts;
+      // std::size_t dataLength = millislice.size()-dunedaq::dataformats::MillisliceHeader::sizeInUInts;
 
       //SSPFragment::Metadata metadata;
       //metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());

@@ -222,7 +222,7 @@ void SSPDAQ::EthernetDevice::SendReceive(dunedaq::dataformats::CtrlPacket& tx, d
       usleep(2000);
       success=true;
     }
-    catch(ETCPError){
+    catch(ETCPError&){
       if(timesTried<retryCount){
 	DevicePurgeComm();
 	++timesTried;

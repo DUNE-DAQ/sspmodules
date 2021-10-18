@@ -43,10 +43,8 @@ void SSPDAQ::DeviceInterface::OpenSlowControl(){
   device=devman.OpenDevice(fCommType,fDeviceId,true);
 
   if(!device){
-    try {
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
-    } catch (...) {}
-      throw(ENoSuchDevice());
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
+    throw(ENoSuchDevice());
   }
 
   fDevice=device;
@@ -155,9 +153,7 @@ void SSPDAQ::DeviceInterface::Start(){
   }
 
   if(fSlowControlOnly){
-    try {
-      TLOG_DEBUG(TLVL_WORK_STEPS) << "Naughty Zoot! Attempt to start run on slow control interface refused!"<<std::endl;
-    } catch (...) {}
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Naughty Zoot! Attempt to start run on slow control interface refused!"<<std::endl;
     return;
   }
 
@@ -638,9 +634,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
 
       timeWaited+=100;
       if(timeWaited>10000000){ //10s
-	try {
-	  TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP delayed 10s between issuing header word and full header; giving up" <<std::endl;
-	} catch(...) {}
+        TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP delayed 10s between issuing header word and full header; giving up" <<std::endl;
 	event.SetEmpty();
 	throw(EEventReadError());
       }
@@ -650,9 +644,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   //Get header from device and check it is the right length
   fDevice->DeviceReceive(data,headerReadSize);
   if(data.size()!=headerReadSize){
-    try {
-      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP returned truncated header even though FIFO queue is of sufficient length!" <<std::endl;
-    } catch (...) {}
+    TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP returned truncated header even though FIFO queue is of sufficient length!" <<std::endl;
     event.SetEmpty();
     throw(EEventReadError());
   }
@@ -672,9 +664,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
       TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"Warning: we slept after finding header before reading full event." << std::endl;
       timeWaited+=100;
       if(timeWaited>10000000){ //10s
-	try {
-	  TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP delayed 10s between issuing header and full event; giving up" << std::endl;
-	} catch(...) {}
+	TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP delayed 10s between issuing header and full event; giving up" << std::endl;
 	event.DumpHeader();
 	event.SetEmpty();
 	throw(EEventReadError());
@@ -686,10 +676,8 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   fDevice->DeviceReceive(data,bodyReadSize);
 
   if(data.size()!=bodyReadSize){
-    try {
-       TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP returned truncated event even though FIFO queue is of sufficient length!"
+    TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier()<<"SSP returned truncated event even though FIFO queue is of sufficient length!"
 				   << std::endl;
-    } catch (...) {}
     event.SetEmpty();
     throw(EEventReadError());
   }
@@ -779,10 +767,8 @@ void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, unsigned 
 void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, std::vector<unsigned int> values){
   SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
   if(reg.Size()!=values.size()){
-    try {
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Request to set named register array "<<name<<", length "<<reg.Size()
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Request to set named register array "<<name<<", length "<<reg.Size()
 				  <<"with vector of "<<values.size()<<" values!"<<std::endl;
-    } catch (...) {}
     throw(std::invalid_argument(""));
   }
   this->SetRegisterArray(reg[0],values);
@@ -829,27 +815,18 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
     fCommType=dunedaq::dataformats::kEmulated;
     break;
   case 999:
-    try {
-      TLOG() << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
-    } catch (...) {
-      exit(424);
-    }
+    TLOG() << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+    exit(424);
   default:
-    try {
-      TLOG() << "Error: Unknown interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
-    } catch (...) {
-      exit(424);
-    }
+    TLOG() << "Error: Unknown interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+    exit(424);
   }
   //
   if(fCommType!=dunedaq::dataformats::kEthernet){
     fDeviceId = 0;
-    try {
-      TLOG() << "Error: Non-functioning interface type set: "<< fCommType
+    TLOG() << "Error: Non-functioning interface type set: "<< fCommType
 	     << "so forcing an exit and having none of this USB based SSP crap." << std::endl;
-    } catch (...) {
-      exit(424);
-   }
+    exit(424);
   }
   else{
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Board IP is listed as: " << m_cfg.board_ip << std::endl;
@@ -866,10 +843,8 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
   device=devman.OpenDevice(fCommType,fDeviceId);
 
   if(!device){
-    try {
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
-    } catch (...) {}
-      throw(ENoSuchDevice());
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Unable to get handle to device; giving up!"<<std::endl;
+    throw(ENoSuchDevice());
   }
 
   fDevice=device;
