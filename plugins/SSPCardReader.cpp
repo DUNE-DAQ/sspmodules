@@ -1,12 +1,12 @@
 /**
- * @file SSPCardReader.cc SSPCardReader DAQModule implementation
+ * @file SSPCardReader.cpp SSPCardReader DAQModule implementation
  *
  * This is part of the DUNE DAQ Application Framework, copyright 2020.
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_SSPCARDREADER_CPP_
-#define SSPMODULES_SRC_SSPCARDREADER_CPP_
+#ifndef SSPMODULES_PLUGINS_SSPCARDREADER_CPP_
+#define SSPMODULES_PLUGINS_SSPCARDREADER_CPP_
 
 #include "logging/Logging.hpp"
 
@@ -137,4 +137,4 @@ SSPCardReader::get_info(opmonlib::InfoCollector& /*ci*/, int /*level*/)
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::sspmodules::SSPCardReader)
 
-#endif // SSPMODULES_SRC_SSPCARDREADER_CPP_
+#endif // SSPMODULES_PLUGINS_SSPCARDREADER_CPP_

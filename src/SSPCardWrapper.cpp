@@ -5,8 +5,8 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_SSPCARDWRPPER_CPP_
-#define SSPMODULES_SRC_SSPCARDWRPPER_CPP_
+#ifndef SSPMODULES_SRC_SSPCARDWRAPPER_CPP_
+#define SSPMODULES_SRC_SSPCARDWRAPPER_CPP_
 
 // From Module
 #include "SSPCardWrapper.hpp"
@@ -509,4 +509,4 @@ ssp603_standard.fragment_receiver.board_ip: "10.73.137.74"
 ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63
 ssp603_standard.metrics.dim.IDName: "ssp603" */
 
-#endif // SSPMODULES_SRC_SSPCARDWRPPER_CPP_
+#endif // SSPMODULES_SRC_SSPCARDWRAPPER_CPP_
