@@ -1,3 +1,13 @@
+/**
+ * @file DeviceInterface.cxx
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_CXX_
+#define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_CXX_
+
 #include "appfwk/app/Nljs.hpp"
 #include "sspmodules/sspcardreader/Nljs.hpp"
 
@@ -21,8 +31,8 @@ enum
 
 
 //SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
-SSPDAQ::DeviceInterface::DeviceInterface(dunedaq::dataformats::Comm_t commType)
-  : fCommType(commType), fDeviceId(0), fState(SSPDAQ::DeviceInterface::kUninitialized),
+dunedaq::sspmodules::DeviceInterface::DeviceInterface(dunedaq::dataformats::Comm_t commType)
+  : fCommType(commType), fDeviceId(0), fState(dunedaq::sspmodules::DeviceInterface::kUninitialized),
     fUseExternalTimestamp(true), fHardwareClockRateInMHz(128), fPreTrigLength(1E8),
     fPostTrigLength(1E7), fTriggerWriteDelay(1000), fTriggerLatency(0), fTriggerMask(0),
     fDummyPeriod(-1), fSlowControlOnly(false), fPartitionNumber(0), fTimingAddress(0), exception_(false),
@@ -30,12 +40,12 @@ SSPDAQ::DeviceInterface::DeviceInterface(dunedaq::dataformats::Comm_t commType)
     //, fRequestReceiver(0){
 }
 
-void SSPDAQ::DeviceInterface::OpenSlowControl(){
+void dunedaq::sspmodules::DeviceInterface::OpenSlowControl(){
 
   TLOG_DEBUG(TLVL_FULL_DEBUG) << "SSP Device Interface OpenSlowControl called.";
   //Ask device manager for a pointer to the specified device
-  SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
-  SSPDAQ::Device* device=0;
+  dunedaq::sspmodules::DeviceManager& devman=dunedaq::sspmodules::DeviceManager::Get();
+  dunedaq::sspmodules::Device* device=0;
 
   TLOG_DEBUG(TLVL_WORK_STEPS) <<"Opening "<<((fCommType==dunedaq::dataformats::kUSB)?"USB":((fCommType==dunedaq::dataformats::kEthernet)?"Ethernet":"Emulated"))
 			      <<" device #"<<fDeviceId<<" for slow control only..."<<std::endl;
@@ -64,7 +74,7 @@ tokenize(std::string const& str, const char delim, std::vector<std::string>& out
   }
 }
 
-void SSPDAQ::DeviceInterface::Initialize(const nlohmann::json& args){
+void dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initialize called.";
 
@@ -95,15 +105,15 @@ void SSPDAQ::DeviceInterface::Initialize(const nlohmann::json& args){
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initailize complete.";
 }
 
-void SSPDAQ::DeviceInterface::Stop(){
+void dunedaq::sspmodules::DeviceInterface::Stop(){
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Stop called.";
 
-  if(fState!=SSPDAQ::DeviceInterface::kRunning&&
-     fState!=SSPDAQ::DeviceInterface::kUninitialized){
+  if(fState!=dunedaq::sspmodules::DeviceInterface::kRunning&&
+     fState!=dunedaq::sspmodules::DeviceInterface::kUninitialized){
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Running stop command for non-running device!"<<std::endl;
   }
 
-  if(fState==SSPDAQ::DeviceInterface::kRunning){
+  if(fState==dunedaq::sspmodules::DeviceInterface::kRunning){
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Device interface stopping run"<<std::endl;
     fShouldStop=true;
     //if(fRequestReceiver){
@@ -115,7 +125,7 @@ void SSPDAQ::DeviceInterface::Stop(){
   }
 
 
-  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
+  dunedaq::sspmodules::RegMap& duneReg=dunedaq::sspmodules::RegMap::Get();
 
   fDevice->DeviceWrite(duneReg.eventDataControl, 0x0013001F);
   fDevice->DeviceClear(duneReg.master_logic_control, 0x00000101);
@@ -128,22 +138,22 @@ void SSPDAQ::DeviceInterface::Stop(){
   fDevice->DevicePurgeData();
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Hardware set to stopped state"<<std::endl;
 
-  if(fState==SSPDAQ::DeviceInterface::kRunning){
+  if(fState==dunedaq::sspmodules::DeviceInterface::kRunning){
     TLOG_DEBUG(TLVL_WORK_STEPS) << "DeviceInterface stop transition complete!"<<std::endl;
   }
 
-  fState=SSPDAQ::DeviceInterface::kStopped;
+  fState=dunedaq::sspmodules::DeviceInterface::kStopped;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Stop complete.";
 }
 
-/*void SSPDAQ::DeviceInterface::StartRequestReceiver(std::string address){
+/*void dunedaq::sspmodules::DeviceInterface::StartRequestReceiver(std::string address){
 
   //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Subscribing to software triggers at "<<address<<" and ignoring hardware triggers."<<std::endl;
   fRequestReceiver=new RequestReceiver(address);
   }*/
 
-void SSPDAQ::DeviceInterface::Start(){
+void dunedaq::sspmodules::DeviceInterface::Start(){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Start called.";
 
@@ -158,7 +168,7 @@ void SSPDAQ::DeviceInterface::Start(){
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Device interface starting hardware run..."<<std::endl;
-  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
+  dunedaq::sspmodules::RegMap& duneReg=dunedaq::sspmodules::RegMap::Get();
   // This script enables all logic and FIFOs and starts data acquisition in the device
   // Operations MUST be performed in this order
 
@@ -181,11 +191,11 @@ void SSPDAQ::DeviceInterface::Start(){
 
   fDevice->DeviceWrite(duneReg.master_logic_control, 0x00000041);
 
-  fState=SSPDAQ::DeviceInterface::kRunning;
+  fState=dunedaq::sspmodules::DeviceInterface::kRunning;
   fShouldStop=false;
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Starting read thread..."<<std::endl;
-  fDataThread=new std::thread(&SSPDAQ::DeviceInterface::HardwareReadLoop,this);
+  fDataThread=new std::thread(&dunedaq::sspmodules::DeviceInterface::HardwareReadLoop,this);
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Read thread is up!"<<std::endl;
 
   //if(fRequestReceiver){
@@ -197,7 +207,7 @@ void SSPDAQ::DeviceInterface::Start(){
 
 }
 
-void SSPDAQ::DeviceInterface::HardwareReadLoop(){
+void dunedaq::sspmodules::DeviceInterface::HardwareReadLoop(){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface HardwareReadLoop called.";
 
@@ -209,7 +219,7 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
     // Read an event from SSP. If there is no data, break. //
     /////////////////////////////////////////////////////////
 
-    SSPDAQ::EventPacket newPacket;
+    dunedaq::sspmodules::EventPacket newPacket;
     this->ReadEventFromDevice(newPacket);
     if(newPacket.header.header!=0xAAAAAAAA){
       usleep(1000);
@@ -337,7 +347,7 @@ void SSPDAQ::DeviceInterface::HardwareReadLoop(){
 
 }
 
-void SSPDAQ::DeviceInterface::ReadEvent(std::vector<unsigned int>& fragment){
+void dunedaq::sspmodules::DeviceInterface::ReadEvent(std::vector<unsigned int>& fragment){
 
   //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEvent called.";
 
@@ -374,7 +384,7 @@ void SSPDAQ::DeviceInterface::ReadEvent(std::vector<unsigned int>& fragment){
 }
 
 
-bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SSPDAQ::TriggerInfo& newTrigger){
+bool dunedaq::sspmodules::DeviceInterface::GetTriggerInfo(const dunedaq::sspmodules::EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface GetTriggerInfo called.";
   static unsigned long currentTriggerTime=0;
@@ -427,12 +437,12 @@ bool SSPDAQ::DeviceInterface::GetTriggerInfo(const SSPDAQ::EventPacket& event,SS
   return false;
 }
 
-void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigger,std::vector<unsigned int>& fragmentData){
+void dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::TriggerInfo& theTrigger,std::vector<unsigned int>& fragmentData){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface BuildFragment called.";
 
-  std::vector<SSPDAQ::EventPacket> eventsToPutBack;
-  std::vector<SSPDAQ::EventPacket*> eventsToWrite;
+  std::vector<dunedaq::sspmodules::EventPacket> eventsToPutBack;
+  std::vector<dunedaq::sspmodules::EventPacket*> eventsToWrite;
 
   auto lastPacket = fPacketBuffer.begin();
 
@@ -562,7 +572,7 @@ void SSPDAQ::DeviceInterface::BuildFragment(const SSPDAQ::TriggerInfo& theTrigge
   }
   }*/
 
-void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
+void dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event){
 
   //TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice called.";
 
@@ -695,7 +705,7 @@ void SSPDAQ::DeviceInterface::ReadEventFromDevice(EventPacket& event){
   return;
 }
 
-void SSPDAQ::DeviceInterface::Shutdown(){
+void dunedaq::sspmodules::DeviceInterface::Shutdown(){
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Shutdown called.";
 
   fDevice->Close();
@@ -703,7 +713,7 @@ void SSPDAQ::DeviceInterface::Shutdown(){
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Shutdown complete.";
 }
 
-void SSPDAQ::DeviceInterface::SetRegister(unsigned int address, unsigned int value,
+void dunedaq::sspmodules::DeviceInterface::SetRegister(unsigned int address, unsigned int value,
 					  unsigned int mask){
 
   if(mask==0xFFFFFFFF){
@@ -714,17 +724,17 @@ void SSPDAQ::DeviceInterface::SetRegister(unsigned int address, unsigned int val
   }
 }
 
-void SSPDAQ::DeviceInterface::SetRegisterArray(unsigned int address, std::vector<unsigned int> value){
+void dunedaq::sspmodules::DeviceInterface::SetRegisterArray(unsigned int address, std::vector<unsigned int> value){
 
     this->SetRegisterArray(address,&(value[0]),value.size());
 }
 
-void SSPDAQ::DeviceInterface::SetRegisterArray(unsigned int address, unsigned int* value, unsigned int size){
+void dunedaq::sspmodules::DeviceInterface::SetRegisterArray(unsigned int address, unsigned int* value, unsigned int size){
 
   fDevice->DeviceArrayWrite(address,size,value);
 }
 
-void SSPDAQ::DeviceInterface::ReadRegister(unsigned int address, unsigned int& value,
+void dunedaq::sspmodules::DeviceInterface::ReadRegister(unsigned int address, unsigned int& value,
 					  unsigned int mask){
 
   if(mask==0xFFFFFFFF){
@@ -735,37 +745,37 @@ void SSPDAQ::DeviceInterface::ReadRegister(unsigned int address, unsigned int& v
   }
 }
 
-void SSPDAQ::DeviceInterface::ReadRegisterArray(unsigned int address, std::vector<unsigned int>& value, unsigned int size){
+void dunedaq::sspmodules::DeviceInterface::ReadRegisterArray(unsigned int address, std::vector<unsigned int>& value, unsigned int size){
 
   value.resize(size);
   this->ReadRegisterArray(address,&(value[0]),size);
 }
 
-void SSPDAQ::DeviceInterface::ReadRegisterArray(unsigned int address, unsigned int* value, unsigned int size){
+void dunedaq::sspmodules::DeviceInterface::ReadRegisterArray(unsigned int address, unsigned int* value, unsigned int size){
 
   fDevice->DeviceArrayRead(address,size,value);
 }
-void SSPDAQ::DeviceInterface::SetRegisterByName(std::string name, unsigned int value){
-  SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
+void dunedaq::sspmodules::DeviceInterface::SetRegisterByName(std::string name, unsigned int value){
+  dunedaq::sspmodules::RegMap::Register reg=(dunedaq::sspmodules::RegMap::Get())[name];
 
   this->SetRegister(reg,value,reg.WriteMask());
 }
 
-void SSPDAQ::DeviceInterface::SetRegisterElementByName(std::string name, unsigned int index, unsigned int value){
-  SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name][index];
+void dunedaq::sspmodules::DeviceInterface::SetRegisterElementByName(std::string name, unsigned int index, unsigned int value){
+  dunedaq::sspmodules::RegMap::Register reg=(dunedaq::sspmodules::RegMap::Get())[name][index];
 
   this->SetRegister(reg,value,reg.WriteMask());
 }
 
-void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, unsigned int value){
-  unsigned int regSize=(SSPDAQ::RegMap::Get())[name].Size();
+void dunedaq::sspmodules::DeviceInterface::SetRegisterArrayByName(std::string name, unsigned int value){
+  unsigned int regSize=(dunedaq::sspmodules::RegMap::Get())[name].Size();
   std::vector<unsigned int> arrayContents(regSize,value);
 
   this->SetRegisterArrayByName(name,arrayContents);
 }
 
-void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, std::vector<unsigned int> values){
-  SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
+void dunedaq::sspmodules::DeviceInterface::SetRegisterArrayByName(std::string name, std::vector<unsigned int> values){
+  dunedaq::sspmodules::RegMap::Register reg=(dunedaq::sspmodules::RegMap::Get())[name];
   if(reg.Size()!=values.size()){
     TLOG_DEBUG(TLVL_WORK_STEPS) <<"Request to set named register array "<<name<<", length "<<reg.Size()
 				  <<"with vector of "<<values.size()<<" values!"<<std::endl;
@@ -774,26 +784,26 @@ void SSPDAQ::DeviceInterface::SetRegisterArrayByName(std::string name, std::vect
   this->SetRegisterArray(reg[0],values);
 }
 
-void SSPDAQ::DeviceInterface::ReadRegisterByName(std::string name, unsigned int& value){
-  SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
+void dunedaq::sspmodules::DeviceInterface::ReadRegisterByName(std::string name, unsigned int& value){
+  dunedaq::sspmodules::RegMap::Register reg=(dunedaq::sspmodules::RegMap::Get())[name];
 
   this->ReadRegister(reg,value,reg.ReadMask());
 }
 
-void SSPDAQ::DeviceInterface::ReadRegisterElementByName(std::string name, unsigned int index, unsigned int& value){
-  SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name][index];
+void dunedaq::sspmodules::DeviceInterface::ReadRegisterElementByName(std::string name, unsigned int index, unsigned int& value){
+  dunedaq::sspmodules::RegMap::Register reg=(dunedaq::sspmodules::RegMap::Get())[name][index];
 
   this->ReadRegister(reg,value,reg.ReadMask());
 }
 
-void SSPDAQ::DeviceInterface::ReadRegisterArrayByName(std::string name, std::vector<unsigned int>& values){
-  SSPDAQ::RegMap::Register reg=(SSPDAQ::RegMap::Get())[name];
+void dunedaq::sspmodules::DeviceInterface::ReadRegisterArrayByName(std::string name, std::vector<unsigned int>& values){
+  dunedaq::sspmodules::RegMap::Register reg=(dunedaq::sspmodules::RegMap::Get())[name];
   this->ReadRegisterArray(reg[0],values,reg.Size());
 }
 
 
 
-void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
+void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configure called.";
 
@@ -834,8 +844,8 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
   }
 
   //Ask device manager for a pointer to the specified device
-  SSPDAQ::DeviceManager& devman=SSPDAQ::DeviceManager::Get();
-  SSPDAQ::Device* device=0;
+  dunedaq::sspmodules::DeviceManager& devman=dunedaq::sspmodules::DeviceManager::Get();
+  dunedaq::sspmodules::Device* device=0;
 
   TLOG_DEBUG(TLVL_WORK_STEPS) <<"Configuring "<<((fCommType==dunedaq::dataformats::kUSB)?"USB":((fCommType==dunedaq::dataformats::kEthernet)?"Ethernet":"Emulated"))
   <<" device #"<<fDeviceId<<"..."<<std::endl;
@@ -854,7 +864,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
   TLOG_DEBUG(TLVL_FULL_DEBUG) <<"SSP Device Interface stop sent."<<std::endl;
 
   //Reset timing endpoint
-  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
+  dunedaq::sspmodules::RegMap& duneReg=dunedaq::sspmodules::RegMap::Get();
 
   unsigned int pdts_status=0;
   unsigned int pdts_control=0;
@@ -1105,7 +1115,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
 
 }
 
-std::string SSPDAQ::DeviceInterface::GetIdentifier(){
+std::string dunedaq::sspmodules::DeviceInterface::GetIdentifier(){
 
   std::string ident;
   ident+="SSP@";
@@ -1129,7 +1139,7 @@ std::string SSPDAQ::DeviceInterface::GetIdentifier(){
   return ident;
 }
 
-unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const dunedaq::dataformats::EventHeader& header){
+unsigned long dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::dataformats::EventHeader& header){
   unsigned long packetTime=0;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp << std::endl;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fPreTrigLength value: " << fPreTrigLength << std::endl;
@@ -1146,11 +1156,11 @@ unsigned long SSPDAQ::DeviceInterface::GetTimestamp(const dunedaq::dataformats::
   return packetTime;
 }
 
-void SSPDAQ::DeviceInterface::PrintHardwareState(){
+void dunedaq::sspmodules::DeviceInterface::PrintHardwareState(){
 
  TLOG_DEBUG(TLVL_WORK_STEPS) << "===SSP DIAGNOSTIC REGISTERS==="<<std::endl;
 
-  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
+  dunedaq::sspmodules::RegMap& duneReg=dunedaq::sspmodules::RegMap::Get();
   unsigned int val;
 
   fDevice->DeviceRead(duneReg.dp_clock_status, &val);
@@ -1165,3 +1175,5 @@ void SSPDAQ::DeviceInterface::PrintHardwareState(){
   TLOG_DEBUG(TLVL_WORK_STEPS) << "sync_count: "<<val<<std::dec<<std::endl;
 
 }
+
+#endif // SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_CXX_

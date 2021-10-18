@@ -1,10 +1,16 @@
-#ifndef DEVICEMANAGER_H
-#define DEVICEMANAGER_H
+/**
+ * @file DeviceManager.h
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_H_
+#define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_H_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
 //#include "ftd2xx.h"
-#include "dune-raw-data/Overlays/anlTypes.hh"
 //#include "USBDevice.h"
 #include "EmulatedDevice.h"
 #include "EthernetDevice.h"
@@ -19,13 +25,13 @@
 #include <cstring>
 #include <unistd.h>
 #include <memory>
-#include "dune-raw-data/Overlays/anlTypes.hh"
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
 class DeviceManager{
 
- public:
+public:
 
   //Get reference to instance of DeviceManager singleton
   static DeviceManager& Get();
@@ -39,7 +45,7 @@ class DeviceManager{
   //if it has not yet been run, so it should not normally be necessary to call this directly.
   void RefreshDevices();
 
- private:
+private:
 
   DeviceManager();
 
@@ -59,5 +65,7 @@ class DeviceManager{
   bool fHaveLookedForDevices;
 };
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_H_

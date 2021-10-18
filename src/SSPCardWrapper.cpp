@@ -5,17 +5,18 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
+#ifndef SSPMODULES_SRC_SSPCARDWRPPER_CPP_
+#define SSPMODULES_SRC_SSPCARDWRPPER_CPP_
+
 // From Module
 #include "SSPCardWrapper.hpp"
 //#include "dune-raw-data/Overlays/SSPFragment.hh"
 //#include "dune-raw-data/Overlays/SSPFragmentWriter.hh"
-#include "logging/Logging.hpp"
 //#include "packetformat/block_format.hpp"
 
 // From STD
 #include <chrono>
 #include <iomanip>
-#include <memory>
 
 /**
  * @brief TRACE debug levels used in this source file
@@ -74,7 +75,7 @@ SSPCardWrapper::init(const data_t& args)
   //          configuration parameters that you're looking for in args aren't available since the args you're
   //          getting here is likely only *::Init data from the json file
 
-  m_device_interface=new SSPDAQ::DeviceInterface(dunedaq::dataformats::kEthernet);
+  m_device_interface=new dunedaq::sspmodules::DeviceInterface(dunedaq::dataformats::kEthernet);
   m_device_interface->Initialize(args);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init complete.";
@@ -507,3 +508,5 @@ ssp603_standard.fragment_receiver.timing_address: 0x36
 ssp603_standard.fragment_receiver.board_ip: "10.73.137.74"
 ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63
 ssp603_standard.metrics.dim.IDName: "ssp603" */
+
+#endif // SSPMODULES_SRC_SSPCARDWRPPER_CPP_

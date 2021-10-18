@@ -1,91 +1,101 @@
-#ifndef ANLEXCEPTIONS_H__
-#define ANLEXCEPTIONS_H__
+/**
+ * @file anlExceptions.h
+
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_ANDEXCEPTIONS_H_
+#define SSPMODULES_SRC_ANLBOARD_ANDEXCEPTIONS_H_
 
 #include <stdexcept>
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
-  //================================//
-  //Bad requests from Device Manager//
-  //================================//
+//================================//
+//Bad requests from Device Manager//
+//================================//
 
-  class ENoSuchDevice: public std::runtime_error{
-  public:
-    explicit ENoSuchDevice(const std::string &s):
-      std::runtime_error(s) {}
+class ENoSuchDevice: public std::runtime_error{
+public:
+  explicit ENoSuchDevice(const std::string &s):
+  std::runtime_error(s) {}
 
-    explicit ENoSuchDevice():
-      std::runtime_error("") {}
-  };
+  explicit ENoSuchDevice():
+  std::runtime_error("") {}
+};
 
-  class EDeviceAlreadyOpen: public std::runtime_error{
-  public:
-    explicit EDeviceAlreadyOpen(const std::string &s):
-      std::runtime_error(s) {}
+class EDeviceAlreadyOpen: public std::runtime_error{
+public:
+  explicit EDeviceAlreadyOpen(const std::string &s):
+  std::runtime_error(s) {}
 
-    explicit EDeviceAlreadyOpen():
-      std::runtime_error("") {}
+  explicit EDeviceAlreadyOpen():
+  std::runtime_error("") {}
 
-  };
+};
 
-  class EBadDeviceList: public std::runtime_error{
-  public:
-    explicit EBadDeviceList(const std::string &s):
-      std::runtime_error(s) {}
+class EBadDeviceList: public std::runtime_error{
+public:
+  explicit EBadDeviceList(const std::string &s):
+  std::runtime_error(s) {}
       
-      explicit EBadDeviceList():
-	std::runtime_error("") {}
+  explicit EBadDeviceList():
+  std::runtime_error("") {}
 
-  };
+};
 
-  //=======================================//
-  //Error reported by USB interface library//
-  //=======================================//
+//=======================================//
+//Error reported by USB interface library//
+//=======================================//
 
-  class EFTDIError: public std::runtime_error{
-  public:
-    explicit EFTDIError(const std::string &s):
-      std::runtime_error(s) {}
+class EFTDIError: public std::runtime_error{
+public:
+  explicit EFTDIError(const std::string &s):
+  std::runtime_error(s) {}
 
-    explicit EFTDIError():
-      std::runtime_error("") {}
-  };
+  explicit EFTDIError():
+  std::runtime_error("") {}
+};
 
-  //=======================================//
-  //Error reported by TCP interface library//
-  //=======================================//
+//=======================================//
+//Error reported by TCP interface library//
+//=======================================//
 
-  class ETCPError: public std::runtime_error{
-  public:
-    explicit ETCPError(const std::string &s):
-      std::runtime_error(s) {}
+class ETCPError: public std::runtime_error{
+public:
+  explicit ETCPError(const std::string &s):
+  std::runtime_error(s) {}
 
-    explicit ETCPError():
-      std::runtime_error("") {}
-  };
+  explicit ETCPError():
+  std::runtime_error("") {}
+};
 
 
-  //===============================================//
-  //Error receiving expected event data from device//
-  //===============================================//
+//===============================================//
+//Error receiving expected event data from device//
+//===============================================//
 
-  class EEventReadError: public std::runtime_error{
-  public:
-    explicit EEventReadError(const std::string &s):
-      std::runtime_error(s) {}
+class EEventReadError: public std::runtime_error{
+public:
+  explicit EEventReadError(const std::string &s):
+  std::runtime_error(s) {}
 
-    explicit EEventReadError():
-      std::runtime_error("") {}
-  };
+  explicit EEventReadError():
+  std::runtime_error("") {}
+};
 
-  class EDAQConfigError: public std::runtime_error{
-  public:
-    explicit EDAQConfigError(const std::string &s):
-      std::runtime_error(s) {}
+class EDAQConfigError: public std::runtime_error{
+public:
+  explicit EDAQConfigError(const std::string &s):
+  std::runtime_error(s) {}
 
-    explicit EDAQConfigError():
-      std::runtime_error("") {}
-  };
+  explicit EDAQConfigError():
+  std::runtime_error("") {}
+};
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_ANDEXCEPTIONS_H_

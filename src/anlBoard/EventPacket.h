@@ -1,59 +1,68 @@
-#ifndef EVENTPACKET_H__
-#define EVENTPACKET_H__
+/**
+ * @file EventPacket.h
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_EVENTPACKET_H_
+#define SSPMODULES_SRC_ANLBOARD_EVENTPACKET_H_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
-#include "dune-raw-data/Overlays/anlTypes.hh"
 #include <vector>
 #include <sstream>
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
 
 //Simple bag of data but with implementation of move methods
 //to allow efficient shifting around of data between containers
-  class EventPacket{
-  public:
+class EventPacket{
+public:
 
-    //Move constructor
-    EventPacket(EventPacket&& rhs){
-      data=std::move(rhs.data);
-      header=rhs.header;
-    }
+  //Move constructor
+  EventPacket(EventPacket&& rhs){
+    data=std::move(rhs.data);
+    header=rhs.header;
+  }
 
-    //Move assignment operator
-    EventPacket& operator=(EventPacket&& rhs){
-      data=std::move(rhs.data);
-      header=rhs.header;
-      return *this;
-    }
+  //Move assignment operator
+  EventPacket& operator=(EventPacket&& rhs){
+    data=std::move(rhs.data);
+    header=rhs.header;
+    return *this;
+  }
 
-    //Copy constructor
-    EventPacket(const EventPacket& rhs){
-      data=rhs.data;
-      header=rhs.header;
-    }
+  //Copy constructor
+  EventPacket(const EventPacket& rhs){
+    data=rhs.data;
+    header=rhs.header;
+  }
 
-    //Copy assignment operator
-    EventPacket& operator=(const EventPacket& rhs){
-      data=rhs.data;
-      header=rhs.header;
-      return *this;
-    }
+  //Copy assignment operator
+  EventPacket& operator=(const EventPacket& rhs){
+    data=rhs.data;
+    header=rhs.header;
+    return *this;
+  }
 
-    EventPacket(){}
+  EventPacket(){}
 
-    //Clear data vector and set header word to 0xDEADBEEF
-    void SetEmpty();
+  //Clear data vector and set header word to 0xDEADBEEF
+  void SetEmpty();
 
-    void DumpHeader();
+  void DumpHeader();
 
-    void DumpEvent();
+  void DumpEvent();
 
-    dunedaq::dataformats::EventHeader header;
+  dunedaq::dataformats::EventHeader header;
 
-    std::vector<unsigned int> data;
-  };
+  std::vector<unsigned int> data;
+};
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_EVENTPACKET_H_

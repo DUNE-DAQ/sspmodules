@@ -1,12 +1,22 @@
+/**
+ * @file RegMap.cxx
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_REGMAP_CXX_
+#define SSPMODULES_SRC_ANLBOARD_REGMAP_CXX_
+
 #include "RegMap.h"
 
-SSPDAQ::RegMap& SSPDAQ::RegMap::Get(void)
+dunedaq::sspmodules::RegMap& dunedaq::sspmodules::RegMap::Get(void)
 {
 
-  static SSPDAQ::RegMap* instance = 0;
+  static dunedaq::sspmodules::RegMap* instance = 0;
 
   if(!instance){
-    instance=new SSPDAQ::RegMap;
+    instance=new dunedaq::sspmodules::RegMap;
     // NOTE: All comments about default values, read masks, and write masks are current as of 2/11/2014
 
     // Registers in the Zynq ARM        Address                         Address         Default Value   Read Mask               Write Mask              Code Name
@@ -634,3 +644,5 @@ SSPDAQ::RegMap& SSPDAQ::RegMap::Get(void)
   }
   return *instance;
 }
+
+#endif // SSPMODULES_SRC_ANLBOARD_REGMAP_CXX_

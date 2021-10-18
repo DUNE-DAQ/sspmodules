@@ -1,8 +1,17 @@
-#ifndef EMULATEDDEVICE_H__
-#define EMULATEDDEVICE_H__
+/**
+ * @file EmulatedDevice.h
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_H_
+#define SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_H_
 
-#include "dune-raw-data/Overlays/anlTypes.hh"
+#include "dataformats/ssp/SSPTypes.hpp"
+
 #include "Device.h"
+#include "SafeQueue.h"
 
 #include <iostream>
 #include <iomanip>
@@ -12,18 +21,18 @@
 #include <cstring>
 #include <unistd.h>
 #include <memory>
-#include "SafeQueue.h"
 #include <atomic>
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
 class EmulatedDevice : public Device{
 
- friend class DeviceManager;
+  friend class DeviceManager;
 
- public:
+public:
 
- EmulatedDevice(unsigned int deviceNumber=0);
+  EmulatedDevice(unsigned int deviceNumber=0);
 
   virtual ~EmulatedDevice(){};
 
@@ -59,7 +68,7 @@ class EmulatedDevice : public Device{
 
   virtual void DeviceArrayWrite(unsigned int address, unsigned int size, unsigned int* data);
 
- private:
+private:
 
   virtual void Open(bool slowControlOnly=false);
 
@@ -89,5 +98,7 @@ class EmulatedDevice : public Device{
   std::atomic<bool> fEmulatorShouldStop;
 };
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_H_

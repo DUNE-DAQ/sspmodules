@@ -1,9 +1,15 @@
-#ifndef ETHERNETDEVICE_H__
-#define ETHERNETDEVICE_H__
+/**
+ * @file EthernetDevice.h
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_H_
+#define SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_H_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
-#include "dune-raw-data/Overlays/anlTypes.hh"
 #include "Device.h"
 #include "boost/asio.hpp"
 
@@ -15,26 +21,27 @@
 #include <cstring>
 #include <unistd.h>
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
 class EthernetDevice : public Device{
 
-  private:
+private:
 
- friend class DeviceManager;
+  friend class DeviceManager;
 
- public:
+public:
 
- //Create a device object using FTDI handles given for data and communication channels
- EthernetDevice(unsigned long ipAddress);
+  //Create a device object using FTDI handles given for data and communication channels
+  EthernetDevice(unsigned long ipAddress);
 
- virtual ~EthernetDevice(){};
+  virtual ~EthernetDevice(){};
 
- //Implementation of base class interface
+  //Implementation of base class interface
 
- inline virtual bool IsOpen(){
-   return isOpen;
- }
+  inline virtual bool IsOpen(){
+    return isOpen;
+  }
 
   virtual void Close();
 
@@ -72,7 +79,7 @@ class EthernetDevice : public Device{
 
   void DevicePurge(boost::asio::ip::tcp::socket& socket);
 
- private:
+private:
 
   bool isOpen;
 
@@ -88,5 +95,7 @@ class EthernetDevice : public Device{
 
 };
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_H_

@@ -1,18 +1,28 @@
+/**
+ * @file EthernetDevice.cxx
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_CXX_
+#define SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_CXX_
+
 #include "EthernetDevice.h"
 #include <cstdlib>
 #include <algorithm>
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "anlExceptions.h"
 
-boost::asio::io_service SSPDAQ::EthernetDevice::fIo_service;
+boost::asio::io_service dunedaq::sspmodules::EthernetDevice::fIo_service;
 
-SSPDAQ::EthernetDevice::EthernetDevice(unsigned long ipAddress):
+dunedaq::sspmodules::EthernetDevice::EthernetDevice(unsigned long ipAddress):
   isOpen(false),
   fCommSocket(fIo_service),fDataSocket(fIo_service),
   fIP(boost::asio::ip::address_v4(ipAddress))
   {}
 
-void SSPDAQ::EthernetDevice::Open(bool slowControlOnly){
+void dunedaq::sspmodules::EthernetDevice::Open(bool slowControlOnly){
 
   fSlowControlOnly=slowControlOnly;
 
@@ -41,25 +51,25 @@ void SSPDAQ::EthernetDevice::Open(bool slowControlOnly){
   //dune::DAQLogger::LogInfo("SSP_EthernetDevice")<<"Connected to SSP Ethernet device at "<<fIP.to_string()<<std::endl;
 }
 
-void SSPDAQ::EthernetDevice::Close(){
+void dunedaq::sspmodules::EthernetDevice::Close(){
   isOpen=false;
   //dune::DAQLogger::LogInfo("SSP_EthernetDevice")<<"Device closed"<<std::endl;
 }
 
-void SSPDAQ::EthernetDevice::DevicePurgeComm (void){
+void dunedaq::sspmodules::EthernetDevice::DevicePurgeComm (void){
   DevicePurge(fCommSocket);
 }
 
-void SSPDAQ::EthernetDevice::DevicePurgeData (void){
+void dunedaq::sspmodules::EthernetDevice::DevicePurgeData (void){
   DevicePurge(fDataSocket);
 }
 
-void SSPDAQ::EthernetDevice::DeviceQueueStatus(unsigned int* numWords){
+void dunedaq::sspmodules::EthernetDevice::DeviceQueueStatus(unsigned int* numWords){
   unsigned int numBytes=fDataSocket.available();
   (*numWords)=numBytes/sizeof(unsigned int);
 }
 
-void SSPDAQ::EthernetDevice::DeviceReceive(std::vector<unsigned int>& data, unsigned int size){
+void dunedaq::sspmodules::EthernetDevice::DeviceReceive(std::vector<unsigned int>& data, unsigned int size){
   data.resize(size);
   unsigned int dataReturned=fDataSocket.read_some(boost::asio::buffer(data));
   if(dataReturned<size*sizeof(unsigned int)){
@@ -71,7 +81,7 @@ void SSPDAQ::EthernetDevice::DeviceReceive(std::vector<unsigned int>& data, unsi
 // Command Functions
 //==============================================================================
 
-void SSPDAQ::EthernetDevice::DeviceRead (unsigned int address, unsigned int* value){
+void dunedaq::sspmodules::EthernetDevice::DeviceRead (unsigned int address, unsigned int* value){
  	dunedaq::dataformats::CtrlPacket tx;
 	dunedaq::dataformats::CtrlPacket rx;
 	unsigned int txSize;
@@ -89,7 +99,7 @@ void SSPDAQ::EthernetDevice::DeviceRead (unsigned int address, unsigned int* val
 	*value = rx.data[0];
 }
 
-void SSPDAQ::EthernetDevice::DeviceReadMask (unsigned int address, unsigned int mask, unsigned int* value)
+void dunedaq::sspmodules::EthernetDevice::DeviceReadMask (unsigned int address, unsigned int mask, unsigned int* value)
 {
 	dunedaq::dataformats::CtrlPacket tx;
 	dunedaq::dataformats::CtrlPacket rx;
@@ -109,7 +119,7 @@ void SSPDAQ::EthernetDevice::DeviceReadMask (unsigned int address, unsigned int 
 	*value = rx.data[0];
 }
 
-void SSPDAQ::EthernetDevice::DeviceWrite (unsigned int address, unsigned int value)
+void dunedaq::sspmodules::EthernetDevice::DeviceWrite (unsigned int address, unsigned int value)
 {
 	dunedaq::dataformats::CtrlPacket tx;
 	dunedaq::dataformats::CtrlPacket rx;
@@ -128,7 +138,7 @@ void SSPDAQ::EthernetDevice::DeviceWrite (unsigned int address, unsigned int val
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 }
 
-void SSPDAQ::EthernetDevice::DeviceWriteMask (unsigned int address, unsigned int mask, unsigned int value)
+void dunedaq::sspmodules::EthernetDevice::DeviceWriteMask (unsigned int address, unsigned int mask, unsigned int value)
 {
 	dunedaq::dataformats::CtrlPacket tx;
 	dunedaq::dataformats::CtrlPacket rx;
@@ -148,17 +158,17 @@ void SSPDAQ::EthernetDevice::DeviceWriteMask (unsigned int address, unsigned int
 	SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 }
 
-void SSPDAQ::EthernetDevice::DeviceSet (unsigned int address, unsigned int mask)
+void dunedaq::sspmodules::EthernetDevice::DeviceSet (unsigned int address, unsigned int mask)
 {
 	DeviceWriteMask(address, mask, 0xFFFFFFFF);
 }
 
-void SSPDAQ::EthernetDevice::DeviceClear (unsigned int address, unsigned int mask)
+void dunedaq::sspmodules::EthernetDevice::DeviceClear (unsigned int address, unsigned int mask)
 {
 	DeviceWriteMask(address, mask, 0x00000000);
 }
 
-void SSPDAQ::EthernetDevice::DeviceArrayRead (unsigned int address, unsigned int size, unsigned int* data)
+void dunedaq::sspmodules::EthernetDevice::DeviceArrayRead (unsigned int address, unsigned int size, unsigned int* data)
 {
 	unsigned int i = 0;
 	dunedaq::dataformats::CtrlPacket tx;
@@ -180,7 +190,7 @@ void SSPDAQ::EthernetDevice::DeviceArrayRead (unsigned int address, unsigned int
 	}
 }
 
-void SSPDAQ::EthernetDevice::DeviceArrayWrite (unsigned int address, unsigned int size, unsigned int* data)
+void dunedaq::sspmodules::EthernetDevice::DeviceArrayWrite (unsigned int address, unsigned int size, unsigned int* data)
 {
 	unsigned int i = 0;
  	dunedaq::dataformats::CtrlPacket tx;
@@ -207,7 +217,7 @@ void SSPDAQ::EthernetDevice::DeviceArrayWrite (unsigned int address, unsigned in
 // Support Functions
 //==============================================================================
 
-void SSPDAQ::EthernetDevice::SendReceive(dunedaq::dataformats::CtrlPacket& tx, dunedaq::dataformats::CtrlPacket& rx,
+void dunedaq::sspmodules::EthernetDevice::SendReceive(dunedaq::dataformats::CtrlPacket& tx, dunedaq::dataformats::CtrlPacket& rx,
 				   unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount)
 {
   unsigned int timesTried=0;
@@ -238,7 +248,7 @@ void SSPDAQ::EthernetDevice::SendReceive(dunedaq::dataformats::CtrlPacket& tx, d
   }
 }
 
-void SSPDAQ::EthernetDevice::SendEthernet(dunedaq::dataformats::CtrlPacket& tx, unsigned int txSize)
+void dunedaq::sspmodules::EthernetDevice::SendEthernet(dunedaq::dataformats::CtrlPacket& tx, unsigned int txSize)
 {
   unsigned int txSizeWritten=fCommSocket.write_some(boost::asio::buffer((void*)(&tx),txSize));
   if(txSizeWritten!=txSize){
@@ -247,7 +257,7 @@ void SSPDAQ::EthernetDevice::SendEthernet(dunedaq::dataformats::CtrlPacket& tx, 
 
 }
 
-void SSPDAQ::EthernetDevice::ReceiveEthernet(dunedaq::dataformats::CtrlPacket& rx, unsigned int rxSizeExpected)
+void dunedaq::sspmodules::EthernetDevice::ReceiveEthernet(dunedaq::dataformats::CtrlPacket& rx, unsigned int rxSizeExpected)
 {
   unsigned int rxSizeReturned=fCommSocket.read_some(boost::asio::buffer((void*)(&rx),rxSizeExpected));
   if(rxSizeReturned!=rxSizeExpected){
@@ -255,7 +265,7 @@ void SSPDAQ::EthernetDevice::ReceiveEthernet(dunedaq::dataformats::CtrlPacket& r
   }
 }
 
-void SSPDAQ::EthernetDevice::DevicePurge(boost::asio::ip::tcp::socket& socket){
+void dunedaq::sspmodules::EthernetDevice::DevicePurge(boost::asio::ip::tcp::socket& socket){
   bool done = false;
   unsigned int bytesQueued = 0;
   unsigned int sleepTime = 0;
@@ -284,3 +294,5 @@ void SSPDAQ::EthernetDevice::DevicePurge(boost::asio::ip::tcp::socket& socket){
   while (!done);
 
 }
+
+#endif // SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_CXX_
