@@ -17,6 +17,9 @@
 // From STD
 #include <chrono>
 #include <iomanip>
+#include <utility>
+#include <string>
+#include <vector>
 
 /**
  * @brief TRACE debug levels used in this source file
@@ -182,72 +185,72 @@ SSPCardWrapper::configure_device(const data_t& /*args*/)
   // bool haveChannelControl=false;
   std::vector< std::pair<std::string,unsigned int>> channelControlEntries;
 
-  /*for (auto regValuesIter=m_hardware_configuration.begin();regValuesIter!=m_hardware_configuration.end();++regValuesIter){
-    std::string name = regValuesIter->regname;
-    std::vector<unsigned int> hexvalues = regValuesIter->hexvalues;
-
-    if (!name.compare(0,14,"ChannelControl")) {
-      channelControlEntries.push_back(make_pair(name,hexvalues[0]));
-      haveChannelControl=true;
-    }
-    //Expect to see a Literals section; take any name starting with "Literal" and parse as hex values: regAddress, regValue, regMask
-    else if(!name.compare(0,7,"Literal")){
-      unsigned int regAddress=hexvalues[0];
-      unsigned int regVal=hexvalues[1];
-      unsigned int regMask=hexvalues.size()>2?hexvalues[2]:0xFFFFFFFF;
-      m_device_interface->SetRegister(regAddress,regVal,regMask);
-    }//End Processing of Literals
-    //Intercept channel_control setting so that we can replace bits with logical values later...
-    else if(!name.substr(4).compare("channel_control")){
-      if(!name.substr(0,4).compare("ELE_")){ //The format expected is ELE_channel_control: register_number, regsiter_value
-        //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-        chControlReg[hexvalues[0]]=hexvalues[1];
-      }
-      else if(!name.substr(0,4).compare("ALL_")){ //All array elements set to same value e.g. ALL_channel_control: 0xDEADBEEF and the register must be one with 12 entries
-        for(unsigned int i=0;i<12;++i){
-          chControlReg[i]=hexvalues[i];
-        }
-      }
-      else if(!name.substr(0,4).compare("ARR_")){ //All array elements individually e.g. ARR_channel_control: 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc
-        for(unsigned int i=0;i<12;++i){
-          chControlReg[i]=hexvalues[i];
-        }
-      }
-    }
-    else if(!name.substr(0,4).compare("ELE_")){ //Single array element
-      //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-      m_device_interface->SetRegisterElementByName(name.substr(4,std::string::npos),hexvalues[0],hexvalues[1]);
-    }
-    else if(!name.substr(0,4).compare("ALL_")){ //All array elements set to same value
-      unsigned int val=hexvalues[0];
-      m_device_interface->SetRegisterArrayByName(name.substr(4,std::string::npos),val);
-    }
-    else if(!name.substr(0,4).compare("ARR_")){ //All array elements individually
-      std::vector<unsigned int> vals;
-      for (unsigned int i=0; i<hexvalues.size(); ++i){
-	vals[i]=hexvalues[i];
-      }
-      m_device_interface->SetRegisterArrayByName(name.substr(4,std::string::npos),vals);
-    }
-    else{ //Individual register not in an array
-      m_device_interface->SetRegisterByName(name,hexvalues[0]);
-    }
-  }
-  //Modify channel control registers and send to hardware
-  if(haveChannelControl){
-    this->build_channel_control_registers(channelControlEntries,chControlReg);
-  }
-  m_device_interface->SetRegisterArrayByName("channel_control",chControlReg);
-
-  //this is all just doing it hardcoded
-
-  //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-  //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),val);// for ALL configs not channel_control
-  //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-  //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals); //for ARR configs not channel_control
-  //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-  //m_device_interface->SetRegisterByName(*hcIter,val); //for things without ARR, ALL, or ELE
-  */
+//  for (auto regValuesIter=m_hardware_configuration.begin();regValuesIter!=m_hardware_configuration.end();++regValuesIter){
+//    std::string name = regValuesIter->regname;
+//    std::vector<unsigned int> hexvalues = regValuesIter->hexvalues;
+//
+//    if (!name.compare(0,14,"ChannelControl")) {
+//      channelControlEntries.push_back(make_pair(name,hexvalues[0]));
+//      haveChannelControl=true;
+//    }
+//    //Expect to see a Literals section; take any name starting with "Literal" and parse as hex values: regAddress, regValue, regMask
+//    else if(!name.compare(0,7,"Literal")){
+//      unsigned int regAddress=hexvalues[0];
+//      unsigned int regVal=hexvalues[1];
+//      unsigned int regMask=hexvalues.size()>2?hexvalues[2]:0xFFFFFFFF;
+//      m_device_interface->SetRegister(regAddress,regVal,regMask);
+//    }//End Processing of Literals
+//    //Intercept channel_control setting so that we can replace bits with logical values later...
+//    else if(!name.substr(4).compare("channel_control")){
+//      if(!name.substr(0,4).compare("ELE_")){ //The format expected is ELE_channel_control: register_number, regsiter_value
+//        //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
+//        chControlReg[hexvalues[0]]=hexvalues[1];
+//      }
+//      else if(!name.substr(0,4).compare("ALL_")){ //All array elements set to same value e.g. ALL_channel_control: 0xDEADBEEF and the register must be one with 12 entries
+//        for(unsigned int i=0;i<12;++i){
+//          chControlReg[i]=hexvalues[i];
+//        }
+//      }
+//      else if(!name.substr(0,4).compare("ARR_")){ //All array elements individually e.g. ARR_channel_control: 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc
+//        for(unsigned int i=0;i<12;++i){
+//          chControlReg[i]=hexvalues[i];
+//        }
+//      }
+//    }
+//    else if(!name.substr(0,4).compare("ELE_")){ //Single array element
+//      //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
+//      m_device_interface->SetRegisterElementByName(name.substr(4,std::string::npos),hexvalues[0],hexvalues[1]);
+//    }
+//    else if(!name.substr(0,4).compare("ALL_")){ //All array elements set to same value
+//      unsigned int val=hexvalues[0];
+//      m_device_interface->SetRegisterArrayByName(name.substr(4,std::string::npos),val);
+//    }
+//    else if(!name.substr(0,4).compare("ARR_")){ //All array elements individually
+//      std::vector<unsigned int> vals;
+//      for (unsigned int i=0; i<hexvalues.size(); ++i){
+//	vals[i]=hexvalues[i];
+//      }
+//      m_device_interface->SetRegisterArrayByName(name.substr(4,std::string::npos),vals);
+//    }
+//    else{ //Individual register not in an array
+//      m_device_interface->SetRegisterByName(name,hexvalues[0]);
+//    }
+//  }
+//  //Modify channel control registers and send to hardware
+//  if(haveChannelControl){
+//    this->build_channel_control_registers(channelControlEntries,chControlReg);
+//  }
+//  m_device_interface->SetRegisterArrayByName("channel_control",chControlReg);
+//
+//  //this is all just doing it hardcoded
+//
+//  //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
+//  //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),val);// for ALL configs not channel_control
+//  //std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
+//  //m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals); //for ARR configs not channel_control
+//  //unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
+//  //m_device_interface->SetRegisterByName(*hcIter,val); //for things without ARR, ALL, or ELE
+//
 
   //std::vector<unsigned int> chControlReg(12,0);
   for(unsigned int i=0;i<12;++i){
@@ -326,8 +329,7 @@ SSPCardWrapper::build_channel_control_registers(const std::vector< std::pair<std
 	  } catch (...) {}
 	  //throw SSPDAQ::EDAQConfigError("");
 	}
-      }
-      else if(!ccIter->first.compare("ChannelControl_LEDTrigger")){
+      } else if (!ccIter->first.compare("ChannelControl_LEDTrigger")){
 	unsigned int val=ccIter->second;
 	switch(val){
 	case 1:                          //Negative edge
@@ -351,8 +353,7 @@ SSPCardWrapper::build_channel_control_registers(const std::vector< std::pair<std
 	  } catch (...) {}
 	  //throw SSPDAQ::EDAQConfigError("");
 	}
-      }
-      else if(!ccIter->first.compare("ChannelControl_TimestampRate")){
+      } else if (!ccIter->first.compare("ChannelControl_TimestampRate")){
 	unsigned int val=ccIter->second;
 	if(val>7){
 	  try {
@@ -485,28 +486,28 @@ SSPCardWrapper::process_ssp()
 } // namespace sspmodules
 } // namespace dunedaq
 
-/*ssp101_standard: @local::ssp_standard
-ssp101_standard.fragment_receiver.fragment_id: 11
-ssp101_standard.fragment_receiver.board_id: 11
-ssp101_standard.fragment_receiver.timing_address: 0x20
-ssp101_standard.fragment_receiver.board_ip: "10.73.137.56"
-ssp101_standard.fragment_receiver.HardwareConfig.module_id: 11
-ssp101_standard.metrics.dim.IDName: "ssp101"
-
-ssp304_standard: @local::ssp_standard
-ssp304_standard.fragment_receiver.fragment_id: 34
-ssp304_standard.fragment_receiver.board_id: 34
-ssp304_standard.fragment_receiver.timing_address: 0x2B
-ssp304_standard.fragment_receiver.board_ip: "10.73.137.79"
-ssp304_standard.fragment_receiver.HardwareConfig.module_id: 34
-ssp304_standard.metrics.dim.IDName: "ssp304"
-
-ssp603_standard: @local::ssp_standard
-ssp603_standard.fragment_receiver.fragment_id: 63
-ssp603_standard.fragment_receiver.board_id: 63
-ssp603_standard.fragment_receiver.timing_address: 0x36
-ssp603_standard.fragment_receiver.board_ip: "10.73.137.74"
-ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63
-ssp603_standard.metrics.dim.IDName: "ssp603" */
+//ssp101_standard: @local::ssp_standard
+//ssp101_standard.fragment_receiver.fragment_id: 11
+//ssp101_standard.fragment_receiver.board_id: 11
+//ssp101_standard.fragment_receiver.timing_address: 0x20
+//ssp101_standard.fragment_receiver.board_ip: "10.73.137.56"
+//ssp101_standard.fragment_receiver.HardwareConfig.module_id: 11
+//ssp101_standard.metrics.dim.IDName: "ssp101"
+//
+//ssp304_standard: @local::ssp_standard
+//ssp304_standard.fragment_receiver.fragment_id: 34
+//ssp304_standard.fragment_receiver.board_id: 34
+//ssp304_standard.fragment_receiver.timing_address: 0x2B
+//ssp304_standard.fragment_receiver.board_ip: "10.73.137.79"
+//ssp304_standard.fragment_receiver.HardwareConfig.module_id: 34
+//ssp304_standard.metrics.dim.IDName: "ssp304"
+//
+//ssp603_standard: @local::ssp_standard
+//ssp603_standard.fragment_receiver.fragment_id: 63
+//ssp603_standard.fragment_receiver.board_id: 63
+//ssp603_standard.fragment_receiver.timing_address: 0x36
+//ssp603_standard.fragment_receiver.board_ip: "10.73.137.74"
+//ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63
+//ssp603_standard.metrics.dim.IDName: "ssp603"
 
 #endif // SSPMODULES_SRC_SSPCARDWRAPPER_CPP_

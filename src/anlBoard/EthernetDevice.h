@@ -16,7 +16,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>

@@ -19,6 +19,8 @@
 #include <random>
 #include <chrono>
 #include <iostream>
+#include <memory>
+#include <vector>
 
 dunedaq::sspmodules::EmulatedDevice::EmulatedDevice(unsigned int deviceNumber){
   fDeviceNumber=deviceNumber;
@@ -63,8 +65,7 @@ void dunedaq::sspmodules::EmulatedDevice::DeviceReceive(std::vector<unsigned int
     bool gotData=fEmulatedBuffer.try_pop(element,std::chrono::microseconds(1000));
     if(gotData){
       data.push_back(element);
-	}
-    else{
+	} else {
       break;
     }
   }
@@ -93,8 +94,7 @@ void dunedaq::sspmodules::EmulatedDevice::DeviceWrite (unsigned int address, uns
   dunedaq::sspmodules::RegMap& duneReg=dunedaq::sspmodules::RegMap::Get();
   if(address==duneReg.master_logic_control&&value==0x00000001){
     this->Start();
-  }
-  else if(address==duneReg.event_data_control&&value==0x00020001){
+  } else if (address==duneReg.event_data_control&&value==0x00020001){
     this->Stop();
   }
 }
@@ -167,7 +167,7 @@ void dunedaq::sspmodules::EmulatedDevice::EmulatorLoop(){
     double waitTime = timeDistribution(generator);
     usleep(int(waitTime));
     std::chrono::steady_clock::time_point eventTime = std::chrono::steady_clock::now();
-    unsigned long eventTimestamp = (std::chrono::duration_cast<std::chrono::duration<unsigned long,std::ratio<1, 150000000>>>(eventTime - runStartTime)).count();//150MHz clock
+    unsigned long eventTimestamp = (std::chrono::duration_cast<std::chrono::duration<unsigned long,std::ratio<1, 150000000>>>(eventTime - runStartTime)).count(); //150MHz clock // NOLINT(runtime/int)
     int channel = channelDistribution(generator);
 
     //Build an event header. 

@@ -10,16 +10,21 @@
 
 #include "appfwk/app/Nljs.hpp"
 #include "sspmodules/sspcardreader/Nljs.hpp"
-
 #include "readout/ReadoutTypes.hpp"
 
 #include "DeviceInterface.h"
 #include "anlExceptions.h"
-//#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "RegMap.h"
-#include <time.h>
-#include <utility>
+//#include "dune-artdaq/DAQLogger/DAQLogger.hh"
+
 #include "boost/asio.hpp"
+
+#include <ctime>
+#include <utility>
+#include <memory>
+#include <string>
+#include <algorithm>
+#include <vector>
 
 enum
 {
@@ -146,12 +151,12 @@ void dunedaq::sspmodules::DeviceInterface::Stop(){
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Stop complete.";
 }
 
-/*void dunedaq::sspmodules::DeviceInterface::StartRequestReceiver(std::string address){
-
-  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "Subscribing to software triggers at "<<address<<" and ignoring hardware triggers."<<std::endl;
-  fRequestReceiver=new RequestReceiver(address);
-  }*/
+//void dunedaq::sspmodules::DeviceInterface::StartRequestReceiver(std::string address){
+//
+//  //dune::DAQLogger::LogInfo("SSP_DeviceInterface")<<
+//  TLOG_DEBUG(TLVL_WORK_STEPS) << "Subscribing to software triggers at "<<address<<" and ignoring hardware triggers."<<std::endl;
+//  fRequestReceiver=new RequestReceiver(address);
+//  }
 
 void dunedaq::sspmodules::DeviceInterface::Start(){
 
@@ -228,26 +233,26 @@ void dunedaq::sspmodules::DeviceInterface::HardwareReadLoop(){
 
     newPacket.DumpHeader();
 
-    /*unsigned long m_external_packetTime = 0;
-    for(unsigned int iWord=0;iWord<=3;++iWord){
-      m_external_packetTime += ((unsigned long)(newPacket.header.timestamp[iWord]))<<16*iWord;
-    }
-    unsigned long m_internal_packetTime = 0;
-    for (unsigned int iWord = 1; iWord <= 3; ++iWord){
-      m_internal_packetTime += ((unsigned long)(newPacket.header.intTimestamp[iWord]))<<16*(iWord-1);
-    }
-
-    unsigned long m_internal_pretrig_time = m_internal_packetTime - fPreTrigLength;
-    unsigned long m_internal_posttrig_time = m_internal_packetTime + fPostTrigLength;
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) << std::endl << " GetTimestamp return value: " << GetTimestamp(newPacket.header) << std::endl
-                                << " external packetTime: " << m_external_packetTime << std::endl
-				<< " raw internal packetTime: " << m_internal_packetTime
-                                << " raw internal pretrig Time: " << m_internal_pretrig_time
-                                << " raw internal posttrig Time: " << m_internal_posttrig_time << std::endl
-				<< " scaled internal packetTime: " << m_internal_packetTime/3
-                                << " scaled internal pretrig Time: " << m_internal_pretrig_time/3
-                                << " scaled internal posttrig Time: " << m_internal_posttrig_time/3;*/
+//    unsigned long m_external_packetTime = 0;
+//    for(unsigned int iWord=0;iWord<=3;++iWord){
+//      m_external_packetTime += ((unsigned long)(newPacket.header.timestamp[iWord]))<<16*iWord;
+//    }
+//    unsigned long m_internal_packetTime = 0;
+//    for (unsigned int iWord = 1; iWord <= 3; ++iWord){
+//      m_internal_packetTime += ((unsigned long)(newPacket.header.intTimestamp[iWord]))<<16*(iWord-1);
+//    }
+//
+//    unsigned long m_internal_pretrig_time = m_internal_packetTime - fPreTrigLength;
+//    unsigned long m_internal_posttrig_time = m_internal_packetTime + fPostTrigLength;
+//
+//    TLOG_DEBUG(TLVL_WORK_STEPS) << std::endl << " GetTimestamp return value: " << GetTimestamp(newPacket.header) << std::endl
+//                                << " external packetTime: " << m_external_packetTime << std::endl
+//				<< " raw internal packetTime: " << m_internal_packetTime
+//                                << " raw internal pretrig Time: " << m_internal_pretrig_time
+//                                << " raw internal posttrig Time: " << m_internal_posttrig_time << std::endl
+//				<< " scaled internal packetTime: " << m_internal_packetTime/3
+//                                << " scaled internal pretrig Time: " << m_internal_pretrig_time/3
+//                                << " scaled internal posttrig Time: " << m_internal_posttrig_time/3;
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead getting mutex..."<<std::endl;
     std::unique_lock<std::mutex> mlock(fBufferMutex);
@@ -276,68 +281,67 @@ void dunedaq::sspmodules::DeviceInterface::HardwareReadLoop(){
     // fall over.                                                //
     ///////////////////////////////////////////////////////////////
 
-    /*    if(fRequestReceiver){
-      while(true){
-	auto t=fRequestReceiver->getNextRequest(0);
-	if(t.timestamp==0){
-	  break;
-	}
-
-        auto localTimestamp = t.timestamp*3 - fFragmentTimestampOffset;
-
-	SSPDAQ::TriggerInfo newTrigger;
-
-	newTrigger.triggerTime=localTimestamp;
-	newTrigger.startTime=localTimestamp-fPreTrigLength;
-	newTrigger.endTime=localTimestamp+fPostTrigLength;
-	newTrigger.triggerType=0xFFFF;
-	fTriggers.push(newTrigger);
-      }
-    }
-    else{
-
-      SSPDAQ::TriggerInfo newTrigger;
-
-      if(this->GetTriggerInfo(fPacketBuffer.back(),newTrigger)){
-	if(fTriggers.size()&&(newTrigger.startTime<fTriggers.back().endTime)){
-	  //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Seen trigger with start time overlapping with previous, falling over!"<<std::endl;
-	  throw(EEventReadError());
-	  //	set_exception(true);
-	  return;
-	}
-	fTriggers.push(newTrigger);
-      }
-    }
-
-    ////////////////////////////////////////////////////////////
-    //Cull old packets which are not associated with a trigger//
-    ////////////////////////////////////////////////////////////
-
-    unsigned long packetTime = GetTimestamp(fPacketBuffer.back().header);
-    unsigned long firstInterestingTime;
-
-    if (fTriggers.size()){
-      firstInterestingTime = fTriggers.front().startTime - fTriggerWriteDelay;
-    } else {
-      firstInterestingTime = packetTime - fPreTrigLength - fTriggerLatency - fTriggerWriteDelay;
-    }
-
-    auto globalTimestamp = (packetTime + fFragmentTimestampOffset) / 3;
-
-
-    auto frontTS = GetTimestamp(fPacketBuffer.front().header);
-    auto dropCount = 0;
-    while ( GetTimestamp(fPacketBuffer.front().header) < firstInterestingTime ) {
-      fPacketBuffer.pop_front();
-      dropCount++;
-      }
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime
-				<< " firstInterestingTime: " << firstInterestingTime
-				<< " frontTS: " << frontTS
-				<< " globalTS: " << globalTimestamp
-				<< " dropped: " << dropCount;
-    */
+//        if(fRequestReceiver){
+//      while(true){
+//	auto t=fRequestReceiver->getNextRequest(0);
+//	if(t.timestamp==0){
+//	  break;
+//	}
+//
+//        auto localTimestamp = t.timestamp*3 - fFragmentTimestampOffset;
+//
+//	SSPDAQ::TriggerInfo newTrigger;
+//
+//	newTrigger.triggerTime=localTimestamp;
+//	newTrigger.startTime=localTimestamp-fPreTrigLength;
+//	newTrigger.endTime=localTimestamp+fPostTrigLength;
+//	newTrigger.triggerType=0xFFFF;
+//	fTriggers.push(newTrigger);
+//      }
+//    }
+//    else{
+//
+//      SSPDAQ::TriggerInfo newTrigger;
+//
+//      if(this->GetTriggerInfo(fPacketBuffer.back(),newTrigger)){
+//	if(fTriggers.size()&&(newTrigger.startTime<fTriggers.back().endTime)){
+//	  //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Seen trigger with start time overlapping with previous, falling over!"<<std::endl;
+//	  throw(EEventReadError());
+//	  //	set_exception(true);
+//	  return;
+//	}
+//	fTriggers.push(newTrigger);
+//      }
+//    }
+//
+//    ////////////////////////////////////////////////////////////
+//    //Cull old packets which are not associated with a trigger//
+//    ////////////////////////////////////////////////////////////
+//
+//    unsigned long packetTime = GetTimestamp(fPacketBuffer.back().header);
+//    unsigned long firstInterestingTime;
+//
+//    if (fTriggers.size()){
+//      firstInterestingTime = fTriggers.front().startTime - fTriggerWriteDelay;
+//    } else {
+//      firstInterestingTime = packetTime - fPreTrigLength - fTriggerLatency - fTriggerWriteDelay;
+//    }
+//
+//    auto globalTimestamp = (packetTime + fFragmentTimestampOffset) / 3;
+//
+//
+//    auto frontTS = GetTimestamp(fPacketBuffer.front().header);
+//    auto dropCount = 0;
+//    while ( GetTimestamp(fPacketBuffer.front().header) < firstInterestingTime ) {
+//      fPacketBuffer.pop_front();
+//      dropCount++;
+//      }
+//
+//    TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime
+//				<< " firstInterestingTime: " << firstInterestingTime
+//				<< " frontTS: " << frontTS
+//				<< " globalTS: " << globalTimestamp
+//				<< " dropped: " << dropCount;
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "HWRead releasing mutex..."<<std::endl;
     mlock.unlock();
@@ -368,7 +372,7 @@ void dunedaq::sspmodules::DeviceInterface::ReadEvent(std::vector<unsigned int>& 
     return;
   }
   TLOG_DEBUG(TLVL_WORK_STEPS) << "ReadEvent thread got mutex!" << std::endl;
-  unsigned long packetTime = GetTimestamp(fPacketBuffer.back().header);
+  unsigned long packetTime = GetTimestamp(fPacketBuffer.back().header);   // NOLINT(runtime/int)
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime: " << packetTime;
 
@@ -383,17 +387,16 @@ void dunedaq::sspmodules::DeviceInterface::ReadEvent(std::vector<unsigned int>& 
 
 }
 
-
 bool dunedaq::sspmodules::DeviceInterface::GetTriggerInfo(const dunedaq::sspmodules::EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger){
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface GetTriggerInfo called.";
-  static unsigned long currentTriggerTime=0;
+  static unsigned long currentTriggerTime=0;              // NOLINT(runtime/int)
   static bool channelsSeen[12]={false};
 
-  static unsigned long lastDummyTrigger=0;
+  static unsigned long lastDummyTrigger=0;                // NOLINT(runtime/int)
 
   int channel=event.header.group2&0x000F;
-  unsigned long packetTime=GetTimestamp(event.header);
+  unsigned long packetTime=GetTimestamp(event.header);    // NOLINT(runtime/int)
 
   if(fDummyPeriod>0&&(lastDummyTrigger!=packetTime/fDummyPeriod)){
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Generating dummy trigger for packet around "<<packetTime<<"!"<<std::endl;
@@ -415,8 +418,7 @@ bool dunedaq::sspmodules::DeviceInterface::GetTriggerInfo(const dunedaq::sspmodu
     if(!channelsSeen[channel]&&packetTime<currentTriggerTime+1000){
       channelsSeen[channel]=true;
       TLOG_DEBUG(TLVL_WORK_STEPS) << "Packet contains trigger word but this trigger was already generated from another channel"<<std::endl;
-    }
-    else{
+    } else {
       currentTriggerTime=packetTime;
       newTrigger.triggerTime=currentTriggerTime;
       newTrigger.startTime=currentTriggerTime-fPreTrigLength;
@@ -447,7 +449,7 @@ void dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodul
   auto lastPacket = fPacketBuffer.begin();
 
   for (auto packetIter=fPacketBuffer.begin(); packetIter != fPacketBuffer.end(); ++packetIter) {
-    unsigned long packetTime = GetTimestamp(packetIter->header);
+    unsigned long packetTime = GetTimestamp(packetIter->header);    // NOLINT(runtime/int)
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "packetTime=" << packetTime
       << " triggerTime=[" << theTrigger.startTime << " to " << theTrigger.endTime << "]";
@@ -458,13 +460,12 @@ void dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodul
   }
 
   for(auto packetIter=fPacketBuffer.begin();;++packetIter){
-    unsigned long packetTime=GetTimestamp(packetIter->header);
+    unsigned long packetTime=GetTimestamp(packetIter->header);      // NOLINT(runtime/int)
 
     if(packetTime>=theTrigger.startTime){
       if(packetTime>=theTrigger.endTime){
 	eventsToPutBack.push_back(std::move(*packetIter));
-      }
-      else{
+      } else {
 	eventsToWrite.push_back(&*packetIter);
       }
     }
@@ -537,8 +538,7 @@ void dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodul
   if(lastPacket==fPacketBuffer.begin()){
     fPacketBuffer.pop_front();
     ++nDropped;
-  }
-  else{
+  } else {
     for(auto packetIter=(fPacketBuffer.begin())++;packetIter!=lastPacket;++packetIter){
       fPacketBuffer.pop_front();
       ++nDropped;
@@ -560,17 +560,17 @@ void dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodul
 //  this->BuildMillislice(emptySlice,startTime,endTime);
 //}
 
-/*void SSPDAQ::DeviceInterface::GetMillislice(std::vector<unsigned int>& sliceData){
-  if(fQueue.try_pop(sliceData,std::chrono::microseconds(100000))){
-    ++fMillislicesSent;//Try to pop from queue for 100ms
-    if(!(fMillislicesSent%1000)){
-    dune::DAQLogger::LogDebug("SSP_DeviceInterface")<<this->GetIdentifier()
-		       <<"Interface sending slice "<<fMillislicesSent
-		       <<", total built slices "<<fMillislicesBuilt
-		       <<", current queue length "<<fQueue.size()<<std::endl;
-    }
-  }
-  }*/
+//void SSPDAQ::DeviceInterface::GetMillislice(std::vector<unsigned int>& sliceData){
+//  if(fQueue.try_pop(sliceData,std::chrono::microseconds(100000))){
+//    ++fMillislicesSent;//Try to pop from queue for 100ms
+//    if(!(fMillislicesSent%1000)){
+//    dune::DAQLogger::LogDebug("SSP_DeviceInterface")<<this->GetIdentifier()
+//		       <<"Interface sending slice "<<fMillislicesSent
+//		       <<", total built slices "<<fMillislicesBuilt
+//		       <<", current queue length "<<fQueue.size()<<std::endl;
+//    }
+//  }
+//}
 
 void dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event){
 
@@ -718,8 +718,7 @@ void dunedaq::sspmodules::DeviceInterface::SetRegister(unsigned int address, uns
 
   if(mask==0xFFFFFFFF){
     fDevice->DeviceWrite(address,value);
-  }
-  else{
+  } else {
     fDevice->DeviceWriteMask(address,mask,value);
   }
 }
@@ -739,8 +738,7 @@ void dunedaq::sspmodules::DeviceInterface::ReadRegister(unsigned int address, un
 
   if(mask==0xFFFFFFFF){
     fDevice->DeviceRead(address,&value);
-  }
-  else{
+  } else {
     fDevice->DeviceReadMask(address,mask,&value);
   }
 }
@@ -837,8 +835,7 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
     TLOG() << "Error: Non-functioning interface type set: "<< fCommType
 	     << "so forcing an exit and having none of this USB based SSP crap." << std::endl;
     exit(424);
-  }
-  else{
+  } else {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Board IP is listed as: " << m_cfg.board_ip << std::endl;
       fDeviceId = inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");
   }
@@ -890,8 +887,7 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
 
     TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
 
-  }
-  else{
+  } else {
 
     TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
 				<<", endpoint address "<<std::hex<<fTimingAddress
@@ -928,8 +924,7 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
     if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
       TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
-    }
-    else{
+    } else {
       TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
       TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
 				  <<std::hex<<pdts_status<<std::dec<<std::endl;
@@ -951,165 +946,165 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
 
   TLOG_DEBUG(TLVL_WORK_STEPS)<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
 
-  /*  SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
-
-  	// Setting up some constants to use during initialization
-	const uint	module_id		= 0xABC;	// This value is reported in the event header
-	const uint	channel_control[12] =
-	//	Channel Control Bit Descriptions
-	//	31		cfd_enable
-	//	30		pileup_waveform_only
-	//	26		pileup_extend_enable
-	//	25:24	event_extend_mode
-	//	23		disc_counter_mode
-	//	22		ahit_counter_mode
-	//	21		ACCEPTED_EVENT_COUNTER_MODE
-	//	20		dropped_event_counter_mode
-	//	15:14	external_disc_flag_sel
-	//	13:12	external_disc_mode
-	//	11		negative edge trigger enable
-	//	10		positive edge trigger enable
-	//	6:4		This sets the timestamp trigger rate (source of external_disc_flag_in(3) into channel logic)
-	//	2		Not pileup_disable
-	//	1		Trigger Mode
-	//	0		channel enable
-	//
-	//	Channel Control Examples
-	//	0x00000000,		// disable channel #
-	//	0x80F00001,		// enable channel # but do not enable any triggers (CFD Enabled)
-	//	0x80F00401,		// configure channel # in positive self-trigger mode (CFD Enabled)
-	//	0x80F00801,		// configure channel # in negative self-trigger mode (CFD Enabled)
-	//	0x80F00C01,		// configure channel # in positive and negative self-trigger mode (CFD Enabled)
-	//	0x00F06001,		// configure channel # in external trigger mode.
-	//	0x00F0E051,		// configure channel # in a slow timestamp triggered mode (8.941Hz)
-	//	0x00F0E061,		// configure channel # in a very slow timestamp triggered mode (1.118Hz)
-	{
-		0x00F0E0C1,		// configure channel #0 in a slow timestamp triggered mode
-		0x00000000,		// disable channel #1
-		0x00000000,		// disable channel #2
-		0x00000000,		// disable channel #3
-		0x00000000,		// disable channel #4
-		0x00000000,		// disable channel #5
-		0x00000000,		// disable channel #6
-		0x00000000,		// disable channel #7
-		0x00000000,		// disable channel #8
-		0x00000000,		// disable channel #9
-		0x00000000,		// disable channel #10
-		0x00000000,		// disable channel #11
-	};
-	const uint	led_threshold		= 25;
-	const uint	cfd_fraction		= 0x1800;
-	const uint	readout_pretrigger	= 100;
-	const uint	event_packet_length	= 2046;
-	const uint	p_window			= 0;
-	const uint	i2_window			= 500;
-	const uint	m1_window			= 10;
-	const uint	m2_window			= 10;
-	const uint	d_window			= 20;
-	const uint  i1_window			= 500;
-	const uint	disc_width			= 10;
-	const uint	baseline_start		= 0x0000;
-	const uint	baseline_delay		= 5;
-
-	int i = 0;
-	uint data[12];
-
-	// This script of register writes sets up the digitizer for basic real event operation
-	// Comments next to each register are excerpts from the VHDL or C code
-	// ALL existing registers are shown here however many are commented out because they are
-	// status registers or simply don't need to be modified
-	// The script runs through the registers numerically (increasing addresses)
-	// Therefore, it is assumed DeviceStopReset() has been called so these changes will not
-	// cause crazy things to happen along the way
-
-	fDevice->DeviceWrite(duneReg.c2c_control,0x00000007);
-	fDevice->DeviceWrite(duneReg.c2c_master_intr_control,0x00000000);
-	fDevice->DeviceWrite(duneReg.comm_clock_control,0x00000001);
-	fDevice->DeviceWrite(duneReg.comm_led_config, 0x00000000);
-	fDevice->DeviceWrite(duneReg.comm_led_input, 0x00000000);
-	fDevice->DeviceWrite(duneReg.qi_dac_config,0x00000000);
-	fDevice->DeviceWrite(duneReg.qi_dac_control,0x00000001);
-
-	fDevice->DeviceWrite(duneReg.bias_config[0],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[1],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[2],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[3],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[4],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[5],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[6],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[7],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[8],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[9],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[10],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_config[11],0x00000000);
-	fDevice->DeviceWrite(duneReg.bias_control,0x00000001);
-
-	fDevice->DeviceWrite(duneReg.vmon_config,0x0012F000);
-	fDevice->DeviceWrite(duneReg.vmon_select,0x00FFFF00);
-	fDevice->DeviceWrite(duneReg.vmon_gpio,0x00000000);
-	fDevice->DeviceWrite(duneReg.vmon_control,0x00010001);
-	fDevice->DeviceWrite(duneReg.imon_config,0x0012F000);
-	fDevice->DeviceWrite(duneReg.imon_select,0x00FFFF00);
-	fDevice->DeviceWrite(duneReg.imon_gpio,0x00000000);
-	fDevice->DeviceWrite(duneReg.imon_control,0x00010001);
-
-	//Registers in the Artix FPGA (DSP)//AddressDefault ValueRead MaskWrite MaskCode Name
-	fDevice->DeviceWrite(duneReg.module_id,module_id);
-	fDevice->DeviceWrite(duneReg.c2c_slave_intr_control,0x00000000);
-
-	for (i = 0; i < 12; i++) data[i] = channel_control[i];
-	fDevice->DeviceArrayWrite(duneReg.channel_control[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = led_threshold;
-	fDevice->DeviceArrayWrite(duneReg.led_threshold[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = cfd_fraction;
-	fDevice->DeviceArrayWrite(duneReg.cfd_parameters[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = readout_pretrigger;
-	fDevice->DeviceArrayWrite(duneReg.readout_pretrigger[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = event_packet_length;
-	fDevice->DeviceArrayWrite(duneReg.readout_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = p_window;
-	fDevice->DeviceArrayWrite(duneReg.p_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = i2_window;
-	fDevice->DeviceArrayWrite(duneReg.i2_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = m1_window;
-	fDevice->DeviceArrayWrite(duneReg.m1_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = m2_window;
-	fDevice->DeviceArrayWrite(duneReg.m2_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = d_window;
-	fDevice->DeviceArrayWrite(duneReg.d_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = i1_window;
-	fDevice->DeviceArrayWrite(duneReg.i1_window[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = disc_width;
-	fDevice->DeviceArrayWrite(duneReg.disc_width[0], 12, data);
-
-	for (i = 0; i < 12; i++) data[i] = baseline_start;
-	fDevice->DeviceArrayWrite(duneReg.baseline_start[0], 12, data);
-
-	fDevice->DeviceWrite(duneReg.trigger_input_delay,0x00000001);
-	fDevice->DeviceWrite(duneReg.gpio_output_width,0x00001000);
-	fDevice->DeviceWrite(duneReg.front_panel_config, 0x00001111);
-	fDevice->DeviceWrite(duneReg.dsp_led_config,0x00000000);
-	fDevice->DeviceWrite(duneReg.dsp_led_input, 0x00000000);
-	fDevice->DeviceWrite(duneReg.baseline_delay,baseline_delay);
-	fDevice->DeviceWrite(duneReg.diag_channel_input,0x00000000);
-	fDevice->DeviceWrite(duneReg.qi_config,0x0FFF1F00);
-	fDevice->DeviceWrite(duneReg.qi_delay,0x00000000);
-	fDevice->DeviceWrite(duneReg.qi_pulse_width,0x00000000);
-	fDevice->DeviceWrite(duneReg.external_gate_width,0x00008000);
-	//fDevice->DeviceWrite(duneReg.dsp_clock_control,0x00000000);
-
-	// Load the window settings - This MUST be the last operation */
+//    SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
+//
+//  	// Setting up some constants to use during initialization
+//	const uint	module_id		= 0xABC;	// This value is reported in the event header
+//	const uint	channel_control[12] =
+//	//	Channel Control Bit Descriptions
+//	//	31		cfd_enable
+//	//	30		pileup_waveform_only
+//	//	26		pileup_extend_enable
+//	//	25:24	event_extend_mode
+//	//	23		disc_counter_mode
+//	//	22		ahit_counter_mode
+//	//	21		ACCEPTED_EVENT_COUNTER_MODE
+//	//	20		dropped_event_counter_mode
+//	//	15:14	external_disc_flag_sel
+//	//	13:12	external_disc_mode
+//	//	11		negative edge trigger enable
+//	//	10		positive edge trigger enable
+//	//	6:4		This sets the timestamp trigger rate (source of external_disc_flag_in(3) into channel logic)
+//	//	2		Not pileup_disable
+//	//	1		Trigger Mode
+//	//	0		channel enable
+//	//
+//	//	Channel Control Examples
+//	//	0x00000000,		// disable channel #
+//	//	0x80F00001,		// enable channel # but do not enable any triggers (CFD Enabled)
+//	//	0x80F00401,		// configure channel # in positive self-trigger mode (CFD Enabled)
+//	//	0x80F00801,		// configure channel # in negative self-trigger mode (CFD Enabled)
+//	//	0x80F00C01,		// configure channel # in positive and negative self-trigger mode (CFD Enabled)
+//	//	0x00F06001,		// configure channel # in external trigger mode.
+//	//	0x00F0E051,		// configure channel # in a slow timestamp triggered mode (8.941Hz)
+//	//	0x00F0E061,		// configure channel # in a very slow timestamp triggered mode (1.118Hz)
+//	{
+//		0x00F0E0C1,		// configure channel #0 in a slow timestamp triggered mode
+//		0x00000000,		// disable channel #1
+//		0x00000000,		// disable channel #2
+//		0x00000000,		// disable channel #3
+//		0x00000000,		// disable channel #4
+//		0x00000000,		// disable channel #5
+//		0x00000000,		// disable channel #6
+//		0x00000000,		// disable channel #7
+//		0x00000000,		// disable channel #8
+//		0x00000000,		// disable channel #9
+//		0x00000000,		// disable channel #10
+//		0x00000000,		// disable channel #11
+//	};
+//	const uint	led_threshold		= 25;
+//	const uint	cfd_fraction		= 0x1800;
+//	const uint	readout_pretrigger	= 100;
+//	const uint	event_packet_length	= 2046;
+//	const uint	p_window			= 0;
+//	const uint	i2_window			= 500;
+//	const uint	m1_window			= 10;
+//	const uint	m2_window			= 10;
+//	const uint	d_window			= 20;
+//	const uint  i1_window			= 500;
+//	const uint	disc_width			= 10;
+//	const uint	baseline_start		= 0x0000;
+//	const uint	baseline_delay		= 5;
+//
+//	int i = 0;
+//	uint data[12];
+//
+//	// This script of register writes sets up the digitizer for basic real event operation
+//	// Comments next to each register are excerpts from the VHDL or C code
+//	// ALL existing registers are shown here however many are commented out because they are
+//	// status registers or simply don't need to be modified
+//	// The script runs through the registers numerically (increasing addresses)
+//	// Therefore, it is assumed DeviceStopReset() has been called so these changes will not
+//	// cause crazy things to happen along the way
+//
+//	fDevice->DeviceWrite(duneReg.c2c_control,0x00000007);
+//	fDevice->DeviceWrite(duneReg.c2c_master_intr_control,0x00000000);
+//	fDevice->DeviceWrite(duneReg.comm_clock_control,0x00000001);
+//	fDevice->DeviceWrite(duneReg.comm_led_config, 0x00000000);
+//	fDevice->DeviceWrite(duneReg.comm_led_input, 0x00000000);
+//	fDevice->DeviceWrite(duneReg.qi_dac_config,0x00000000);
+//	fDevice->DeviceWrite(duneReg.qi_dac_control,0x00000001);
+//
+//	fDevice->DeviceWrite(duneReg.bias_config[0],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[1],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[2],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[3],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[4],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[5],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[6],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[7],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[8],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[9],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[10],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_config[11],0x00000000);
+//	fDevice->DeviceWrite(duneReg.bias_control,0x00000001);
+//
+//	fDevice->DeviceWrite(duneReg.vmon_config,0x0012F000);
+//	fDevice->DeviceWrite(duneReg.vmon_select,0x00FFFF00);
+//	fDevice->DeviceWrite(duneReg.vmon_gpio,0x00000000);
+//	fDevice->DeviceWrite(duneReg.vmon_control,0x00010001);
+//	fDevice->DeviceWrite(duneReg.imon_config,0x0012F000);
+//	fDevice->DeviceWrite(duneReg.imon_select,0x00FFFF00);
+//	fDevice->DeviceWrite(duneReg.imon_gpio,0x00000000);
+//	fDevice->DeviceWrite(duneReg.imon_control,0x00010001);
+//
+//	//Registers in the Artix FPGA (DSP)//AddressDefault ValueRead MaskWrite MaskCode Name
+//	fDevice->DeviceWrite(duneReg.module_id,module_id);
+//	fDevice->DeviceWrite(duneReg.c2c_slave_intr_control,0x00000000);
+//
+//	for (i = 0; i < 12; i++) data[i] = channel_control[i];
+//	fDevice->DeviceArrayWrite(duneReg.channel_control[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = led_threshold;
+//	fDevice->DeviceArrayWrite(duneReg.led_threshold[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = cfd_fraction;
+//	fDevice->DeviceArrayWrite(duneReg.cfd_parameters[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = readout_pretrigger;
+//	fDevice->DeviceArrayWrite(duneReg.readout_pretrigger[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = event_packet_length;
+//	fDevice->DeviceArrayWrite(duneReg.readout_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = p_window;
+//	fDevice->DeviceArrayWrite(duneReg.p_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = i2_window;
+//	fDevice->DeviceArrayWrite(duneReg.i2_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = m1_window;
+//	fDevice->DeviceArrayWrite(duneReg.m1_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = m2_window;
+//	fDevice->DeviceArrayWrite(duneReg.m2_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = d_window;
+//	fDevice->DeviceArrayWrite(duneReg.d_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = i1_window;
+//	fDevice->DeviceArrayWrite(duneReg.i1_window[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = disc_width;
+//	fDevice->DeviceArrayWrite(duneReg.disc_width[0], 12, data);
+//
+//	for (i = 0; i < 12; i++) data[i] = baseline_start;
+//	fDevice->DeviceArrayWrite(duneReg.baseline_start[0], 12, data);
+//
+//	fDevice->DeviceWrite(duneReg.trigger_input_delay,0x00000001);
+//	fDevice->DeviceWrite(duneReg.gpio_output_width,0x00001000);
+//	fDevice->DeviceWrite(duneReg.front_panel_config, 0x00001111);
+//	fDevice->DeviceWrite(duneReg.dsp_led_config,0x00000000);
+//	fDevice->DeviceWrite(duneReg.dsp_led_input, 0x00000000);
+//	fDevice->DeviceWrite(duneReg.baseline_delay,baseline_delay);
+//	fDevice->DeviceWrite(duneReg.diag_channel_input,0x00000000);
+//	fDevice->DeviceWrite(duneReg.qi_config,0x0FFF1F00);
+//	fDevice->DeviceWrite(duneReg.qi_delay,0x00000000);
+//	fDevice->DeviceWrite(duneReg.qi_pulse_width,0x00000000);
+//	fDevice->DeviceWrite(duneReg.external_gate_width,0x00008000);
+//	//fDevice->DeviceWrite(duneReg.dsp_clock_control,0x00000000);
+//
+//	// Load the window settings - This MUST be the last operation
 
 	TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configured complete.";
 
@@ -1123,15 +1118,13 @@ std::string dunedaq::sspmodules::DeviceInterface::GetIdentifier(){
     ident+="(USB";
     ident+=fDeviceId;
     ident+="):";
-  }
-  else if(fCommType==dunedaq::dataformats::kEthernet){
+  } else if (fCommType==dunedaq::dataformats::kEthernet){
     boost::asio::ip::address ip=boost::asio::ip::address_v4(fDeviceId);
     std::string ipString=ip.to_string();
     ident+="(";
     ident+=ipString;
     ident+="):";
-  }
-  else if(fCommType==dunedaq::dataformats::kEmulated){
+  } else if (fCommType==dunedaq::dataformats::kEmulated){
     ident+="(EMULATED";
     ident+=fDeviceId;
     ident+="):";
@@ -1140,17 +1133,16 @@ std::string dunedaq::sspmodules::DeviceInterface::GetIdentifier(){
 }
 
 unsigned long dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::dataformats::EventHeader& header){
-  unsigned long packetTime=0;
+  unsigned long packetTime=0;                                                   // NOLINT(runtime/int)
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp << std::endl;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fPreTrigLength value: " << fPreTrigLength << std::endl;
   if(fUseExternalTimestamp){
     for(unsigned int iWord=0;iWord<=3;++iWord){
-      packetTime+=((unsigned long)(header.timestamp[iWord]))<<16*iWord;
+      packetTime+=((unsigned long)(header.timestamp[iWord]))<<16*iWord;         // NOLINT(runtime/int)
     }
-  }
-  else{
+  } else {
     for(unsigned int iWord=1;iWord<=3;++iWord){
-      packetTime+=((unsigned long)(header.intTimestamp[iWord]))<<16*(iWord-1);
+      packetTime+=((unsigned long)(header.intTimestamp[iWord]))<<16*(iWord-1);  // NOLINT(runtime/int)
     }
   }
   return packetTime;

@@ -5,8 +5,8 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_CARDWRAPPER_HPP_
-#define SSPMODULES_SRC_CARDWRAPPER_HPP_
+#ifndef SSPMODULES_SRC_SSPCARDWRAPPER_HPP_
+#define SSPMODULES_SRC_SSPCARDWRAPPER_HPP_
 
 #include "sspmodules/sspcardreader/Nljs.hpp"
 
@@ -22,6 +22,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace dunedaq {
 namespace sspmodules {
@@ -65,10 +67,10 @@ private:
 
   //Initialization configuration variables
   unsigned int m_board_id; //this is the ID of the SSP board
-  unsigned long m_board_ip; //this is the ip address of the SSP board
+  unsigned long m_board_ip; //this is the ip address of the SSP board // NOLINT(runtime/int)
   unsigned int m_partition_number;
   unsigned int m_timing_address;
-  unsigned long m_module_id;
+  unsigned long m_module_id;                                          // NOLINT(runtime/int)
 
   //DAQ configuration variables first
   unsigned int m_pre_trig_length; //Window length in ticks for packets to be included in a fragment. This is the length of the window before the trigger timestamp.
@@ -83,9 +85,9 @@ private:
 
 
   // Tracking metrics for debugging and checking consistency
-  unsigned long m_num_zero_fragments;
-  unsigned long m_num_fragments_sent;
-  unsigned long m_num_read_event_calls;
+  unsigned long m_num_zero_fragments;                                 // NOLINT(runtime/int)
+  unsigned long m_num_fragments_sent;                                 // NOLINT(runtime/int)
+  unsigned long m_num_read_event_calls;                               // NOLINT(runtime/int)
   std::string m_instance_name_for_metrics;
 
   // Card
@@ -101,4 +103,4 @@ private:
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_CARDWRAPPER_HPP_
+#endif // SSPMODULES_SRC_SSPCARDWRAPPER_HPP_

@@ -9,14 +9,17 @@
 #define SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_CXX_
 
 #include "EthernetDevice.h"
-#include <cstdlib>
-#include <algorithm>
+
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "anlExceptions.h"
 
+#include <cstdlib>
+#include <algorithm>
+#include <vector>
+
 boost::asio::io_service dunedaq::sspmodules::EthernetDevice::fIo_service;
 
-dunedaq::sspmodules::EthernetDevice::EthernetDevice(unsigned long ipAddress):
+dunedaq::sspmodules::EthernetDevice::EthernetDevice(unsigned long ipAddress):   // NOLINT(runtime/int)
   isOpen(false),
   fCommSocket(fIo_service),fDataSocket(fIo_service),
   fIP(boost::asio::ip::address_v4(ipAddress))
@@ -237,8 +240,7 @@ void dunedaq::sspmodules::EthernetDevice::SendReceive(dunedaq::dataformats::Ctrl
 	DevicePurgeComm();
 	++timesTried;
 	//dune::DAQLogger::LogWarning("SSP_EthernetDevice")<<"Send/receive failed "<<timesTried<<" times on Ethernet link, retrying..."<<std::endl;
-      }
-      else{
+      } else {
 	try {
 	  //dune::DAQLogger::LogError("SSP_EthernetDevice")<<"Send/receive failed on Ethernet link, giving up."<<std::endl;
 	} catch (...) {}

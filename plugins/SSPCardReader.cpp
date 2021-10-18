@@ -84,7 +84,7 @@ SSPCardReader::init(const data_t& args)
     } else {
       TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPCardReader output queue is " << qi.inst;
     }
-  };
+  }
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader init complete.";
   // Set function for the SSPCardWrapper's block processor.
