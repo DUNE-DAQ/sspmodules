@@ -1,13 +1,23 @@
-#include "EventPacket.h"
+/**
+ * @file EventPacket.cxx
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_EVENTPACKET_CXX_
+#define SSPMODULES_SRC_ANLBOARD_EVENTPACKET_CXX_
 
 #include "logging/Logging.hpp"
 
-void SSPDAQ::EventPacket::SetEmpty(){
+#include "EventPacket.h"
+
+void dunedaq::sspmodules::EventPacket::SetEmpty(){
   data.clear();
   header.header=0xDEADBEEF;
 }
 
-void SSPDAQ::EventPacket::DumpHeader(){
+void dunedaq::sspmodules::EventPacket::DumpHeader(){
 
   u_int32_t peaksum = ((header.group3 & 0x00FF) >> 16) + header.peakSumLow;
   if(peaksum & 0x00800000) {
@@ -42,7 +52,7 @@ void SSPDAQ::EventPacket::DumpHeader(){
     << std::endl;
 }
 
-void SSPDAQ::EventPacket::DumpEvent(){
+void dunedaq::sspmodules::EventPacket::DumpEvent(){
 
   //dune::DAQLogger::LogInfo("SSP_EventPacket")<<"*****EVENT DUMP***********************************" <<std::endl<<std::endl;
 
@@ -65,3 +75,5 @@ void SSPDAQ::EventPacket::DumpEvent(){
   //dune::DAQLogger::LogInfo("SSP_EventPacket")<<std::endl<<"**************************************************" 
   //<<std::endl<<std::endl;
 }
+
+#endif // SSPMODULES_SRC_ANLBOARD_EVENTPACKET_CXX_

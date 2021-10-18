@@ -5,13 +5,16 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
+#ifndef SSPMODULES_SRC_SSPCARDREADER_CPP_
+#define SSPMODULES_SRC_SSPCARDREADER_CPP_
+
+#include "logging/Logging.hpp"
+
 #include "sspmodules/sspcardreader/Nljs.hpp"
 
 //#include "CreateElink.hpp"
 #include "SSPCardReader.hpp"
 //#include "SspIssues.hpp"
-
-#include "logging/Logging.hpp"
 
 //#include "flxcard/FlxException.h"
 
@@ -133,3 +136,5 @@ SSPCardReader::get_info(opmonlib::InfoCollector& /*ci*/, int /*level*/)
 } // namespace dunedaq
 
 DEFINE_DUNE_DAQ_MODULE(dunedaq::sspmodules::SSPCardReader)
+
+#endif // SSPMODULES_SRC_SSPCARDREADER_CPP_

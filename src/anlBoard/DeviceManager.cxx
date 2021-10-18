@@ -1,8 +1,20 @@
+/**
+ * @file DeviceManager.cxx
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
+#define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
+
+#include "dataformats/ssp/SSPTypes.hpp"
+
 #include "DeviceManager.h"
 //#include "ftd2xx.h"
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "anlExceptions.h"
-#include "dune-raw-data/Overlays/anlTypes.hh"
+
 #include "boost/asio.hpp"
 
 #include <iostream>
@@ -13,12 +25,12 @@
 #include <cstring>
 #include <unistd.h>
 
-SSPDAQ::DeviceManager& SSPDAQ::DeviceManager::Get(){
-  static SSPDAQ::DeviceManager instance;
+dunedaq::sspmodules::DeviceManager& dunedaq::sspmodules::DeviceManager::Get(){
+  static dunedaq::sspmodules::DeviceManager instance;
   return instance;
 }
 
-SSPDAQ::DeviceManager::DeviceManager(){
+dunedaq::sspmodules::DeviceManager::DeviceManager(){
 }
 
 /*
@@ -30,7 +42,7 @@ unsigned int SSPDAQ::DeviceManager::GetNUSBDevices(){
 }
 */
 
-void SSPDAQ::DeviceManager::RefreshDevices()
+void dunedaq::sspmodules::DeviceManager::RefreshDevices()
 {
 /*
   for(auto device=fUSBDevices.begin();device!=fUSBDevices.end();++device){
@@ -155,7 +167,7 @@ void SSPDAQ::DeviceManager::RefreshDevices()
 */
 }
 
-SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
+dunedaq::sspmodules::Device* dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
 {
   //Check for devices if this hasn't yet been done
   if(!fHaveLookedForDevices&&commType!=dunedaq::dataformats::kEmulated){
@@ -180,7 +192,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t c
   */
   case dunedaq::dataformats::kEthernet:
     if(fEthernetDevices.find(deviceNum)==fEthernetDevices.end()){
-      fEthernetDevices[deviceNum]=(std::move(std::unique_ptr<SSPDAQ::EthernetDevice>(new SSPDAQ::EthernetDevice(deviceNum))));
+      fEthernetDevices[deviceNum]=(std::move(std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
     }
     if(fEthernetDevices[deviceNum]->IsOpen()){
       try {
@@ -196,7 +208,7 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t c
 
   case dunedaq::dataformats::kEmulated:
     while(fEmulatedDevices.size()<=deviceNum){
-      fEmulatedDevices.push_back(std::move(std::unique_ptr<SSPDAQ::EmulatedDevice>(new SSPDAQ::EmulatedDevice(fEmulatedDevices.size()))));
+      fEmulatedDevices.push_back(std::move(std::unique_ptr<dunedaq::sspmodules::EmulatedDevice>(new dunedaq::sspmodules::EmulatedDevice(fEmulatedDevices.size()))));
     }
     device=fEmulatedDevices[deviceNum].get();
     if(device->IsOpen()){
@@ -217,3 +229,5 @@ SSPDAQ::Device* SSPDAQ::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t c
   }
   return device;
 }
+
+#endif // SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_

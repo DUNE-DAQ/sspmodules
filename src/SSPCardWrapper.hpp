@@ -13,7 +13,6 @@
 #include "dataformats/ssp/SSPTypes.hpp"
 
 #include "readout/utils/ReusableThread.hpp"
-//#include "dune-raw-data/Overlays/SSPFragment.hh"
 #include "anlBoard/DeviceInterface.h"
 #include "logging/Logging.hpp"
 
@@ -24,7 +23,8 @@
 #include <mutex>
 #include <string>
 
-namespace dunedaq::sspmodules {
+namespace dunedaq {
+namespace sspmodules {
 
 class SSPCardWrapper
 {
@@ -53,7 +53,7 @@ private:
 
   //these are SSP configurations for this instance of the SSP Card Wrapper
   //dune::detail::FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh), //KIRBY this is something I don't know how to transition to the new framework
-  SSPDAQ::DeviceInterface* m_device_interface; //instance of the SSP device interface class
+  dunedaq::sspmodules::DeviceInterface* m_device_interface; //instance of the SSP device interface class
   readout::ReusableThread m_ssp_processor; //reusable thread used to start the work done by the device interface
 
   //module status booleans for transition like init, conf, start, etc
@@ -98,6 +98,7 @@ private:
 
 };
 
-} // namespace dunedaq::sspmodules
+} // namespace sspmodules
+} // namespace dunedaq
 
 #endif // SSPMODULES_SRC_CARDWRAPPER_HPP_

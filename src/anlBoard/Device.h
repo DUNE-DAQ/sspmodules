@@ -1,5 +1,12 @@
-#ifndef DEVICE_H__
-#define DEVICE_H__
+/**
+ * @file Device.h
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_DEVICE_H_
+#define SSPMODULES_SRC_ANLBOARD_DEVICE_H_
 
 //#include "ftd2xx.h"
 
@@ -12,7 +19,8 @@
 #include <unistd.h>
 #include <vector>
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
 //PABC defining low-level interface to an SSP board.
 //Actual hardware calls must be implemented by derived classes.
@@ -23,7 +31,7 @@ class Device{
   //DeviceManager::OpenDevice() to get a pointer to the object
   friend class DeviceManager;
 
- public:
+public:
 
   virtual ~Device(){};
 
@@ -73,16 +81,18 @@ class Device{
 
   //=============================
 
- protected:
+protected:
   
   bool fSlowControlOnly;
 
- private:
+private:
 
   //Device can only be opened from the DeviceManager.
   virtual void Open(bool slowControlOnly=false) = 0;
 
 };
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_DEVICE_H_
