@@ -15,6 +15,7 @@
 #include "readout/utils/ReusableThread.hpp"
 #include "anlBoard/DeviceInterface.h"
 #include "logging/Logging.hpp"
+#include "SSPIssues.hpp"
 
 #include <nlohmann/json.hpp>
 

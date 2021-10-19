@@ -13,6 +13,7 @@
 #include "readout/ReadoutTypes.hpp"
 
 #include "DeviceInterface.h"
+#include "SSPIssues.hpp"
 #include "anlExceptions.h"
 #include "RegMap.h"
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
@@ -812,6 +813,7 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
 
   auto m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
   int interfaceTypeCode = m_cfg.interface_type; //dunedaq::dataformats::kEthernet;
+  std::stringstream ss;
   switch(interfaceTypeCode){
   case 0:
     fCommType=dunedaq::dataformats::ssp::kUSB;
@@ -823,18 +825,22 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
     fCommType=dunedaq::dataformats::ssp::kEmulated;
     break;
   case 999:
-    TLOG() << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
-    exit(424);
+      ss << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+      TLOG() << ss.str();
+      throw ConfigurationError(ERS_HERE, ss.str());
   default:
-    TLOG() << "Error: Unknown interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
-    exit(424);
+      ss << "Error: Unknown interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
+      TLOG() << ss.str();
+      throw ConfigurationError(ERS_HERE, ss.str());
   }
   //
   if(fCommType!=dunedaq::dataformats::ssp::kEthernet){
     fDeviceId = 0;
-    TLOG() << "Error: Non-functioning interface type set: "<< fCommType
+    std::stringstream ss;
+    ss << "Error: Non-functioning interface type set: "<< fCommType
 	     << "so forcing an exit and having none of this USB based SSP crap." << std::endl;
-    exit(424);
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
   } else {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Board IP is listed as: " << m_cfg.board_ip << std::endl;
       fDeviceId = inet_network(m_cfg.board_ip.c_str());  //inet_network("10.73.137.56");

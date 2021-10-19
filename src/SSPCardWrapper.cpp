@@ -94,8 +94,7 @@ SSPCardWrapper::configure(const data_t& args)
     TLOG() << "SSPCardWrapper::configure: This Board IP value in the Conf is set to: default" << std::endl
 	     << "As we currently only deal with SSPs on ethernet, this means that either the Board IP was " << std::endl
 	     << "NOT set, or the args.get<Conf> call failed to find parameters." <<std::endl ;
-    //throw SSPDAQ::EDAQConfigError("");
-    exit(424);
+    throw ConfigurationError(ERS_HERE, "Used default Board IP value");
   }
 
   m_board_id = m_cfg.board_id;
@@ -104,9 +103,10 @@ SSPCardWrapper::configure(const data_t& args)
 
   m_timing_address = m_cfg.timing_address; //0x20 is default for 101, 0x2B for 304, and 0x36 for 603
   if(m_timing_address > 0xff){
-    TLOG() << "Error: Invalid timing address set ("<<m_timing_address<<")!"<<std::endl;
-    //throw SSPDAQ::EDAQConfigError("");
-    exit(424);
+    std::stringstream ss;
+    ss << "Error: Invalid timing address set ("<<m_timing_address<<")!"<<std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Board ID is listed as: " << m_cfg.board_id << std::endl
@@ -376,25 +376,22 @@ SSPCardWrapper::configure_daq(const data_t& args)
   m_pre_trig_length = m_cfg.pre_trig_length; //unsigned int preTrigLength=337500;
   if(m_pre_trig_length == 0){
     TLOG() << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
-    exit(424);
+    throw ConfigurationError(ERS_HERE, "PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!");
   }
   m_post_trig_length = m_cfg.post_trig_length; //unsigned int postTrigLength=412500;
   if(m_post_trig_length == 0){
     TLOG() << "Error: PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!" << std::endl;
-    exit(424);
-    //throw SSPDAQ::EDAQConfigError("");
+    throw ConfigurationError(ERS_HERE, "PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!");
   }
   m_use_external_timestamp = m_cfg.use_external_timestamp; //unsigned int useExternalTimestamp=1;
   if(m_use_external_timestamp > 1){
     TLOG() << "Error: Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!" << std::endl;
-    exit(424);
-    //throw SSPDAQ::EDAQConfigError("");
+    throw ConfigurationError(ERS_HERE, "Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!");
   }
   m_trigger_write_delay = m_cfg.trigger_write_delay; //unsigned int triggerWriteDelay=1000;
   if(m_trigger_write_delay == 0){
     TLOG() << "Error: trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!" << std::endl;
-    exit(424);
-    //throw SSPDAQ::EDAQConfigError("");
+    throw ConfigurationError(ERS_HERE, "trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!");
   }
   m_trigger_latency = m_cfg.trigger_latency;//unsigned int trigLatency=0; //not sure about this.
   m_dummy_period = m_cfg.dummy_period;//int dummyPeriod=-1;//default to off which is set with a value of -1
@@ -402,8 +399,7 @@ SSPCardWrapper::configure_daq(const data_t& args)
 
   if(m_hardware_clock_rate_in_MHz == 0){
     TLOG() << "Error: Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!"<<std::endl;
-    exit(424);
-    //throw SSPDAQ::EDAQConfigError("");
+    throw ConfigurationError(ERS_HERE, "Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!");
   }
   m_trigger_mask = m_cfg.trigger_mask; //unsigned int triggerMask=0x2000;
   m_fragment_timestamp_offset = m_cfg.fragment_timestamp_offset;//m_fragment_timestamp_offset=988;
