@@ -900,56 +900,57 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
 			      <<(pdts_status&0xF)<<" and dsp_clock_control at "<<dsp_clock_control
 			      <<std::dec<<std::endl;
 
-  if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 && presentTimingAddress==fTimingAddress && presentTimingPartition==fPartitionNumber
-     && dsp_clock_control==0x31){
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
-
-  }
-  else{
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
-				<<", endpoint address "<<std::hex<<fTimingAddress
-				<<std::dec<<")"<<std::endl;
-
-    unsigned int nTries=0;
+  if((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress && presentTimingPartition == fPartitionNumber
+     && dsp_clock_control == 0x31){
     
-    while(nTries<5){
-      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl; //setting the lowest bit to 0 sets the DSP clock to internal.
-      fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress*0x10000);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl; //setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
-
-      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-      fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
-      fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
-      
-      fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x00000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
-      usleep(2000000); //setting the highest bit (0x80000000) to zero puts the SSP in run mode for the PDTS.
-      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x31); //setting the lowest bit to 1 sets the DSP clock to external.
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x31 << std::dec <<std::endl;
-      usleep(2000000);
-      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-      if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
-      ++nTries;
-    }
-   
-    if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-      TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
-    }
-    else{
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
-				  <<std::hex<<pdts_status<<std::dec<<std::endl;
-    } 
+    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
+    
   }
+  else
+    {
+      
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
+				  <<", endpoint address "<<std::hex<<fTimingAddress
+				  <<std::dec<<")"<<std::endl;
+      
+      unsigned int nTries=0;
+      
+      while(nTries<5){
+	fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl; //setting the lowest bit to 0 sets the DSP clock to internal.
+	fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress*0x10000);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl; //setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
+	
+	fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+	fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
+	fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
+	
+	fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x00000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
+	usleep(2000000); //setting the highest bit (0x80000000) to zero puts the SSP in run mode for the PDTS.
+	fDevice->DeviceWrite(duneReg.dsp_clock_control,0x31); //setting the lowest bit to 1 sets the DSP clock to external.
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x31 << std::dec <<std::endl;
+	usleep(2000000);
+	fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+	if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
+	TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
+	++nTries;
+      }
+      
+      if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+	TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
+      }
+      else{
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+	TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
+				    <<std::hex<<pdts_status<<std::dec<<std::endl;
+      } 
+    }
 
   TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
   //Wait until pdts_status reaches exactly 0x8 before resolving.
@@ -965,7 +966,7 @@ void SSPDAQ::DeviceInterface::Configure(const nlohmann::json& args){
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS)<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
-
+  
   /*  SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
 
   	// Setting up some constants to use during initialization
