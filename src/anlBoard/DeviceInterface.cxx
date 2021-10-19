@@ -36,7 +36,7 @@ enum
 
 
 //SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
-dunedaq::sspmodules::DeviceInterface::DeviceInterface(dunedaq::dataformats::Comm_t commType)
+dunedaq::sspmodules::DeviceInterface::DeviceInterface(dunedaq::dataformats::ssp::Comm_t commType)
   : fCommType(commType), fDeviceId(0), fState(dunedaq::sspmodules::DeviceInterface::kUninitialized),
     fUseExternalTimestamp(true), fHardwareClockRateInMHz(128), fPreTrigLength(1E8),
     fPostTrigLength(1E7), fTriggerWriteDelay(1000), fTriggerLatency(0), fTriggerMask(0),
@@ -52,7 +52,7 @@ void dunedaq::sspmodules::DeviceInterface::OpenSlowControl(){
   dunedaq::sspmodules::DeviceManager& devman=dunedaq::sspmodules::DeviceManager::Get();
   dunedaq::sspmodules::Device* device=0;
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Opening "<<((fCommType==dunedaq::dataformats::kUSB)?"USB":((fCommType==dunedaq::dataformats::kEthernet)?"Ethernet":"Emulated"))
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Opening "<<((fCommType==dunedaq::dataformats::ssp::kUSB)?"USB":((fCommType==dunedaq::dataformats::ssp::kEthernet)?"Ethernet":"Emulated"))
 			      <<" device #"<<fDeviceId<<" for slow control only..."<<std::endl;
 
   device=devman.OpenDevice(fCommType,fDeviceId,true);
@@ -814,13 +814,13 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
   int interfaceTypeCode = m_cfg.interface_type; //dunedaq::dataformats::kEthernet;
   switch(interfaceTypeCode){
   case 0:
-    fCommType=dunedaq::dataformats::kUSB;
+    fCommType=dunedaq::dataformats::ssp::kUSB;
     break;
   case 1:
-    fCommType=dunedaq::dataformats::kEthernet;
+    fCommType=dunedaq::dataformats::ssp::kEthernet;
     break;
   case 2:
-    fCommType=dunedaq::dataformats::kEmulated;
+    fCommType=dunedaq::dataformats::ssp::kEmulated;
     break;
   case 999:
     TLOG() << "Error: Invalid interface type set ("<<interfaceTypeCode<<")!"<<std::endl;
@@ -830,7 +830,7 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
     exit(424);
   }
   //
-  if(fCommType!=dunedaq::dataformats::kEthernet){
+  if(fCommType!=dunedaq::dataformats::ssp::kEthernet){
     fDeviceId = 0;
     TLOG() << "Error: Non-functioning interface type set: "<< fCommType
 	     << "so forcing an exit and having none of this USB based SSP crap." << std::endl;
@@ -844,7 +844,7 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
   dunedaq::sspmodules::DeviceManager& devman=dunedaq::sspmodules::DeviceManager::Get();
   dunedaq::sspmodules::Device* device=0;
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Configuring "<<((fCommType==dunedaq::dataformats::kUSB)?"USB":((fCommType==dunedaq::dataformats::kEthernet)?"Ethernet":"Emulated"))
+  TLOG_DEBUG(TLVL_WORK_STEPS) <<"Configuring "<<((fCommType==dunedaq::dataformats::ssp::kUSB)?"USB":((fCommType==dunedaq::dataformats::ssp::kEthernet)?"Ethernet":"Emulated"))
   <<" device #"<<fDeviceId<<"..."<<std::endl;
 
   device=devman.OpenDevice(fCommType,fDeviceId);
@@ -1114,17 +1114,17 @@ std::string dunedaq::sspmodules::DeviceInterface::GetIdentifier(){
 
   std::string ident;
   ident+="SSP@";
-  if(fCommType==dunedaq::dataformats::kUSB){
+  if(fCommType==dunedaq::dataformats::ssp::kUSB){
     ident+="(USB";
     ident+=fDeviceId;
     ident+="):";
-  } else if (fCommType==dunedaq::dataformats::kEthernet){
+  } else if (fCommType==dunedaq::dataformats::ssp::kEthernet){
     boost::asio::ip::address ip=boost::asio::ip::address_v4(fDeviceId);
     std::string ipString=ip.to_string();
     ident+="(";
     ident+=ipString;
     ident+="):";
-  } else if (fCommType==dunedaq::dataformats::kEmulated){
+  } else if (fCommType==dunedaq::dataformats::ssp::kEmulated){
     ident+="(EMULATED";
     ident+=fDeviceId;
     ident+="):";

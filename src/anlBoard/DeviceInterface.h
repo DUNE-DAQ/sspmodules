@@ -43,7 +43,7 @@ public:
 
   //Just sets the fields needed to request the device.
   //Real work is done in Initialize which is called manually.
-  DeviceInterface(dunedaq::dataformats::Comm_t commType);
+  DeviceInterface(dunedaq::dataformats::ssp::Comm_t commType);
 
   ~DeviceInterface(){
     //if(fRequestReceiver){
@@ -169,7 +169,7 @@ private:
   Device* fDevice;
 
   //Whether we are using USB or Ethernet to connect to the device
-  dunedaq::dataformats::Comm_t fCommType;
+  dunedaq::dataformats::ssp::Comm_t fCommType;
 
   //Index of the device in the hardware-returned list
   unsigned long fDeviceId;

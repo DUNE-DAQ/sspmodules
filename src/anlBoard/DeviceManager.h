@@ -39,7 +39,7 @@ public:
   //unsigned int GetNUSBDevices();
 
   //Open a device and return a pointer containing a handle to it
-  Device* OpenDevice(dunedaq::dataformats::Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
+  Device* OpenDevice(dunedaq::dataformats::ssp::Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
 
   //Interrogate FTDI for list of devices. GetNUSBDevices and OpenDevice will call this
   //if it has not yet been run, so it should not normally be necessary to call this directly.

@@ -169,10 +169,10 @@ void dunedaq::sspmodules::DeviceManager::RefreshDevices()
 //
 }
 
-dunedaq::sspmodules::Device* dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::dataformats::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
+dunedaq::sspmodules::Device* dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::dataformats::ssp::Comm_t commType, unsigned int deviceNum, bool slowControlOnly)
 {
   //Check for devices if this hasn't yet been done
-  if(!fHaveLookedForDevices&&commType!=dunedaq::dataformats::kEmulated){
+  if(!fHaveLookedForDevices&&commType!=dunedaq::dataformats::ssp::kEmulated){
     this->RefreshDevices();
   }
 
@@ -192,7 +192,7 @@ dunedaq::sspmodules::Device* dunedaq::sspmodules::DeviceManager::OpenDevice(dune
 //    }
 //    break;
 //
-  case dunedaq::dataformats::kEthernet:
+    case dunedaq::dataformats::ssp::kEthernet:
     if(fEthernetDevices.find(deviceNum)==fEthernetDevices.end()){
       fEthernetDevices[deviceNum]=(std::move(std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
     }
@@ -207,7 +207,7 @@ dunedaq::sspmodules::Device* dunedaq::sspmodules::DeviceManager::OpenDevice(dune
     }
     break;
 
-  case dunedaq::dataformats::kEmulated:
+    case dunedaq::dataformats::ssp::kEmulated:
     while(fEmulatedDevices.size()<=deviceNum){
       fEmulatedDevices.push_back(std::move(std::unique_ptr<dunedaq::sspmodules::EmulatedDevice>(new dunedaq::sspmodules::EmulatedDevice(fEmulatedDevices.size()))));
     }
