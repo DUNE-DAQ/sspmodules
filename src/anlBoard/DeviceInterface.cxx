@@ -888,54 +888,56 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
 			      <<(pdts_status&0xF)<<" and dsp_clock_control at "<<dsp_clock_control
 			      <<std::dec<<std::endl;
 
-  if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 && presentTimingAddress==fTimingAddress && presentTimingPartition==fPartitionNumber
-     && dsp_clock_control==0x31){
-
+  if((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress && presentTimingPartition == fPartitionNumber
+     && dsp_clock_control == 0x31){
+    
     TLOG_DEBUG(TLVL_WORK_STEPS) <<"Clock already looks ok... skipping endpoint reset."<<std::endl;
-
-  } else {
-
-    TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
-				<<", endpoint address "<<std::hex<<fTimingAddress
-				<<std::dec<<")"<<std::endl;
-
-    unsigned int nTries=0;
-
-    while(nTries<5){
-      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl; //setting the lowest bit to 0 sets the DSP clock to internal.
-      fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress*0x10000);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl; //setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
-
-      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-      fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
-      fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
-
-      fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x00000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
-      usleep(2000000); //setting the highest bit (0x80000000) to zero puts the SSP in run mode for the PDTS.
-      fDevice->DeviceWrite(duneReg.dsp_clock_control,0x31); //setting the lowest bit to 1 sets the DSP clock to external.
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x31 << std::dec <<std::endl;
-      usleep(2000000);
-      fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
-      if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
-      ++nTries;
-    }
-
-    if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-      TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
-    } else {
-      TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
-      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
-				  <<std::hex<<pdts_status<<std::dec<<std::endl;
-    }
   }
+  else
+    {
+      
+      TLOG_DEBUG(TLVL_WORK_STEPS) <<"Syncing SSP to PDTS (partition "<<fPartitionNumber
+				  <<", endpoint address "<<std::hex<<fTimingAddress
+				  <<std::dec<<")"<<std::endl;
+      
+      unsigned int nTries=0;
+      
+      while(nTries<5){
+	fDevice->DeviceWrite(duneReg.dsp_clock_control,0x30);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x30 << std::dec <<std::endl; //setting the lowest bit to 0 sets the DSP clock to internal.
+	fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress*0x10000);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control value was set to " << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl; //setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
+	
+	fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+	fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_control read back as " << std::hex <<pdts_control << std::dec <<std::endl;
+	fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control read back as " << std::hex << dsp_clock_control << std::dec <<std::endl;
+	
+	fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress*0x10000);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value was set to " << std::hex << 0x00000000 + fPartitionNumber + fTimingAddress*0x10000  <<std::dec <<std::endl;
+	usleep(2000000); //setting the highest bit (0x80000000) to zero puts the SSP in run mode for the PDTS.
+	fDevice->DeviceWrite(duneReg.dsp_clock_control,0x31); //setting the lowest bit to 1 sets the DSP clock to external.
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The dsp_clock_control was set to " << std::hex << 0x31 << std::dec <<std::endl;
+	usleep(2000000);
+	fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status read back as " << std::hex <<pdts_status << std::dec <<std::endl;
+	if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ) break;
+	TLOG_DEBUG(TLVL_WORK_STEPS) <<"Timing endpoint sync failed (try "<<nTries<<")"<<std::endl;
+	++nTries;
+      }
+      
+      if((pdts_status&0xF)>=0x6 && (pdts_status&0xF)<=0x8 ){
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+	TLOG_DEBUG(TLVL_WORK_STEPS)<<"Timing endpoint synced!"<<std::endl;
+      }
+      else{
+	TLOG_DEBUG(TLVL_FULL_DEBUG)<<"The pdts_status value is " << std::hex << pdts_status << " and the 0xF bit masked value is " << (pdts_status&0xF) <<std::dec <<std::endl;
+	TLOG_DEBUG(TLVL_WORK_STEPS) <<"Giving up on endpoint sync after 5 tries. Value of pdts_status register was "
+				    <<std::hex<<pdts_status<<std::dec<<std::endl;
+      } 
+    }
 
   TLOG_DEBUG(TLVL_WORK_STEPS)<<"Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."<<std::endl;
   //Wait until pdts_status reaches exactly 0x8 before resolving.
@@ -951,166 +953,165 @@ void dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS)<<"Endpoint is in running state, continuing with configuration!"<<std::endl;
+  /*  SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
 
-//    SSPDAQ::RegMap& duneReg = SSPDAQ::RegMap::Get();
-//
-//  	// Setting up some constants to use during initialization
-//	const uint	module_id		= 0xABC;	// This value is reported in the event header
-//	const uint	channel_control[12] =
-//	//	Channel Control Bit Descriptions
-//	//	31		cfd_enable
-//	//	30		pileup_waveform_only
-//	//	26		pileup_extend_enable
-//	//	25:24	event_extend_mode
-//	//	23		disc_counter_mode
-//	//	22		ahit_counter_mode
-//	//	21		ACCEPTED_EVENT_COUNTER_MODE
-//	//	20		dropped_event_counter_mode
-//	//	15:14	external_disc_flag_sel
-//	//	13:12	external_disc_mode
-//	//	11		negative edge trigger enable
-//	//	10		positive edge trigger enable
-//	//	6:4		This sets the timestamp trigger rate (source of external_disc_flag_in(3) into channel logic)
-//	//	2		Not pileup_disable
-//	//	1		Trigger Mode
-//	//	0		channel enable
-//	//
-//	//	Channel Control Examples
-//	//	0x00000000,		// disable channel #
-//	//	0x80F00001,		// enable channel # but do not enable any triggers (CFD Enabled)
-//	//	0x80F00401,		// configure channel # in positive self-trigger mode (CFD Enabled)
-//	//	0x80F00801,		// configure channel # in negative self-trigger mode (CFD Enabled)
-//	//	0x80F00C01,		// configure channel # in positive and negative self-trigger mode (CFD Enabled)
-//	//	0x00F06001,		// configure channel # in external trigger mode.
-//	//	0x00F0E051,		// configure channel # in a slow timestamp triggered mode (8.941Hz)
-//	//	0x00F0E061,		// configure channel # in a very slow timestamp triggered mode (1.118Hz)
-//	{
-//		0x00F0E0C1,		// configure channel #0 in a slow timestamp triggered mode
-//		0x00000000,		// disable channel #1
-//		0x00000000,		// disable channel #2
-//		0x00000000,		// disable channel #3
-//		0x00000000,		// disable channel #4
-//		0x00000000,		// disable channel #5
-//		0x00000000,		// disable channel #6
-//		0x00000000,		// disable channel #7
-//		0x00000000,		// disable channel #8
-//		0x00000000,		// disable channel #9
-//		0x00000000,		// disable channel #10
-//		0x00000000,		// disable channel #11
-//	};
-//	const uint	led_threshold		= 25;
-//	const uint	cfd_fraction		= 0x1800;
-//	const uint	readout_pretrigger	= 100;
-//	const uint	event_packet_length	= 2046;
-//	const uint	p_window			= 0;
-//	const uint	i2_window			= 500;
-//	const uint	m1_window			= 10;
-//	const uint	m2_window			= 10;
-//	const uint	d_window			= 20;
-//	const uint  i1_window			= 500;
-//	const uint	disc_width			= 10;
-//	const uint	baseline_start		= 0x0000;
-//	const uint	baseline_delay		= 5;
-//
-//	int i = 0;
-//	uint data[12];
-//
-//	// This script of register writes sets up the digitizer for basic real event operation
-//	// Comments next to each register are excerpts from the VHDL or C code
-//	// ALL existing registers are shown here however many are commented out because they are
-//	// status registers or simply don't need to be modified
-//	// The script runs through the registers numerically (increasing addresses)
-//	// Therefore, it is assumed DeviceStopReset() has been called so these changes will not
-//	// cause crazy things to happen along the way
-//
-//	fDevice->DeviceWrite(duneReg.c2c_control,0x00000007);
-//	fDevice->DeviceWrite(duneReg.c2c_master_intr_control,0x00000000);
-//	fDevice->DeviceWrite(duneReg.comm_clock_control,0x00000001);
-//	fDevice->DeviceWrite(duneReg.comm_led_config, 0x00000000);
-//	fDevice->DeviceWrite(duneReg.comm_led_input, 0x00000000);
-//	fDevice->DeviceWrite(duneReg.qi_dac_config,0x00000000);
-//	fDevice->DeviceWrite(duneReg.qi_dac_control,0x00000001);
-//
-//	fDevice->DeviceWrite(duneReg.bias_config[0],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[1],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[2],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[3],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[4],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[5],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[6],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[7],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[8],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[9],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[10],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_config[11],0x00000000);
-//	fDevice->DeviceWrite(duneReg.bias_control,0x00000001);
-//
-//	fDevice->DeviceWrite(duneReg.vmon_config,0x0012F000);
-//	fDevice->DeviceWrite(duneReg.vmon_select,0x00FFFF00);
-//	fDevice->DeviceWrite(duneReg.vmon_gpio,0x00000000);
-//	fDevice->DeviceWrite(duneReg.vmon_control,0x00010001);
-//	fDevice->DeviceWrite(duneReg.imon_config,0x0012F000);
-//	fDevice->DeviceWrite(duneReg.imon_select,0x00FFFF00);
-//	fDevice->DeviceWrite(duneReg.imon_gpio,0x00000000);
-//	fDevice->DeviceWrite(duneReg.imon_control,0x00010001);
-//
-//	//Registers in the Artix FPGA (DSP)//AddressDefault ValueRead MaskWrite MaskCode Name
-//	fDevice->DeviceWrite(duneReg.module_id,module_id);
-//	fDevice->DeviceWrite(duneReg.c2c_slave_intr_control,0x00000000);
-//
-//	for (i = 0; i < 12; i++) data[i] = channel_control[i];
-//	fDevice->DeviceArrayWrite(duneReg.channel_control[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = led_threshold;
-//	fDevice->DeviceArrayWrite(duneReg.led_threshold[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = cfd_fraction;
-//	fDevice->DeviceArrayWrite(duneReg.cfd_parameters[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = readout_pretrigger;
-//	fDevice->DeviceArrayWrite(duneReg.readout_pretrigger[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = event_packet_length;
-//	fDevice->DeviceArrayWrite(duneReg.readout_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = p_window;
-//	fDevice->DeviceArrayWrite(duneReg.p_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = i2_window;
-//	fDevice->DeviceArrayWrite(duneReg.i2_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = m1_window;
-//	fDevice->DeviceArrayWrite(duneReg.m1_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = m2_window;
-//	fDevice->DeviceArrayWrite(duneReg.m2_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = d_window;
-//	fDevice->DeviceArrayWrite(duneReg.d_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = i1_window;
-//	fDevice->DeviceArrayWrite(duneReg.i1_window[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = disc_width;
-//	fDevice->DeviceArrayWrite(duneReg.disc_width[0], 12, data);
-//
-//	for (i = 0; i < 12; i++) data[i] = baseline_start;
-//	fDevice->DeviceArrayWrite(duneReg.baseline_start[0], 12, data);
-//
-//	fDevice->DeviceWrite(duneReg.trigger_input_delay,0x00000001);
-//	fDevice->DeviceWrite(duneReg.gpio_output_width,0x00001000);
-//	fDevice->DeviceWrite(duneReg.front_panel_config, 0x00001111);
-//	fDevice->DeviceWrite(duneReg.dsp_led_config,0x00000000);
-//	fDevice->DeviceWrite(duneReg.dsp_led_input, 0x00000000);
-//	fDevice->DeviceWrite(duneReg.baseline_delay,baseline_delay);
-//	fDevice->DeviceWrite(duneReg.diag_channel_input,0x00000000);
-//	fDevice->DeviceWrite(duneReg.qi_config,0x0FFF1F00);
-//	fDevice->DeviceWrite(duneReg.qi_delay,0x00000000);
-//	fDevice->DeviceWrite(duneReg.qi_pulse_width,0x00000000);
-//	fDevice->DeviceWrite(duneReg.external_gate_width,0x00008000);
-//	//fDevice->DeviceWrite(duneReg.dsp_clock_control,0x00000000);
-//
-//	// Load the window settings - This MUST be the last operation
+  	// Setting up some constants to use during initialization
+	const uint	module_id		= 0xABC;	// This value is reported in the event header
+	const uint	channel_control[12] = 
+	//	Channel Control Bit Descriptions
+	//	31		cfd_enable
+	//	30		pileup_waveform_only
+	//	26		pileup_extend_enable
+	//	25:24	event_extend_mode
+	//	23		disc_counter_mode
+	//	22		ahit_counter_mode 
+	//	21		ACCEPTED_EVENT_COUNTER_MODE
+	//	20		dropped_event_counter_mode
+	//	15:14	external_disc_flag_sel
+	//	13:12	external_disc_mode
+	//	11		negative edge trigger enable
+	//	10		positive edge trigger enable
+	//	6:4		This sets the timestamp trigger rate (source of external_disc_flag_in(3) into channel logic)
+	//	2		Not pileup_disable
+	//	1		Trigger Mode
+	//	0		channel enable
+	//
+	//	Channel Control Examples
+	//	0x00000000,		// disable channel #
+	//	0x80F00001,		// enable channel # but do not enable any triggers (CFD Enabled)
+	//	0x80F00401,		// configure channel # in positive self-trigger mode (CFD Enabled)
+	//	0x80F00801,		// configure channel # in negative self-trigger mode (CFD Enabled)
+	//	0x80F00C01,		// configure channel # in positive and negative self-trigger mode (CFD Enabled)
+	//	0x00F06001,		// configure channel # in external trigger mode.
+	//	0x00F0E051,		// configure channel # in a slow timestamp triggered mode (8.941Hz)
+	//	0x00F0E061,		// configure channel # in a very slow timestamp triggered mode (1.118Hz)
+	{
+		0x00F0E0C1,		// configure channel #0 in a slow timestamp triggered mode
+		0x00000000,		// disable channel #1
+		0x00000000,		// disable channel #2
+		0x00000000,		// disable channel #3
+		0x00000000,		// disable channel #4
+		0x00000000,		// disable channel #5
+		0x00000000,		// disable channel #6
+		0x00000000,		// disable channel #7
+		0x00000000,		// disable channel #8
+		0x00000000,		// disable channel #9
+		0x00000000,		// disable channel #10
+		0x00000000,		// disable channel #11
+	};
+	const uint	led_threshold		= 25;	
+	const uint	cfd_fraction		= 0x1800;
+	const uint	readout_pretrigger	= 100;	
+	const uint	event_packet_length	= 2046;	
+	const uint	p_window			= 0;	
+	const uint	i2_window			= 500;
+	const uint	m1_window			= 10;	
+	const uint	m2_window			= 10;	
+	const uint	d_window			= 20;
+	const uint  i1_window			= 500;
+	const uint	disc_width			= 10;
+	const uint	baseline_start		= 0x0000;
+	const uint	baseline_delay		= 5;
+
+	int i = 0;
+	uint data[12];
+
+	// This script of register writes sets up the digitizer for basic real event operation
+	// Comments next to each register are excerpts from the VHDL or C code
+	// ALL existing registers are shown here however many are commented out because they are
+	// status registers or simply don't need to be modified
+	// The script runs through the registers numerically (increasing addresses)
+	// Therefore, it is assumed DeviceStopReset() has been called so these changes will not
+	// cause crazy things to happen along the way
+
+	fDevice->DeviceWrite(duneReg.c2c_control,0x00000007);
+	fDevice->DeviceWrite(duneReg.c2c_master_intr_control,0x00000000);
+	fDevice->DeviceWrite(duneReg.comm_clock_control,0x00000001);
+	fDevice->DeviceWrite(duneReg.comm_led_config, 0x00000000);
+	fDevice->DeviceWrite(duneReg.comm_led_input, 0x00000000);
+	fDevice->DeviceWrite(duneReg.qi_dac_config,0x00000000);
+	fDevice->DeviceWrite(duneReg.qi_dac_control,0x00000001);
+
+	fDevice->DeviceWrite(duneReg.bias_config[0],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[1],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[2],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[3],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[4],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[5],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[6],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[7],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[8],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[9],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[10],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_config[11],0x00000000);
+	fDevice->DeviceWrite(duneReg.bias_control,0x00000001);
+
+	fDevice->DeviceWrite(duneReg.vmon_config,0x0012F000);
+	fDevice->DeviceWrite(duneReg.vmon_select,0x00FFFF00);
+	fDevice->DeviceWrite(duneReg.vmon_gpio,0x00000000);
+	fDevice->DeviceWrite(duneReg.vmon_control,0x00010001);
+	fDevice->DeviceWrite(duneReg.imon_config,0x0012F000);
+	fDevice->DeviceWrite(duneReg.imon_select,0x00FFFF00);
+	fDevice->DeviceWrite(duneReg.imon_gpio,0x00000000);
+	fDevice->DeviceWrite(duneReg.imon_control,0x00010001);
+
+	//Registers in the Artix FPGA (DSP)//AddressDefault ValueRead MaskWrite MaskCode Name
+	fDevice->DeviceWrite(duneReg.module_id,module_id);
+	fDevice->DeviceWrite(duneReg.c2c_slave_intr_control,0x00000000);
+
+	for (i = 0; i < 12; i++) data[i] = channel_control[i];
+	fDevice->DeviceArrayWrite(duneReg.channel_control[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = led_threshold;
+	fDevice->DeviceArrayWrite(duneReg.led_threshold[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = cfd_fraction;
+	fDevice->DeviceArrayWrite(duneReg.cfd_parameters[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = readout_pretrigger;
+	fDevice->DeviceArrayWrite(duneReg.readout_pretrigger[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = event_packet_length;
+	fDevice->DeviceArrayWrite(duneReg.readout_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = p_window;
+	fDevice->DeviceArrayWrite(duneReg.p_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = i2_window;
+	fDevice->DeviceArrayWrite(duneReg.i2_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = m1_window;
+	fDevice->DeviceArrayWrite(duneReg.m1_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = m2_window;
+	fDevice->DeviceArrayWrite(duneReg.m2_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = d_window;
+	fDevice->DeviceArrayWrite(duneReg.d_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = i1_window;
+	fDevice->DeviceArrayWrite(duneReg.i1_window[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = disc_width;
+	fDevice->DeviceArrayWrite(duneReg.disc_width[0], 12, data);
+
+	for (i = 0; i < 12; i++) data[i] = baseline_start;
+	fDevice->DeviceArrayWrite(duneReg.baseline_start[0], 12, data);
+
+	fDevice->DeviceWrite(duneReg.trigger_input_delay,0x00000001);
+	fDevice->DeviceWrite(duneReg.gpio_output_width,0x00001000);
+	fDevice->DeviceWrite(duneReg.front_panel_config, 0x00001111);
+	fDevice->DeviceWrite(duneReg.dsp_led_config,0x00000000);
+	fDevice->DeviceWrite(duneReg.dsp_led_input, 0x00000000);
+	fDevice->DeviceWrite(duneReg.baseline_delay,baseline_delay);
+	fDevice->DeviceWrite(duneReg.diag_channel_input,0x00000000);
+	fDevice->DeviceWrite(duneReg.qi_config,0x0FFF1F00);
+	fDevice->DeviceWrite(duneReg.qi_delay,0x00000000);
+	fDevice->DeviceWrite(duneReg.qi_pulse_width,0x00000000);
+	fDevice->DeviceWrite(duneReg.external_gate_width,0x00008000);
+	//fDevice->DeviceWrite(duneReg.dsp_clock_control,0x00000000);
+
+	// Load the window settings - This MUST be the last operation */
 
 	TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configured complete.";
 
