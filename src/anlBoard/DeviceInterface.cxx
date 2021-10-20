@@ -749,7 +749,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface ReadEventFromDevice complete.";
 
   return;
-}
+} // NOLINT(readability/fn_size)
 
 void
 dunedaq::sspmodules::DeviceInterface::Shutdown()
@@ -1219,7 +1219,7 @@ dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
 //  // Load the window settings - This MUST be the last operation
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Configured complete.";
-}
+} // NOLINT(readability/fn_size)
 
 std::string
 dunedaq::sspmodules::DeviceInterface::GetIdentifier()

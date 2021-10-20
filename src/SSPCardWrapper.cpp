@@ -319,7 +319,7 @@ SSPCardWrapper::configure_device(const data_t& /*args*/)
   // m_device_interface->SetRegisterByName("gpio_output_width", 0x00001000);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::ConfigureDevice complete.";
-}
+} // NOLINT(readability/fn_size)
 
 void
 SSPCardWrapper::build_channel_control_registers(const std::vector<std::pair<std::string, unsigned int>> entries,
@@ -351,12 +351,10 @@ SSPCardWrapper::build_channel_control_registers(const std::vector<std::pair<std:
           }
           break;
         default:
-          try {
-            // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for external trigger source
-            // setting!"<<std::endl;
-          } catch (...) {
-          }
+          // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for external trigger source
+          // setting!"<<std::endl;
           // throw SSPDAQ::EDAQConfigError("");
+          break;
       }
     } else if (!ccIter->first.compare("ChannelControl_LEDTrigger")) {
       unsigned int val = ccIter->second;
@@ -377,20 +375,15 @@ SSPCardWrapper::build_channel_control_registers(const std::vector<std::pair<std:
           }
           break;
         default:
-          try {
-            // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for trigger polarity
-            // setting!"<<std::endl;
-          } catch (...) {
-          }
+          // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for trigger polarity
+          // setting!"<<std::endl;
           // throw SSPDAQ::EDAQConfigError("");
+          break;
       }
     } else if (!ccIter->first.compare("ChannelControl_TimestampRate")) {
       unsigned int val = ccIter->second;
       if (val > 7) {
-        try {
-          // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for timestamp rate setting!"<<std::endl;
-        } catch (...) {
-        }
+        // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for timestamp rate setting!"<<std::endl;
         // throw SSPDAQ::EDAQConfigError("");
       }
       for (unsigned int i = 0; i < 12; ++i) {

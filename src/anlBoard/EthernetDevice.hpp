@@ -32,8 +32,6 @@ public:
   //Create a device object using FTDI handles given for data and communication channels
   explicit EthernetDevice(unsigned long ipAddress);  // NOLINT
 
-  virtual ~EthernetDevice(){}
-
   //Implementation of base class interface
 
   inline virtual bool IsOpen(){
@@ -90,7 +88,7 @@ private:
   boost::asio::ip::address fIP;
 
   //Can only be opened by DeviceManager, not by user
-  virtual void Open(bool slowControlOnly=false);
+  virtual void Open(bool slowControlOnly);
 
 };
 

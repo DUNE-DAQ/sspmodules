@@ -45,10 +45,8 @@ public:
      //Allow implicit conversion to unsigned int for scalar registers
      operator unsigned int(){
       if(fSize>1){
-        try {
-          //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
-          // <<std::hex<<fAddress<<std::dec<<" as scalar!"<<std::endl;
-        } catch (...) {}
+        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
+        // <<std::hex<<fAddress<<std::dec<<" as scalar!"<<std::endl;
         throw(std::invalid_argument(""));
       }
       return fAddress;
@@ -57,11 +55,9 @@ public:
     //Indexing returns another register with correct address offset and size 1
     Register operator[](unsigned int i) const{
       if(i>=fSize){
-        try {
-          //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register at "
-          // <<std::hex<<fAddress<<std::dec<<" index "<<i
-          //<<", beyond end of array (size is "<<fSize<<")"<<std::endl;
-        } catch (...) {}
+        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register at "
+        // <<std::hex<<fAddress<<std::dec<<" index "<<i
+        //<<", beyond end of array (size is "<<fSize<<")"<<std::endl;
       }
       return Register(fAddress+0x4*i,fReadMask,fWriteMask,fOffset,1);
     }
@@ -112,10 +108,8 @@ public:
   //Get registers using variable names...
   Register operator[](std::string name){
     if(fNamed.find(name)==fNamed.end()){
-      try {
-        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access named SSP register "<<name
-        //<<", which does not exist!"<<std::endl;
-      } catch (...) {}
+      //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access named SSP register "<<name
+      //<<", which does not exist!"<<std::endl;
       throw(std::invalid_argument(""));
     }
     return fNamed[name];
@@ -271,8 +265,11 @@ public:
 
 private:
   RegMap(){}
-  RegMap(RegMap const&); //Don't implement
-  void operator=(RegMap const&); //Don't implement
+  ~RegMap(){}
+  RegMap(RegMap const&) = delete; //Don't implement
+  void operator=(RegMap const&) = delete; //Don't implement
+  RegMap(RegMap&&) = delete;
+  RegMap& operator=(RegMap&&) = delete;
   std::map<std::string, Register> fNamed;
 };
 

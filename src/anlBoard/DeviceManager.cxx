@@ -206,10 +206,7 @@ dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::dataformats::ssp::Comm_t
           std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
       }
       if (fEthernetDevices[deviceNum]->IsOpen()) {
-        try {
-          // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
-        } catch (...) {
-        }
+        // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
         throw(EDeviceAlreadyOpen());
       } else {
         device = fEthernetDevices[deviceNum].get();
@@ -224,20 +221,14 @@ dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::dataformats::ssp::Comm_t
       }
       device = fEmulatedDevices[deviceNum].get();
       if (device->IsOpen()) {
-        try {
-          // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
-        } catch (...) {
-        }
+        // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
         throw(EDeviceAlreadyOpen());
       } else {
         device->Open(slowControlOnly);
       }
       break;
     default:
-      try {
         // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Unrecognised interface type!"<<std::endl;
-      } catch (...) {
-      }
       throw(std::invalid_argument(""));
   }
   return device;

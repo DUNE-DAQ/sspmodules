@@ -644,6 +644,6 @@ dunedaq::sspmodules::RegMap::Get(void)
     // clang-format on
   }
   return *instance;
-}
+} // NOLINT(readability/fn_size)
 
 #endif // SSPMODULES_SRC_ANLBOARD_REGMAP_CXX_

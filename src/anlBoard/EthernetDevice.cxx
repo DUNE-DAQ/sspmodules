@@ -269,11 +269,8 @@ dunedaq::sspmodules::EthernetDevice::SendReceive(dunedaq::dataformats::CtrlPacke
         // dune::DAQLogger::LogWarning("SSP_EthernetDevice")<<"Send/receive failed "<<timesTried<<" times on Ethernet
         // link, retrying..."<<std::endl;
       } else {
-        try {
-          // dune::DAQLogger::LogError("SSP_EthernetDevice")<<"Send/receive failed on Ethernet link, giving
-          // up."<<std::endl;
-        } catch (...) {
-        }
+        // dune::DAQLogger::LogError("SSP_EthernetDevice")<<"Send/receive failed on Ethernet link, giving
+        // up."<<std::endl;
         throw;
       }
     }
