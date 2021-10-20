@@ -10,10 +10,10 @@
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
-#include "anlExceptions.h"
-#include "EmulatedDevice.h"
+#include "anlExceptions.hpp"
+#include "EmulatedDevice.hpp"
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
-#include "RegMap.h"
+#include "RegMap.hpp"
 
 #include <cstdlib>
 #include <random>
@@ -165,7 +165,7 @@ void dunedaq::sspmodules::EmulatedDevice::EmulatorLoop(){
 
     //Wait for random period, then generate event with system timestamp and random channel
     double waitTime = timeDistribution(generator);
-    usleep(int(waitTime));
+    usleep(static_cast<int>(waitTime));
     std::chrono::steady_clock::time_point eventTime = std::chrono::steady_clock::now();
     unsigned long eventTimestamp = (std::chrono::duration_cast<std::chrono::duration<unsigned long,std::ratio<1, 150000000>>>(eventTime - runStartTime)).count(); //150MHz clock // NOLINT(runtime/int)
     int channel = channelDistribution(generator);

@@ -5,14 +5,15 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_H_
-#define SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_H_
+#ifndef SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_
+#define SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_
 
 #include <queue>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <utility>
 
 namespace dunedaq {
 namespace sspmodules {
@@ -96,4 +97,4 @@ private:
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_H_
+#endif // SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_

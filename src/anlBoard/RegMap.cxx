@@ -8,17 +8,18 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_REGMAP_CXX_
 #define SSPMODULES_SRC_ANLBOARD_REGMAP_CXX_
 
-#include "RegMap.h"
+#include "RegMap.hpp"
 
-dunedaq::sspmodules::RegMap& dunedaq::sspmodules::RegMap::Get(void)
+dunedaq::sspmodules::RegMap&
+dunedaq::sspmodules::RegMap::Get(void)
 {
 
-  static dunedaq::sspmodules::RegMap* instance = 0;
+  static dunedaq::sspmodules::RegMap* instance = nullptr;
 
-  if(!instance){
-    instance=new dunedaq::sspmodules::RegMap;
+  if (!instance) {
+    instance = new dunedaq::sspmodules::RegMap;
     // NOTE: All comments about default values, read masks, and write masks are current as of 2/11/2014
-
+    // clang-format off
     // Registers in the Zynq ARM        Address                         Address         Default Value   Read Mask               Write Mask              Code Name
     instance->armStatus                         = 0x00000000;   //      0x0000,         0xABCDEF01              0xFFFFFFFF              0x00000000              rregStatus             
     instance->armError                          = 0x00000004;   //      0x0004,         0xEF012345              0xFFFFFFFF              0x00000000              regError               
@@ -640,7 +641,7 @@ dunedaq::sspmodules::RegMap& dunedaq::sspmodules::RegMap::Get(void)
     instance->fNamed["idelay_count"]            =Register(  0x80000800, 0xFFFFFFFF, 0x00000000, 12);
     instance->fNamed["adc_data_monitor"]        =Register(  0x80000840, 0x0000FFFF, 0x00000000, 12);     
     instance->fNamed["adc_status"]              =Register(  0x80000880, 0xFFFFFFFF, 0x00000000, 12);
-  
+    // clang-format on
   }
   return *instance;
 }

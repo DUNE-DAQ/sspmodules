@@ -5,16 +5,17 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_ANLBOARD_REGMAP_H_
-#define SSPMODULES_SRC_ANLBOARD_REGMAP_H_
+#ifndef SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_
+#define SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
-#include "anlExceptions.h"
+#include "anlExceptions.hpp"
 
 #include <iostream>
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include <map>
+#include <string>
 
 namespace dunedaq {
 namespace sspmodules {
@@ -39,16 +40,10 @@ public:
              fOffset(offset),
              fBits(bits){}
 
-             Register():
-             fAddress(0x00000000),
-             fReadMask(0xFFFFFFFF),
-             fWriteMask(0xFFFFFFFF),
-             fSize(1),
-             fOffset(0),
-             fBits(32){}
+     Register(){}
 
-             //Allow implicit conversion to unsigned int for scalar registers
-             operator unsigned int(){
+     //Allow implicit conversion to unsigned int for scalar registers
+     operator unsigned int(){
       if(fSize>1){
         try {
           //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
@@ -96,22 +91,22 @@ public:
   private:
 
     //Address of register in SSP space
-    unsigned int fAddress;
+    unsigned int fAddress {0x00000000};
 
     //Readable/writable bits in this register for calling code to check
     //that read/write requests make sense
-    unsigned int fReadMask;
-    unsigned int fWriteMask;
+    unsigned int fReadMask {0xFFFFFFFF};
+    unsigned int fWriteMask {0xFFFFFFFF};
 
-    unsigned int fSize;
+    unsigned int fSize {1};
 
     //Bit offset of relevant quantity relative to start of addressed word.
     //Not currently used but we could use this to "virtually" address logical quantities
     //which are assigned only part of a 32-bit word
-    unsigned int fOffset;
+    unsigned int fOffset {0};
 
     //Number of bits assigned to relevant quantity. Not currently used (see above)
-    unsigned int fBits;
+    unsigned int fBits {32};
   };
 
   //Get registers using variable names...
@@ -275,7 +270,7 @@ public:
   unsigned int adc_status[12];
 
 private:
-  RegMap(){};
+  RegMap(){}
   RegMap(RegMap const&); //Don't implement
   void operator=(RegMap const&); //Don't implement
   std::map<std::string, Register> fNamed;
@@ -284,4 +279,4 @@ private:
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_ANLBOARD_REGMAP_H_
+#endif // SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_

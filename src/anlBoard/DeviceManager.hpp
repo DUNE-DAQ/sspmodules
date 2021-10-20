@@ -5,15 +5,15 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_H_
-#define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_H_
+#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_
+#define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
 //#include "ftd2xx.h"
 //#include "USBDevice.h"
-#include "EmulatedDevice.h"
-#include "EthernetDevice.h"
+#include "EmulatedDevice.hpp"
+#include "EthernetDevice.hpp"
 
 #include <vector>
 #include <map>
@@ -57,7 +57,7 @@ private:
   //std::vector<USBDevice> fUSBDevices;
 
   //Ethernet devices keyed by IP address
-  std::map<unsigned long,std::unique_ptr<EthernetDevice> > fEthernetDevices;
+  std::map<unsigned long,std::unique_ptr<EthernetDevice> > fEthernetDevices;  // NOLINT(runtime/int)
 
   //List of emulated devices
   std::vector<std::unique_ptr<EmulatedDevice> > fEmulatedDevices;
@@ -68,4 +68,4 @@ private:
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_H_
+#endif // SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_

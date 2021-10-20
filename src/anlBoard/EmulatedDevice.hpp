@@ -1,41 +1,41 @@
 /**
- * @file EthernetDevice.h
+ * @file EmulatedDevice.h
  *
  * This is part of the DUNE DAQ , copyright 2020.
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_H_
-#define SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_H_
+#ifndef SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_HPP_
+#define SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_HPP_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
-#include "Device.h"
-#include "boost/asio.hpp"
+#include "Device.hpp"
+#include "SafeQueue.hpp"
 
 #include <iostream>
 #include <iomanip>
 #include <string>
-#include <cstdint>
+#include <stdint.h>
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
+#include <memory>
+#include <atomic>
+#include <vector>
 
 namespace dunedaq {
 namespace sspmodules {
 
-class EthernetDevice : public Device{
-
-private:
+class EmulatedDevice : public Device{
 
   friend class DeviceManager;
 
 public:
 
-  //Create a device object using FTDI handles given for data and communication channels
-  EthernetDevice(unsigned long ipAddress);
+  explicit EmulatedDevice(unsigned int deviceNumber = 0);
 
-  virtual ~EthernetDevice(){};
+  virtual ~EmulatedDevice(){}
 
   //Implementation of base class interface
 
@@ -69,33 +69,37 @@ public:
 
   virtual void DeviceArrayWrite(unsigned int address, unsigned int size, unsigned int* data);
 
-  //Internal functions - make public so debugging code can access them
-
-  void SendReceive(dunedaq::dataformats::CtrlPacket& tx, dunedaq::dataformats::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
-
-  void SendEthernet(dunedaq::dataformats::CtrlPacket& tx, unsigned int txSize);
-
-  void ReceiveEthernet(dunedaq::dataformats::CtrlPacket& rx, unsigned int rxSizeExpected);
-
-  void DevicePurge(boost::asio::ip::tcp::socket& socket);
-
 private:
+
+  virtual void Open(bool slowControlOnly=false);
+
+  //Start generation of events by emulator thread
+  //Called when appropriate register is set via DeviceWrite
+  void Start();
+
+  //Stop generation of events by emulator thread
+  //Called when appropriate register is set via DeviceWrite
+  void Stop();
+
+  //Add fake events to fEmulatedBuffer periodically
+  void EmulatorLoop();
+
+  //Device number to put into event headers
+  unsigned int fDeviceNumber;
 
   bool isOpen;
 
-  static boost::asio::io_service fIo_service;
+  //Separate thread to generate fake data asynchronously
+  std::unique_ptr<std::thread> fEmulatorThread;
 
-  boost::asio::ip::tcp::socket fCommSocket;
-  boost::asio::ip::tcp::socket fDataSocket;
+  //Buffer for fake data, popped from by DeviceReceive
+  SafeQueue<unsigned int> fEmulatedBuffer;
 
-  boost::asio::ip::address fIP;
-
-  //Can only be opened by DeviceManager, not by user
-  virtual void Open(bool slowControlOnly=false);
-
+  //Set by Stop method; tells emulator thread to stop generating data
+  std::atomic<bool> fEmulatorShouldStop;
 };
 
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_H_
+#endif // SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_HPP_

@@ -5,13 +5,14 @@
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_ANLBOARD_EVENTPACKET_H_
-#define SSPMODULES_SRC_ANLBOARD_EVENTPACKET_H_
+#ifndef SSPMODULES_SRC_ANLBOARD_EVENTPACKET_HPP_
+#define SSPMODULES_SRC_ANLBOARD_EVENTPACKET_HPP_
 
 #include "dataformats/ssp/SSPTypes.hpp"
 
 #include <vector>
 #include <sstream>
+#include <utility>
 
 namespace dunedaq {
 namespace sspmodules {
@@ -65,4 +66,4 @@ public:
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_ANLBOARD_EVENTPACKET_H_
+#endif // SSPMODULES_SRC_ANLBOARD_EVENTPACKET_HPP_

@@ -14,10 +14,7 @@
 
 namespace dunedaq {
 
-    ERS_DECLARE_ISSUE(sspmodules,
-            ConfigurationError,
-    "SSP Configuration Error: " << conferror,
-    ((std::string)conferror))
+ERS_DECLARE_ISSUE(sspmodules, ConfigurationError, "SSP Configuration Error: " << conferror, ((std::string)conferror))
 
 } // namespace dunedaq
 

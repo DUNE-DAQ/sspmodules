@@ -10,7 +10,7 @@
 
 #include "logging/Logging.hpp"
 
-#include "EventPacket.h"
+#include "EventPacket.hpp"
 
 void dunedaq::sspmodules::EventPacket::SetEmpty(){
   data.clear();
@@ -23,7 +23,7 @@ void dunedaq::sspmodules::EventPacket::DumpHeader(){
   if(peaksum & 0x00800000) {
     peaksum |= 0xFF000000;
   }
-
+  // clang-format off
   //dune::DAQLogger::LogInfo("SSP_EventPacket")
   TLOG_DEBUG(10) 
     << "=====HEADER=======================================" << std::endl
@@ -50,6 +50,7 @@ void dunedaq::sspmodules::EventPacket::DumpHeader(){
     << "Internal timestamp:                 " << ((uint64_t)((uint64_t)header.intTimestamp[3] << 32)) + ((uint64_t)((uint64_t)header.intTimestamp[2]) << 16) + ((uint64_t)((uint64_t)header.intTimestamp[1])) <<" ("<<header.intTimestamp[3]<<" "<<header.intTimestamp[2]<<" "<<header.intTimestamp[1]<<")"<<std::endl  // NOLINT(build/unsigned)
     << "=================================================="<< std::endl
     << std::endl;
+  // clang-format on
 }
 
 void dunedaq::sspmodules::EventPacket::DumpEvent(){

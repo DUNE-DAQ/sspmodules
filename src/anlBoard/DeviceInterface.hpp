@@ -1,33 +1,38 @@
 /**
- * @file DeviceInterface.h
+ * @file DeviceInterface.hpp
  *
  * This is part of the DUNE DAQ , copyright 2020.
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
-#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_H_
-#define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_H_
+#ifndef SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
+#define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
 
 #include "appfwk/app/Nljs.hpp"
 #include "readout/ReadoutTypes.hpp"
 #include "dataformats/ssp/SSPTypes.hpp"
-
-#include "DeviceManager.h"
-#include "Device.h"
-#include "SafeQueue.h"
-#include "EventPacket.h"
-#include <string>
 #include "logging/Logging.hpp"
+
+#include "DeviceManager.hpp"
+#include "Device.hpp"
+#include "SafeQueue.hpp"
+#include "EventPacket.hpp"
+
+#include <string>
 #include <memory>
+#include <map>
+#include <deque>
+#include <queue>
+#include <vector>
 
 namespace dunedaq {
 namespace sspmodules {
 
 struct TriggerInfo{
-  unsigned long startTime;
-  unsigned long endTime;
-  unsigned long triggerTime;
-  unsigned short triggerType;
+  unsigned long startTime;    // NOLINT(runtime/int)
+  unsigned long endTime;      // NOLINT(runtime/int)
+  unsigned long triggerTime;  // NOLINT(runtime/int)
+  unsigned short triggerType; // NOLINT(runtime/int)
 };
 
 class DeviceInterface{
@@ -43,7 +48,7 @@ public:
 
   //Just sets the fields needed to request the device.
   //Real work is done in Initialize which is called manually.
-  DeviceInterface(dunedaq::dataformats::ssp::Comm_t commType);
+  explicit DeviceInterface(dunedaq::dataformats::ssp::Comm_t commType);
 
   ~DeviceInterface(){
     //if(fRequestReceiver){
@@ -140,9 +145,9 @@ public:
 
   void SetPostTrigLength(unsigned int len){fPostTrigLength = len;}
 
-  void SetTriggerWriteDelay(unsigned long delay){fTriggerWriteDelay = delay;}
+  void SetTriggerWriteDelay(unsigned long delay){fTriggerWriteDelay = delay;}   // NOLINT(runtime/int)
 
-  void SetTriggerLatency(unsigned long latency){fTriggerLatency = latency;}
+  void SetTriggerLatency(unsigned long latency){fTriggerLatency = latency;}     // NOLINT(runtime/int)
 
   void SetDummyPeriod(int period){fDummyPeriod=period;}
 
@@ -172,7 +177,7 @@ private:
   dunedaq::dataformats::ssp::Comm_t fCommType;
 
   //Index of the device in the hardware-returned list
-  unsigned long fDeviceId;
+  unsigned long fDeviceId;    // NOLINT(runtime/int)
 
   //Holds current device state. Hopefully this matches the state of the
   //hardware itself.
@@ -184,7 +189,7 @@ private:
 
   bool GetTriggerInfo(const EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger);
 
-  unsigned long GetTimestamp(const dunedaq::dataformats::EventHeader& header);
+  unsigned long GetTimestamp(const dunedaq::dataformats::EventHeader& header);  // NOLINT(runtime/int)
 
   //Build a millislice containing only a header and place in fQueue
   //    void BuildEmptyMillislice(unsigned long startTime,unsigned long endTime);
@@ -199,9 +204,9 @@ private:
 
   std::deque<EventPacket> fPacketBuffer;
 
-  unsigned long fMillislicesSent;
+  unsigned long fMillislicesSent;   // NOLINT(runtime/int)
 
-  unsigned long fMillislicesBuilt;
+  unsigned long fMillislicesBuilt;  // NOLINT(runtime/int)
 
   bool fUseExternalTimestamp;
 
@@ -211,9 +216,9 @@ private:
 
   unsigned int fPostTrigLength;
 
-  unsigned long fTriggerWriteDelay;
+  unsigned long fTriggerWriteDelay; // NOLINT(runtime/int)
 
-  unsigned long fTriggerLatency;
+  unsigned long fTriggerLatency;    // NOLINT(runtime/int)
 
   unsigned int fTriggerMask;
 
@@ -246,4 +251,4 @@ private:
 } // namespace sspmodules
 } // namespace dunedaq
 
-#endif // SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_H_
+#endif // SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
