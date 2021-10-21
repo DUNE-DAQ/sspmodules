@@ -1,19 +1,30 @@
-#ifndef __REGMAP_H__
-#define __REGMAP_H__
+/**
+ * @file RegMap.h
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_
+#define SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_
 
-#include "dune-raw-data/Overlays/anlTypes.hh"
+#include "dataformats/ssp/SSPTypes.hpp"
+
+#include "anlExceptions.hpp"
+
 #include <iostream>
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include <map>
-#include "anlExceptions.h"
+#include <string>
 
-namespace SSPDAQ{
+namespace dunedaq {
+namespace sspmodules {
 
 //Singleton containing human-readable names for SSP registers.
 //Note that Zynq registers are in camelCase, and Artix registers
 //are spaced_with_underscores.  
 class RegMap{
- public:
+public:
 
   //Get a reference to the instance of RegMap
   static RegMap& Get();
@@ -21,30 +32,22 @@ class RegMap{
   class Register{
   public:
     Register(unsigned int address, unsigned int readMask, unsigned int writeMask,
-	     unsigned int size=1, unsigned int offset=0, unsigned int bits=32):
-    fAddress(address),
-      fReadMask(readMask),
-      fWriteMask(writeMask),
-      fSize(size),
-      fOffset(offset),
-      fBits(bits){}
+             unsigned int size=1, unsigned int offset=0, unsigned int bits=32):
+             fAddress(address),
+             fReadMask(readMask),
+             fWriteMask(writeMask),
+             fSize(size),
+             fOffset(offset),
+             fBits(bits){}
 
-  Register():
-    fAddress(0x00000000),
-      fReadMask(0xFFFFFFFF),
-      fWriteMask(0xFFFFFFFF),
-      fSize(1),
-      fOffset(0),
-      fBits(32){}
+     Register(){}
 
-    //Allow implicit conversion to unsigned int for scalar registers
-    operator unsigned int(){
+     //Allow implicit conversion to unsigned int for scalar registers
+     operator unsigned int(){
       if(fSize>1){
-	try {
-	  //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
-	  // <<std::hex<<fAddress<<std::dec<<" as scalar!"<<std::endl;
-	} catch (...) {}
-	throw(std::invalid_argument(""));
+        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
+        // <<std::hex<<fAddress<<std::dec<<" as scalar!"<<std::endl;
+        throw(std::invalid_argument(""));
       }
       return fAddress;
     }
@@ -52,11 +55,9 @@ class RegMap{
     //Indexing returns another register with correct address offset and size 1
     Register operator[](unsigned int i) const{
       if(i>=fSize){
-	try {
-	  //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register at "
-	  // <<std::hex<<fAddress<<std::dec<<" index "<<i
-	  //<<", beyond end of array (size is "<<fSize<<")"<<std::endl;
-	} catch (...) {}
+        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register at "
+        // <<std::hex<<fAddress<<std::dec<<" index "<<i
+        //<<", beyond end of array (size is "<<fSize<<")"<<std::endl;
       }
       return Register(fAddress+0x4*i,fReadMask,fWriteMask,fOffset,1);
     }
@@ -86,31 +87,29 @@ class RegMap{
   private:
 
     //Address of register in SSP space
-    unsigned int fAddress;
+    unsigned int fAddress {0x00000000};
 
     //Readable/writable bits in this register for calling code to check
     //that read/write requests make sense
-    unsigned int fReadMask;
-    unsigned int fWriteMask;
+    unsigned int fReadMask {0xFFFFFFFF};
+    unsigned int fWriteMask {0xFFFFFFFF};
 
-    unsigned int fSize;
+    unsigned int fSize {1};
 
     //Bit offset of relevant quantity relative to start of addressed word.
     //Not currently used but we could use this to "virtually" address logical quantities
     //which are assigned only part of a 32-bit word
-    unsigned int fOffset;
+    unsigned int fOffset {0};
 
     //Number of bits assigned to relevant quantity. Not currently used (see above)
-    unsigned int fBits;
+    unsigned int fBits {32};
   };
 
   //Get registers using variable names...
   Register operator[](std::string name){
     if(fNamed.find(name)==fNamed.end()){
-      try {
-	//dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access named SSP register "<<name
-	//<<", which does not exist!"<<std::endl;
-      } catch (...) {}
+      //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access named SSP register "<<name
+      //<<", which does not exist!"<<std::endl;
       throw(std::invalid_argument(""));
     }
     return fNamed[name];
@@ -264,12 +263,17 @@ class RegMap{
   unsigned int adc_data_monitor[12];
   unsigned int adc_status[12];
 
- private:
-  RegMap(){};
-  RegMap(RegMap const&); //Don't implement
-  void operator=(RegMap const&); //Don't implement
+private:
+  RegMap(){}
+  ~RegMap(){}
+  RegMap(RegMap const&) = delete; //Don't implement
+  void operator=(RegMap const&) = delete; //Don't implement
+  RegMap(RegMap&&) = delete;
+  RegMap& operator=(RegMap&&) = delete;
   std::map<std::string, Register> fNamed;
 };
 
-}//namespace
-#endif
+} // namespace sspmodules
+} // namespace dunedaq
+
+#endif // SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_

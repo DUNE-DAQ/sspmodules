@@ -1,23 +1,27 @@
-/*
- * SafeQueue.hh
+/**
+ * @file SafeQueue.h
  *
- *  Created on: May 22, 2014
- *      Author: tcn45
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
  */
-
-#ifndef SAFEQUEUE_HH_
-#define SAFEQUEUE_HH_
+#ifndef SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_
+#define SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_
 
 #include <queue>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
+#include <utility>
+
+namespace dunedaq {
+namespace sspmodules {
 
 template <typename T>
 class SafeQueue
 {
- public:
+public:
 
   T pop()
   {
@@ -44,15 +48,15 @@ class SafeQueue
 
   bool try_pop(T& item, std::chrono::microseconds timeout)
   {
-      std::unique_lock<std::mutex> mlock(mutex_);
+    std::unique_lock<std::mutex> mlock(mutex_);
 
-      if(!cond_.wait_for(mlock, timeout, [this] { return !queue_.empty(); }))
-          return false;
+    if(!cond_.wait_for(mlock, timeout, [this] { return !queue_.empty(); }))
+      return false;
 
-      item = std::move(queue_.front());
-      queue_.pop();
+    item = std::move(queue_.front());
+    queue_.pop();
 
-      return true;
+    return true;
   }
 
   void push(const T& item)
@@ -73,24 +77,24 @@ class SafeQueue
 
   size_t size(void)
   {
-	  std::unique_lock<std::mutex> mlock(mutex_);
-	  size_t queue_size = queue_.size();
-	  mlock.unlock();
+    std::unique_lock<std::mutex> mlock(mutex_);
+    size_t queue_size = queue_.size();
+    mlock.unlock();
 
-	  return queue_size;
+    return queue_size;
   }
 
   SafeQueue()=default;
   SafeQueue(const SafeQueue&) = delete;            // disable copying
   SafeQueue& operator=(const SafeQueue&) = delete; // disable assignment
 
- private:
+private:
   std::queue<T> queue_;
   std::mutex mutex_;
   std::condition_variable cond_;
 };
 
+} // namespace sspmodules
+} // namespace dunedaq
 
-
-
-#endif /* SAFEQUEUE_HH_ */
+#endif // SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_

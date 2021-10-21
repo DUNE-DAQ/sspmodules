@@ -1,48 +1,63 @@
-#include "EmulatedDevice.h"
-#include <cstdlib>
+/**
+ * @file EmulatedDevice.cxx
+ *
+ * This is part of the DUNE DAQ , copyright 2020.
+ * Licensing/copyright details are in the COPYING file that you should have
+ * received with this code.
+ */
+#ifndef SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_CXX_
+#define SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_CXX_
+
+#include "dataformats/ssp/SSPTypes.hpp"
+
+#include "anlExceptions.hpp"
+#include "EmulatedDevice.hpp"
 //#include "dune-artdaq/DAQLogger/DAQLogger.hh"
-#include "anlExceptions.h"
+#include "RegMap.hpp"
+
+#include <cstdlib>
 #include <random>
-#include "RegMap.h"
 #include <chrono>
 #include <iostream>
+#include <memory>
+#include <vector>
 
-SSPDAQ::EmulatedDevice::EmulatedDevice(unsigned int deviceNumber){
+dunedaq::sspmodules::EmulatedDevice::EmulatedDevice(unsigned int deviceNumber){
   fDeviceNumber=deviceNumber;
   isOpen=false;
   fEmulatorThread=0;
 }
 
-void SSPDAQ::EmulatedDevice::Open(bool slowControlOnly){
+void dunedaq::sspmodules::EmulatedDevice::Open(bool slowControlOnly){
 
   fSlowControlOnly=slowControlOnly;
   //dune::DAQLogger::LogInfo("SSP_EmulatedDevice")<<"Emulated device open"<<std::endl;
   isOpen=true;
 }
 
-void SSPDAQ::EmulatedDevice::Close(){
+void dunedaq::sspmodules::EmulatedDevice::Close(){
   this->DevicePurgeData();
   isOpen=false;
   //dune::DAQLogger::LogInfo("SSP_EmulatedDevice")<<"Emulated Device closed"<<std::endl;
 }
 
-void SSPDAQ::EmulatedDevice::DevicePurgeComm()
+void dunedaq::sspmodules::EmulatedDevice::DevicePurgeComm()
 {
 }
 
-void SSPDAQ::EmulatedDevice::DevicePurgeData()
+void dunedaq::sspmodules::EmulatedDevice::DevicePurgeData()
 {
   while(fEmulatedBuffer.size()){
     fEmulatedBuffer.pop();
   }
 }
 
-void SSPDAQ::EmulatedDevice::DeviceQueueStatus (unsigned int* numWords)
+void dunedaq::sspmodules::EmulatedDevice::DeviceQueueStatus (unsigned int* numWords)
 {
   (*numWords)=fEmulatedBuffer.size();
 }
 
-void SSPDAQ::EmulatedDevice::DeviceReceive(std::vector<unsigned int>& data, unsigned int size){
+void dunedaq::sspmodules::EmulatedDevice::DeviceReceive(std::vector<unsigned int>& data, unsigned int size){
 
   data.clear();
   unsigned int element;
@@ -50,8 +65,7 @@ void SSPDAQ::EmulatedDevice::DeviceReceive(std::vector<unsigned int>& data, unsi
     bool gotData=fEmulatedBuffer.try_pop(element,std::chrono::microseconds(1000));
     if(gotData){
       data.push_back(element);
-	}
-    else{
+	} else {
       break;
     }
   }
@@ -62,55 +76,54 @@ void SSPDAQ::EmulatedDevice::DeviceReceive(std::vector<unsigned int>& data, unsi
 //==============================================================================
 
 //Only respond to specific commands needed to simulate normal operations
-void SSPDAQ::EmulatedDevice::DeviceRead (unsigned int address, unsigned int* value)
+void dunedaq::sspmodules::EmulatedDevice::DeviceRead (unsigned int address, unsigned int* value)
 {
   (void)address;
   (void)value;
 }
 
-void SSPDAQ::EmulatedDevice::DeviceReadMask (unsigned int address, unsigned int mask, unsigned int* value)
+void dunedaq::sspmodules::EmulatedDevice::DeviceReadMask (unsigned int address, unsigned int mask, unsigned int* value)
 {
   (void)address;
   (void)mask;
   (void)value;
 }
 
-void SSPDAQ::EmulatedDevice::DeviceWrite (unsigned int address, unsigned int value)
+void dunedaq::sspmodules::EmulatedDevice::DeviceWrite (unsigned int address, unsigned int value)
 {
-  SSPDAQ::RegMap& duneReg=SSPDAQ::RegMap::Get();
+  dunedaq::sspmodules::RegMap& duneReg=dunedaq::sspmodules::RegMap::Get();
   if(address==duneReg.master_logic_control&&value==0x00000001){
     this->Start();
-  }
-  else if(address==duneReg.event_data_control&&value==0x00020001){
+  } else if (address==duneReg.event_data_control&&value==0x00020001){
     this->Stop();
   }
 }
 
-void SSPDAQ::EmulatedDevice::DeviceWriteMask (unsigned int address, unsigned int mask, unsigned int value)
+void dunedaq::sspmodules::EmulatedDevice::DeviceWriteMask (unsigned int address, unsigned int mask, unsigned int value)
 {
   (void)address;
   (void)mask;
   (void)value;
 }
 
-void SSPDAQ::EmulatedDevice::DeviceSet (unsigned int address, unsigned int mask)
+void dunedaq::sspmodules::EmulatedDevice::DeviceSet (unsigned int address, unsigned int mask)
 {
   DeviceWriteMask(address, mask, 0xFFFFFFFF);
 }
 
-void SSPDAQ::EmulatedDevice::DeviceClear (unsigned int address, unsigned int mask)
+void dunedaq::sspmodules::EmulatedDevice::DeviceClear (unsigned int address, unsigned int mask)
 {
   DeviceWriteMask(address, mask, 0x00000000);
 }
 
-void SSPDAQ::EmulatedDevice::DeviceArrayRead (unsigned int address, unsigned int size, unsigned int* data)
+void dunedaq::sspmodules::EmulatedDevice::DeviceArrayRead (unsigned int address, unsigned int size, unsigned int* data)
 {
   (void)address;
   (void)size;
   (void)data;
 }
 
-void SSPDAQ::EmulatedDevice::DeviceArrayWrite (unsigned int address, unsigned int size, unsigned int* data)
+void dunedaq::sspmodules::EmulatedDevice::DeviceArrayWrite (unsigned int address, unsigned int size, unsigned int* data)
 {
   (void)address;
   (void)size;
@@ -121,13 +134,13 @@ void SSPDAQ::EmulatedDevice::DeviceArrayWrite (unsigned int address, unsigned in
 //Emulator-specific functions
 //==============================================================
 
-void SSPDAQ::EmulatedDevice::Start(){
+void dunedaq::sspmodules::EmulatedDevice::Start(){
   //dune::DAQLogger::LogDebug("SSP_EmulatedDevice")<<"Creating emulator thread..."<<std::endl;
   fEmulatorShouldStop=false;
-  fEmulatorThread=std::unique_ptr<std::thread>(new std::thread(&SSPDAQ::EmulatedDevice::EmulatorLoop,this));
+  fEmulatorThread=std::unique_ptr<std::thread>(new std::thread(&dunedaq::sspmodules::EmulatedDevice::EmulatorLoop,this));
 }
 
-void SSPDAQ::EmulatedDevice::Stop(){
+void dunedaq::sspmodules::EmulatedDevice::Stop(){
   fEmulatorShouldStop=true;
   if(fEmulatorThread){
     fEmulatorThread->join();
@@ -135,10 +148,10 @@ void SSPDAQ::EmulatedDevice::Stop(){
   }  
 }
 
-void SSPDAQ::EmulatedDevice::EmulatorLoop(){
+void dunedaq::sspmodules::EmulatedDevice::EmulatorLoop(){
 
   //dune::DAQLogger::LogDebug("SSP_EmulatedDevice")<<"Starting emulator loop..."<<std::endl;
-  static unsigned int headerSizeInWords=sizeof(SSPDAQ::EventHeader)/sizeof(unsigned int);
+  static unsigned int headerSizeInWords=sizeof(dunedaq::dataformats::EventHeader)/sizeof(unsigned int);
 
   //We want to generate events on random channels at random times
   std::default_random_engine generator;
@@ -152,13 +165,13 @@ void SSPDAQ::EmulatedDevice::EmulatorLoop(){
 
     //Wait for random period, then generate event with system timestamp and random channel
     double waitTime = timeDistribution(generator);
-    usleep(int(waitTime));
+    usleep(static_cast<int>(waitTime));
     std::chrono::steady_clock::time_point eventTime = std::chrono::steady_clock::now();
-    unsigned long eventTimestamp = (std::chrono::duration_cast<std::chrono::duration<unsigned long,std::ratio<1, 150000000>>>(eventTime - runStartTime)).count();//150MHz clock
+    unsigned long eventTimestamp = (std::chrono::duration_cast<std::chrono::duration<unsigned long,std::ratio<1, 150000000>>>(eventTime - runStartTime)).count(); //150MHz clock // NOLINT(runtime/int)
     int channel = channelDistribution(generator);
 
     //Build an event header. 
-    SSPDAQ::EventHeader header;
+    dunedaq::dataformats::EventHeader header;
 
     //Standard header word
     header.header=0xAAAAAAAA;
@@ -202,3 +215,5 @@ void SSPDAQ::EmulatedDevice::EmulatorLoop(){
     }
   }
 }
+
+#endif // SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_CXX_

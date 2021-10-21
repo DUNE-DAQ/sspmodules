@@ -57,7 +57,7 @@ private:
   using module_conf_t = dunedaq::sspmodules::sspcardreader::Conf;
 
   // Constants
-  //static constexpr int s_elink_multiplier = 64;
+  // static constexpr int s_elink_multiplier = 64;
 
   // Commands
   void do_configure(const data_t& args);
@@ -72,7 +72,6 @@ private:
 
   // SSP Cards
   std::unique_ptr<SSPCardWrapper> m_card_wrapper;
-
 };
 
 } // namespace dunedaq::sspmodules
