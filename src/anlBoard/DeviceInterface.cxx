@@ -36,7 +36,7 @@ enum
 };
 
 // SSPDAQ::DeviceInterface::DeviceInterface(SSPDAQ::Comm_t commType, unsigned long deviceId)
-dunedaq::sspmodules::DeviceInterface::DeviceInterface(dunedaq::dataformats::ssp::Comm_t commType)
+dunedaq::sspmodules::DeviceInterface::DeviceInterface(dunedaq::detdataformats::ssp::Comm_t commType)
   : fCommType(commType)
   , fDeviceId(0)
   , fState(dunedaq::sspmodules::DeviceInterface::kUninitialized)
@@ -67,9 +67,9 @@ dunedaq::sspmodules::DeviceInterface::OpenSlowControl()
   dunedaq::sspmodules::Device* device = 0;
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Opening "
-                              << ((fCommType == dunedaq::dataformats::ssp::kUSB)
+                              << ((fCommType == dunedaq::detdataformats::ssp::kUSB)
                                     ? "USB"
-                                    : ((fCommType == dunedaq::dataformats::ssp::kEthernet) ? "Ethernet" : "Emulated"))
+                                    : ((fCommType == dunedaq::detdataformats::ssp::kEthernet) ? "Ethernet" : "Emulated"))
                               << " device #" << fDeviceId << " for slow control only..." << std::endl;
 
   device = devman.OpenDevice(fCommType, fDeviceId, true);
@@ -509,7 +509,7 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
 
   unsigned int dataSizeInWords = 0;
 
-  dataSizeInWords += dunedaq::dataformats::MillisliceHeader::sizeInUInts;
+  dataSizeInWords += dunedaq::detdataformats::MillisliceHeader::sizeInUInts;
   for (auto ev = eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     dataSizeInWords += (*ev)->header.length;
   }
@@ -518,7 +518,7 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
   // Build slice header//
   //==================//
 
-  dunedaq::dataformats::MillisliceHeader sliceHeader;
+  dunedaq::detdataformats::MillisliceHeader sliceHeader;
   sliceHeader.length = dataSizeInWords;
   sliceHeader.nTriggers = eventsToWrite.size();
   sliceHeader.startTime = theTrigger.startTime;
@@ -533,16 +533,16 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
   fragmentData.resize(dataSizeInWords);
 
   static unsigned int headerSizeInWords =
-    sizeof(dunedaq::dataformats::EventHeader) / sizeof(unsigned int); // Size of DAQ event header
+    sizeof(dunedaq::detdataformats::EventHeader) / sizeof(unsigned int); // Size of DAQ event header
 
   // Put millislice header at front of vector
   auto sliceDataPtr = fragmentData.begin();
   unsigned int* millisliceHeaderPtr = static_cast<unsigned int*>(static_cast<void*>(&sliceHeader));
   std::copy(
-    millisliceHeaderPtr, millisliceHeaderPtr + dunedaq::dataformats::MillisliceHeader::sizeInUInts, sliceDataPtr);
+    millisliceHeaderPtr, millisliceHeaderPtr + dunedaq::detdataformats::MillisliceHeader::sizeInUInts, sliceDataPtr);
 
   // Fill rest of vector with event data
-  sliceDataPtr += dunedaq::dataformats::MillisliceHeader::sizeInUInts;
+  sliceDataPtr += dunedaq::detdataformats::MillisliceHeader::sizeInUInts;
 
   for (auto ev = eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     // DAQ event header
@@ -667,7 +667,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   unsigned int* headerBlock = (unsigned int*)&event.header;
   headerBlock[0] = 0xAAAAAAAA;
 
-  static const unsigned int headerReadSize = (sizeof(dunedaq::dataformats::EventHeader) / sizeof(unsigned int) - 1);
+  static const unsigned int headerReadSize = (sizeof(dunedaq::detdataformats::EventHeader) / sizeof(unsigned int) - 1);
 
   // Wait for hardware queue to fill with full header data
   unsigned int timeWaited = 0; // in us
@@ -705,7 +705,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   std::copy(data.begin(), data.end(), &(headerBlock[1]));
 
   // Wait for hardware queue to fill with full event data
-  unsigned int bodyReadSize = event.header.length - (sizeof(dunedaq::dataformats::EventHeader) / sizeof(unsigned int));
+  unsigned int bodyReadSize = event.header.length - (sizeof(dunedaq::detdataformats::EventHeader) / sizeof(unsigned int));
   queueLengthInUInts = 0;
   timeWaited = 0; // in us
 
@@ -740,7 +740,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   // Copy event data into event packet
   event.data = std::move(data);
 
-  auto ehsize = sizeof(struct dunedaq::dataformats::EventHeader);
+  auto ehsize = sizeof(struct dunedaq::detdataformats::EventHeader);
   auto ehlength = event.header.length;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Event data size: " << event.data.size() << " ehsize: " << ehsize
                               << " ehl: " << ehlength;
@@ -887,17 +887,17 @@ dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
   }
 
   auto m_cfg = args.get<dunedaq::sspmodules::sspcardreader::Conf>();
-  int interfaceTypeCode = m_cfg.interface_type; // dunedaq::dataformats::kEthernet;
+  int interfaceTypeCode = m_cfg.interface_type; // dunedaq::detdataformats::kEthernet;
   std::stringstream ss;
   switch (interfaceTypeCode) {
     case 0:
-      fCommType = dunedaq::dataformats::ssp::kUSB;
+      fCommType = dunedaq::detdataformats::ssp::kUSB;
       break;
     case 1:
-      fCommType = dunedaq::dataformats::ssp::kEthernet;
+      fCommType = dunedaq::detdataformats::ssp::kEthernet;
       break;
     case 2:
-      fCommType = dunedaq::dataformats::ssp::kEmulated;
+      fCommType = dunedaq::detdataformats::ssp::kEmulated;
       break;
     case 999:
       ss << "Error: Invalid interface type set (" << interfaceTypeCode << ")!" << std::endl;
@@ -909,7 +909,7 @@ dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
       throw ConfigurationError(ERS_HERE, ss.str());
   }
   //
-  if (fCommType != dunedaq::dataformats::ssp::kEthernet) {
+  if (fCommType != dunedaq::detdataformats::ssp::kEthernet) {
     fDeviceId = 0;
     std::stringstream ss;
     ss << "Error: Non-functioning interface type set: " << fCommType
@@ -926,9 +926,9 @@ dunedaq::sspmodules::DeviceInterface::Configure(const nlohmann::json& args)
   dunedaq::sspmodules::Device* device = 0;
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Configuring "
-                              << ((fCommType == dunedaq::dataformats::ssp::kUSB)
+                              << ((fCommType == dunedaq::detdataformats::ssp::kUSB)
                                     ? "USB"
-                                    : ((fCommType == dunedaq::dataformats::ssp::kEthernet) ? "Ethernet" : "Emulated"))
+                                    : ((fCommType == dunedaq::detdataformats::ssp::kEthernet) ? "Ethernet" : "Emulated"))
                               << " device #" << fDeviceId << "..." << std::endl;
 
   device = devman.OpenDevice(fCommType, fDeviceId);
@@ -1227,17 +1227,17 @@ dunedaq::sspmodules::DeviceInterface::GetIdentifier()
 
   std::string ident;
   ident += "SSP@";
-  if (fCommType == dunedaq::dataformats::ssp::kUSB) {
+  if (fCommType == dunedaq::detdataformats::ssp::kUSB) {
     ident += "(USB";
     ident += fDeviceId;
     ident += "):";
-  } else if (fCommType == dunedaq::dataformats::ssp::kEthernet) {
+  } else if (fCommType == dunedaq::detdataformats::ssp::kEthernet) {
     boost::asio::ip::address ip = boost::asio::ip::address_v4(fDeviceId);
     std::string ipString = ip.to_string();
     ident += "(";
     ident += ipString;
     ident += "):";
-  } else if (fCommType == dunedaq::dataformats::ssp::kEmulated) {
+  } else if (fCommType == dunedaq::detdataformats::ssp::kEmulated) {
     ident += "(EMULATED";
     ident += fDeviceId;
     ident += "):";
@@ -1246,7 +1246,7 @@ dunedaq::sspmodules::DeviceInterface::GetIdentifier()
 }
 
 unsigned long                   // NOLINT(runtime/int)
-dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::dataformats::EventHeader& header)
+dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::detdataformats::EventHeader& header)
 {
   unsigned long packetTime = 0; // NOLINT(runtime/int)
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp

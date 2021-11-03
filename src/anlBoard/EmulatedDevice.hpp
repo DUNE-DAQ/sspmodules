@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_HPP_
 #define SSPMODULES_SRC_ANLBOARD_EMULATEDDEVICE_HPP_
 
-#include "dataformats/ssp/SSPTypes.hpp"
+#include "detdataformats/ssp/SSPTypes.hpp"
 
 #include "Device.hpp"
 #include "SafeQueue.hpp"

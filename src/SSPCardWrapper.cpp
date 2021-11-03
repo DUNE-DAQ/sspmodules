@@ -65,7 +65,7 @@ SSPCardWrapper::init(const data_t& args)
   //          configuration parameters that you're looking for in args aren't available since the args you're
   //          getting here is likely only *::Init data from the json file
 
-  m_device_interface = new dunedaq::sspmodules::DeviceInterface(dunedaq::dataformats::ssp::kEthernet);
+  m_device_interface = new dunedaq::sspmodules::DeviceInterface(dunedaq::detdataformats::ssp::kEthernet);
   m_device_interface->Initialize(args);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardWrapper::init complete.";
@@ -491,7 +491,7 @@ SSPCardWrapper::process_ssp()
                     << ", calls to GetNext " << m_num_read_event_calls << ", of which returned null "
                     << m_num_zero_fragments << std::endl;
 
-      // std::size_t dataLength = millislice.size()-dunedaq::dataformats::MillisliceHeader::sizeInUInts;
+      // std::size_t dataLength = millislice.size()-dunedaq::detdataformats::MillisliceHeader::sizeInUInts;
 
       // SSPFragment::Metadata metadata;
       // metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());

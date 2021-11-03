@@ -10,7 +10,7 @@
 
 #include "appfwk/app/Nljs.hpp"
 #include "readout/ReadoutTypes.hpp"
-#include "dataformats/ssp/SSPTypes.hpp"
+#include "detdataformats/ssp/SSPTypes.hpp"
 #include "logging/Logging.hpp"
 
 #include "DeviceManager.hpp"
@@ -48,7 +48,7 @@ public:
 
   //Just sets the fields needed to request the device.
   //Real work is done in Initialize which is called manually.
-  explicit DeviceInterface(dunedaq::dataformats::ssp::Comm_t commType);
+  explicit DeviceInterface(dunedaq::detdataformats::ssp::Comm_t commType);
 
   ~DeviceInterface(){
     //if(fRequestReceiver){
@@ -174,7 +174,7 @@ private:
   Device* fDevice;
 
   //Whether we are using USB or Ethernet to connect to the device
-  dunedaq::dataformats::ssp::Comm_t fCommType;
+  dunedaq::detdataformats::ssp::Comm_t fCommType;
 
   //Index of the device in the hardware-returned list
   unsigned long fDeviceId;    // NOLINT(runtime/int)
@@ -189,7 +189,7 @@ private:
 
   bool GetTriggerInfo(const EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger);
 
-  unsigned long GetTimestamp(const dunedaq::dataformats::EventHeader& header);  // NOLINT(runtime/int)
+  unsigned long GetTimestamp(const dunedaq::detdataformats::EventHeader& header);  // NOLINT(runtime/int)
 
   //Build a millislice containing only a header and place in fQueue
   //    void BuildEmptyMillislice(unsigned long startTime,unsigned long endTime);
