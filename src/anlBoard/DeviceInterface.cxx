@@ -509,7 +509,7 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
 
   unsigned int dataSizeInWords = 0;
 
-  dataSizeInWords += dunedaq::detdataformats::MillisliceHeader::sizeInUInts;
+  dataSizeInWords += dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts;
   for (auto ev = eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     dataSizeInWords += (*ev)->header.length;
   }
@@ -518,7 +518,7 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
   // Build slice header//
   //==================//
 
-  dunedaq::detdataformats::MillisliceHeader sliceHeader;
+  dunedaq::detdataformats::ssp::MillisliceHeader sliceHeader;
   sliceHeader.length = dataSizeInWords;
   sliceHeader.nTriggers = eventsToWrite.size();
   sliceHeader.startTime = theTrigger.startTime;
@@ -533,16 +533,16 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
   fragmentData.resize(dataSizeInWords);
 
   static unsigned int headerSizeInWords =
-    sizeof(dunedaq::detdataformats::EventHeader) / sizeof(unsigned int); // Size of DAQ event header
+    sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int); // Size of DAQ event header
 
   // Put millislice header at front of vector
   auto sliceDataPtr = fragmentData.begin();
   unsigned int* millisliceHeaderPtr = static_cast<unsigned int*>(static_cast<void*>(&sliceHeader));
   std::copy(
-    millisliceHeaderPtr, millisliceHeaderPtr + dunedaq::detdataformats::MillisliceHeader::sizeInUInts, sliceDataPtr);
+    millisliceHeaderPtr, millisliceHeaderPtr + dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts, sliceDataPtr);
 
   // Fill rest of vector with event data
-  sliceDataPtr += dunedaq::detdataformats::MillisliceHeader::sizeInUInts;
+  sliceDataPtr += dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts;
 
   for (auto ev = eventsToWrite.begin(); ev != eventsToWrite.end(); ++ev) {
     // DAQ event header
@@ -667,7 +667,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   unsigned int* headerBlock = (unsigned int*)&event.header;
   headerBlock[0] = 0xAAAAAAAA;
 
-  static const unsigned int headerReadSize = (sizeof(dunedaq::detdataformats::EventHeader) / sizeof(unsigned int) - 1);
+  static const unsigned int headerReadSize = (sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int) - 1);
 
   // Wait for hardware queue to fill with full header data
   unsigned int timeWaited = 0; // in us
@@ -705,7 +705,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   std::copy(data.begin(), data.end(), &(headerBlock[1]));
 
   // Wait for hardware queue to fill with full event data
-  unsigned int bodyReadSize = event.header.length - (sizeof(dunedaq::detdataformats::EventHeader) / sizeof(unsigned int));
+  unsigned int bodyReadSize = event.header.length - (sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int));
   queueLengthInUInts = 0;
   timeWaited = 0; // in us
 
@@ -740,7 +740,7 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   // Copy event data into event packet
   event.data = std::move(data);
 
-  auto ehsize = sizeof(struct dunedaq::detdataformats::EventHeader);
+  auto ehsize = sizeof(struct dunedaq::detdataformats::ssp::EventHeader);
   auto ehlength = event.header.length;
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Event data size: " << event.data.size() << " ehsize: " << ehsize
                               << " ehl: " << ehlength;
@@ -1246,7 +1246,7 @@ dunedaq::sspmodules::DeviceInterface::GetIdentifier()
 }
 
 unsigned long                   // NOLINT(runtime/int)
-dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::detdataformats::EventHeader& header)
+dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::detdataformats::ssp::EventHeader& header)
 {
   unsigned long packetTime = 0; // NOLINT(runtime/int)
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp

@@ -491,7 +491,7 @@ SSPCardWrapper::process_ssp()
                     << ", calls to GetNext " << m_num_read_event_calls << ", of which returned null "
                     << m_num_zero_fragments << std::endl;
 
-      // std::size_t dataLength = millislice.size()-dunedaq::detdataformats::MillisliceHeader::sizeInUInts;
+      // std::size_t dataLength = millislice.size()-dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts;
 
       // SSPFragment::Metadata metadata;
       // metadata.sliceHeader=*((SSPDAQ::MillisliceHeader*)(void*)millislice.data());
