@@ -151,7 +151,7 @@ void dunedaq::sspmodules::EmulatedDevice::Stop(){
 void dunedaq::sspmodules::EmulatedDevice::EmulatorLoop(){
 
   //dune::DAQLogger::LogDebug("SSP_EmulatedDevice")<<"Starting emulator loop..."<<std::endl;
-  static unsigned int headerSizeInWords=sizeof(dunedaq::detdataformats::EventHeader)/sizeof(unsigned int);
+  static unsigned int headerSizeInWords=sizeof(dunedaq::detdataformats::ssp::EventHeader)/sizeof(unsigned int);
 
   //We want to generate events on random channels at random times
   std::default_random_engine generator;
@@ -171,7 +171,7 @@ void dunedaq::sspmodules::EmulatedDevice::EmulatorLoop(){
     int channel = channelDistribution(generator);
 
     //Build an event header. 
-    dunedaq::detdataformats::EventHeader header;
+    dunedaq::detdataformats::ssp::EventHeader header;
 
     //Standard header word
     header.header=0xAAAAAAAA;

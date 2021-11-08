@@ -102,18 +102,18 @@ dunedaq::sspmodules::EthernetDevice::DeviceReceive(std::vector<unsigned int>& da
 void
 dunedaq::sspmodules::EthernetDevice::DeviceRead(unsigned int address, unsigned int* value)
 {
-  dunedaq::detdataformats::CtrlPacket tx;
-  dunedaq::detdataformats::CtrlPacket rx;
+  dunedaq::detdataformats::ssp::CtrlPacket tx;
+  dunedaq::detdataformats::ssp::CtrlPacket rx;
   unsigned int txSize;
   unsigned int rxSizeExpected;
 
-  tx.header.length = sizeof(dunedaq::detdataformats::CtrlHeader);
+  tx.header.length = sizeof(dunedaq::detdataformats::ssp::CtrlHeader);
   tx.header.address = address;
-  tx.header.command = dunedaq::detdataformats::cmdRead;
+  tx.header.command = dunedaq::detdataformats::ssp::cmdRead;
   tx.header.size = 1;
-  tx.header.status = dunedaq::detdataformats::statusNoError;
-  txSize = sizeof(dunedaq::detdataformats::CtrlHeader);
-  rxSizeExpected = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(unsigned int);
+  tx.header.status = dunedaq::detdataformats::ssp::statusNoError;
+  txSize = sizeof(dunedaq::detdataformats::ssp::CtrlHeader);
+  rxSizeExpected = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(unsigned int);
 
   SendReceive(tx, rx, txSize, rxSizeExpected, 3);
   *value = rx.data[0];
@@ -122,19 +122,19 @@ dunedaq::sspmodules::EthernetDevice::DeviceRead(unsigned int address, unsigned i
 void
 dunedaq::sspmodules::EthernetDevice::DeviceReadMask(unsigned int address, unsigned int mask, unsigned int* value)
 {
-  dunedaq::detdataformats::CtrlPacket tx;
-  dunedaq::detdataformats::CtrlPacket rx;
+  dunedaq::detdataformats::ssp::CtrlPacket tx;
+  dunedaq::detdataformats::ssp::CtrlPacket rx;
   unsigned int txSize;
   unsigned int rxSizeExpected;
 
-  tx.header.length = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(uint);
+  tx.header.length = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(uint);
   tx.header.address = address;
-  tx.header.command = dunedaq::detdataformats::cmdReadMask;
+  tx.header.command = dunedaq::detdataformats::ssp::cmdReadMask;
   tx.header.size = 1;
-  tx.header.status = dunedaq::detdataformats::statusNoError;
+  tx.header.status = dunedaq::detdataformats::ssp::statusNoError;
   tx.data[0] = mask;
-  txSize = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(unsigned int);
-  rxSizeExpected = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(unsigned int);
+  txSize = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(unsigned int);
+  rxSizeExpected = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(unsigned int);
 
   SendReceive(tx, rx, txSize, rxSizeExpected, 3);
   *value = rx.data[0];
@@ -143,19 +143,19 @@ dunedaq::sspmodules::EthernetDevice::DeviceReadMask(unsigned int address, unsign
 void
 dunedaq::sspmodules::EthernetDevice::DeviceWrite(unsigned int address, unsigned int value)
 {
-  dunedaq::detdataformats::CtrlPacket tx;
-  dunedaq::detdataformats::CtrlPacket rx;
+  dunedaq::detdataformats::ssp::CtrlPacket tx;
+  dunedaq::detdataformats::ssp::CtrlPacket rx;
   unsigned int txSize;
   unsigned int rxSizeExpected;
 
-  tx.header.length = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(uint);
+  tx.header.length = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(uint);
   tx.header.address = address;
-  tx.header.command = dunedaq::detdataformats::cmdWrite;
+  tx.header.command = dunedaq::detdataformats::ssp::cmdWrite;
   tx.header.size = 1;
-  tx.header.status = dunedaq::detdataformats::statusNoError;
+  tx.header.status = dunedaq::detdataformats::ssp::statusNoError;
   tx.data[0] = value;
-  txSize = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(unsigned int);
-  rxSizeExpected = sizeof(dunedaq::detdataformats::CtrlHeader);
+  txSize = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(unsigned int);
+  rxSizeExpected = sizeof(dunedaq::detdataformats::ssp::CtrlHeader);
 
   SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 }
@@ -163,20 +163,20 @@ dunedaq::sspmodules::EthernetDevice::DeviceWrite(unsigned int address, unsigned 
 void
 dunedaq::sspmodules::EthernetDevice::DeviceWriteMask(unsigned int address, unsigned int mask, unsigned int value)
 {
-  dunedaq::detdataformats::CtrlPacket tx;
-  dunedaq::detdataformats::CtrlPacket rx;
+  dunedaq::detdataformats::ssp::CtrlPacket tx;
+  dunedaq::detdataformats::ssp::CtrlPacket rx;
   unsigned int txSize;
   unsigned int rxSizeExpected;
 
-  tx.header.length = sizeof(dunedaq::detdataformats::CtrlHeader) + (sizeof(uint) * 2);
+  tx.header.length = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + (sizeof(uint) * 2);
   tx.header.address = address;
-  tx.header.command = dunedaq::detdataformats::cmdWriteMask;
+  tx.header.command = dunedaq::detdataformats::ssp::cmdWriteMask;
   tx.header.size = 1;
-  tx.header.status = dunedaq::detdataformats::statusNoError;
+  tx.header.status = dunedaq::detdataformats::ssp::statusNoError;
   tx.data[0] = mask;
   tx.data[1] = value;
-  txSize = sizeof(dunedaq::detdataformats::CtrlHeader) + (sizeof(unsigned int) * 2);
-  rxSizeExpected = sizeof(dunedaq::detdataformats::CtrlHeader) + sizeof(unsigned int);
+  txSize = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + (sizeof(unsigned int) * 2);
+  rxSizeExpected = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + sizeof(unsigned int);
 
   SendReceive(tx, rx, txSize, rxSizeExpected, 3);
 }
@@ -197,18 +197,18 @@ void
 dunedaq::sspmodules::EthernetDevice::DeviceArrayRead(unsigned int address, unsigned int size, unsigned int* data)
 {
   unsigned int i = 0;
-  dunedaq::detdataformats::CtrlPacket tx;
-  dunedaq::detdataformats::CtrlPacket rx;
+  dunedaq::detdataformats::ssp::CtrlPacket tx;
+  dunedaq::detdataformats::ssp::CtrlPacket rx;
   unsigned int txSize;
   unsigned int rxSizeExpected;
 
-  tx.header.length = sizeof(dunedaq::detdataformats::CtrlHeader);
+  tx.header.length = sizeof(dunedaq::detdataformats::ssp::CtrlHeader);
   tx.header.address = address;
-  tx.header.command = dunedaq::detdataformats::cmdArrayRead;
+  tx.header.command = dunedaq::detdataformats::ssp::cmdArrayRead;
   tx.header.size = size;
-  tx.header.status = dunedaq::detdataformats::statusNoError;
-  txSize = sizeof(dunedaq::detdataformats::CtrlHeader);
-  rxSizeExpected = sizeof(dunedaq::detdataformats::CtrlHeader) + (sizeof(unsigned int) * size);
+  tx.header.status = dunedaq::detdataformats::ssp::statusNoError;
+  txSize = sizeof(dunedaq::detdataformats::ssp::CtrlHeader);
+  rxSizeExpected = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + (sizeof(unsigned int) * size);
 
   SendReceive(tx, rx, txSize, rxSizeExpected, 3);
   for (i = 0; i < rx.header.size; i++) {
@@ -220,18 +220,18 @@ void
 dunedaq::sspmodules::EthernetDevice::DeviceArrayWrite(unsigned int address, unsigned int size, unsigned int* data)
 {
   unsigned int i = 0;
-  dunedaq::detdataformats::CtrlPacket tx;
-  dunedaq::detdataformats::CtrlPacket rx;
+  dunedaq::detdataformats::ssp::CtrlPacket tx;
+  dunedaq::detdataformats::ssp::CtrlPacket rx;
   unsigned int txSize;
   unsigned int rxSizeExpected;
 
-  tx.header.length = sizeof(dunedaq::detdataformats::CtrlHeader) + (sizeof(uint) * size);
+  tx.header.length = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + (sizeof(uint) * size);
   tx.header.address = address;
-  tx.header.command = dunedaq::detdataformats::cmdArrayWrite;
+  tx.header.command = dunedaq::detdataformats::ssp::cmdArrayWrite;
   tx.header.size = size;
-  tx.header.status = dunedaq::detdataformats::statusNoError;
-  txSize = sizeof(dunedaq::detdataformats::CtrlHeader) + (sizeof(unsigned int) * size);
-  rxSizeExpected = sizeof(dunedaq::detdataformats::CtrlHeader);
+  tx.header.status = dunedaq::detdataformats::ssp::statusNoError;
+  txSize = sizeof(dunedaq::detdataformats::ssp::CtrlHeader) + (sizeof(unsigned int) * size);
+  rxSizeExpected = sizeof(dunedaq::detdataformats::ssp::CtrlHeader);
 
   for (i = 0; i < size; i++) {
     tx.data[i] = data[i];
@@ -245,8 +245,8 @@ dunedaq::sspmodules::EthernetDevice::DeviceArrayWrite(unsigned int address, unsi
 //==============================================================================
 
 void
-dunedaq::sspmodules::EthernetDevice::SendReceive(dunedaq::detdataformats::CtrlPacket& tx,
-                                                 dunedaq::detdataformats::CtrlPacket& rx,
+dunedaq::sspmodules::EthernetDevice::SendReceive(dunedaq::detdataformats::ssp::CtrlPacket& tx,
+                                                 dunedaq::detdataformats::ssp::CtrlPacket& rx,
                                                  unsigned int txSize,
                                                  unsigned int rxSizeExpected,
                                                  unsigned int retryCount)
@@ -278,7 +278,7 @@ dunedaq::sspmodules::EthernetDevice::SendReceive(dunedaq::detdataformats::CtrlPa
 }
 
 void
-dunedaq::sspmodules::EthernetDevice::SendEthernet(dunedaq::detdataformats::CtrlPacket& tx, unsigned int txSize)
+dunedaq::sspmodules::EthernetDevice::SendEthernet(dunedaq::detdataformats::ssp::CtrlPacket& tx, unsigned int txSize)
 {
   unsigned int txSizeWritten = fCommSocket.write_some(boost::asio::buffer(static_cast<void*>(&tx), txSize));
   if (txSizeWritten != txSize) {
@@ -287,7 +287,7 @@ dunedaq::sspmodules::EthernetDevice::SendEthernet(dunedaq::detdataformats::CtrlP
 }
 
 void
-dunedaq::sspmodules::EthernetDevice::ReceiveEthernet(dunedaq::detdataformats::CtrlPacket& rx, unsigned int rxSizeExpected)
+dunedaq::sspmodules::EthernetDevice::ReceiveEthernet(dunedaq::detdataformats::ssp::CtrlPacket& rx, unsigned int rxSizeExpected)
 {
   unsigned int rxSizeReturned = fCommSocket.read_some(boost::asio::buffer(static_cast<void*>(&rx), rxSizeExpected));
   if (rxSizeReturned != rxSizeExpected) {

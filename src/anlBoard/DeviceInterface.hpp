@@ -189,7 +189,7 @@ private:
 
   bool GetTriggerInfo(const EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger);
 
-  unsigned long GetTimestamp(const dunedaq::detdataformats::EventHeader& header);  // NOLINT(runtime/int)
+  unsigned long GetTimestamp(const dunedaq::detdataformats::ssp::EventHeader& header);  // NOLINT(runtime/int)
 
   //Build a millislice containing only a header and place in fQueue
   //    void BuildEmptyMillislice(unsigned long startTime,unsigned long endTime);

@@ -66,11 +66,11 @@ public:
 
   //Internal functions - make public so debugging code can access them
 
-  void SendReceive(dunedaq::detdataformats::CtrlPacket& tx, dunedaq::detdataformats::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
+  void SendReceive(dunedaq::detdataformats::ssp::CtrlPacket& tx, dunedaq::detdataformats::ssp::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
 
-  void SendEthernet(dunedaq::detdataformats::CtrlPacket& tx, unsigned int txSize);
+  void SendEthernet(dunedaq::detdataformats::ssp::CtrlPacket& tx, unsigned int txSize);
 
-  void ReceiveEthernet(dunedaq::detdataformats::CtrlPacket& rx, unsigned int rxSizeExpected);
+  void ReceiveEthernet(dunedaq::detdataformats::ssp::CtrlPacket& rx, unsigned int rxSizeExpected);
 
   void DevicePurge(boost::asio::ip::tcp::socket& socket);
 

@@ -58,7 +58,7 @@ public:
 
   void DumpEvent();
 
-  dunedaq::detdataformats::EventHeader header;
+  dunedaq::detdataformats::ssp::EventHeader header;
 
   std::vector<unsigned int> data;
 };
