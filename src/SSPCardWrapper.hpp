@@ -10,7 +10,7 @@
 
 #include "sspmodules/sspcardreader/Nljs.hpp"
 
-#include "dataformats/ssp/SSPTypes.hpp"
+#include "detdataformats/ssp/SSPTypes.hpp"
 
 #include "SSPIssues.hpp"
 #include "anlBoard/DeviceInterface.hpp"

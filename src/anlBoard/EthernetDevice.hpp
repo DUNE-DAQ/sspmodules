@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_HPP_
 #define SSPMODULES_SRC_ANLBOARD_ETHERNETDEVICE_HPP_
 
-#include "dataformats/ssp/SSPTypes.hpp"
+#include "detdataformats/ssp/SSPTypes.hpp"
 
 #include "Device.hpp"
 #include "boost/asio.hpp"
@@ -66,11 +66,11 @@ public:
 
   //Internal functions - make public so debugging code can access them
 
-  void SendReceive(dunedaq::dataformats::CtrlPacket& tx, dunedaq::dataformats::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
+  void SendReceive(dunedaq::detdataformats::ssp::CtrlPacket& tx, dunedaq::detdataformats::ssp::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
 
-  void SendEthernet(dunedaq::dataformats::CtrlPacket& tx, unsigned int txSize);
+  void SendEthernet(dunedaq::detdataformats::ssp::CtrlPacket& tx, unsigned int txSize);
 
-  void ReceiveEthernet(dunedaq::dataformats::CtrlPacket& rx, unsigned int rxSizeExpected);
+  void ReceiveEthernet(dunedaq::detdataformats::ssp::CtrlPacket& rx, unsigned int rxSizeExpected);
 
   void DevicePurge(boost::asio::ip::tcp::socket& socket);
 
