@@ -40,7 +40,7 @@ class DeviceInterface{
 public:
 
   // RS: queues here... I know...
-  using sink_t = dunedaq::appfwk::DAQSink<dunedaq::fdreadout::types::SSP_FRAME_STRUCT>;
+  using sink_t = dunedaq::appfwk::DAQSink<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>;
   std::map<unsigned, std::unique_ptr<sink_t>> m_sink_queues;
 
 
