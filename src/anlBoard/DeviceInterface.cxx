@@ -9,7 +9,7 @@
 #define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_CXX_
 
 #include "appfwk/app/Nljs.hpp"
-#include "readout/ReadoutTypes.hpp"
+#include "fdreadoutlibs/FDReadoutTypes.hpp"
 #include "sspmodules/sspcardreader/Nljs.hpp"
 
 #include "DeviceInterface.hpp"
@@ -284,7 +284,7 @@ dunedaq::sspmodules::DeviceInterface::HardwareReadLoop()
     // Push event onto deque.                              //
     /////////////////////////////////////////////////////////
 
-    dunedaq::readout::types::SSP_FRAME_STRUCT sspfs;
+    dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT sspfs;
     sspfs.header = newPacket.header;
     // memcpy();
     memcpy(sspfs.data, newPacket.data.data(), newPacket.data.size());
