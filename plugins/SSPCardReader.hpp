@@ -19,8 +19,8 @@
 #include "appfwk/DAQSink.hpp"
 #include "appfwk/ThreadHelper.hpp"
 
-// From readout
-#include "readout/utils/ReusableThread.hpp"
+// From readoutlibs
+#include "readoutlibs/utils/ReusableThread.hpp"
 
 // FELIX Software Suite provided
 //#include "packetformat/block_format.hpp"
