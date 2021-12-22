@@ -9,7 +9,7 @@
 #define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
 
 #include "appfwk/app/Nljs.hpp"
-#include "readout/ReadoutTypes.hpp"
+#include "fdreadoutlibs/FDReadoutTypes.hpp"
 #include "detdataformats/ssp/SSPTypes.hpp"
 #include "logging/Logging.hpp"
 
@@ -40,7 +40,7 @@ class DeviceInterface{
 public:
 
   // RS: queues here... I know...
-  using sink_t = dunedaq::appfwk::DAQSink<dunedaq::readout::types::SSP_FRAME_STRUCT>;
+  using sink_t = dunedaq::appfwk::DAQSink<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>;
   std::map<unsigned, std::unique_ptr<sink_t>> m_sink_queues;
 
 

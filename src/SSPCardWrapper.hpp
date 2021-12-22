@@ -15,7 +15,7 @@
 #include "SSPIssues.hpp"
 #include "anlBoard/DeviceInterface.hpp"
 #include "logging/Logging.hpp"
-#include "readout/utils/ReusableThread.hpp"
+#include "readoutlibs/utils/ReusableThread.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -58,7 +58,7 @@ private:
   // dune::detail::FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh), //KIRBY this is
   // something I don't know how to transition to the new framework
   dunedaq::sspmodules::DeviceInterface* m_device_interface; // instance of the SSP device interface class
-  readout::ReusableThread m_ssp_processor; // reusable thread used to start the work done by the device interface
+  readoutlibs::ReusableThread m_ssp_processor; // reusable thread used to start the work done by the device interface
 
   // module status booleans for transition like init, conf, start, etc
   std::atomic<bool> m_run_marker;

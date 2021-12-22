@@ -6,19 +6,21 @@ find_package(daq-cmake REQUIRED)
 daq_setup_environment()
 
 # ers: for exceptions and normal output
-# TRACE: for low-level debugging statements
 # Boost unit_test_framework: for the unit tests
 # Boost program_options: to allow command line options with descriptions/default values
 
 find_package(appfwk REQUIRED)
 find_package(logging REQUIRED)
+find_package(ers REQUIRED)
 find_package(detdataformats REQUIRED)
-find_package(readout REQUIRED)
+find_package(readoutlibs REQUIRED)
+find_package(fdreadoutlibs REQUIRED)
+find_package(opmonlib REQUIRED)
 
 daq_codegen(sspcardreader.jsonnet TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
 
-set(DUNEDAQ_DEPENDENCIES appfwk::appfwk readout::readout detdataformats::detdataformats)
+set(DUNEDAQ_DEPENDENCIES appfwk::appfwk readoutlibs::readoutlibs fdreadoutlibs::fdreadoutlibs detdataformats::detdataformats)
 
 # Provide override functionality for SSP dependencies
 #option(WITH_FTD2XX_AS_PACKAGE "SSP external (ftd2xx) as a dunedaq package" OFF)
