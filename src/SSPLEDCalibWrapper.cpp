@@ -103,7 +103,7 @@ SSPLEDCalibWrapper::configure(const data_t& args)
 
   m_device_interface->SetPartitionNumber(m_partition_number);
   m_device_interface->SetTimingAddress(m_timing_address);
-  m_device_interface->Configure(args);
+  m_device_interface->ConfigureLEDCalib(args);
 
   this->configure_daq(args);
   this->configure_device(args);

@@ -51,7 +51,8 @@ daq_add_library(anlBoard/*.cxx SSPCardWrapper.cpp SSPLEDCalibWrapper.cpp LINK_LI
 #daq_add_python_bindings(ssp_wrapper.cpp LINK_LIBRARIES ${PROJECT_NAME})
 
 ##############################################################################
-daq_add_plugin(SSPCardReader SSPLEDCalibModule duneDAQModule LINK_LIBRARIES sspmodules)
+daq_add_plugin(SSPCardReader duneDAQModule LINK_LIBRARIES sspmodules)
+daq_add_plugin(SSPLEDCalibModule duneDAQModule LINK_LIBRARIES sspmodules)
 
 ##############################################################################
 #daq_add_application( toylibrary_test_program toylibrary_test_program.cxx TEST LINK_LIBRARIES ${Boost_PROGRAM_OPTIONS_LIBRARY} toylibrary )

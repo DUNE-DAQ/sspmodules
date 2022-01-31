@@ -54,6 +54,8 @@ private:
   void do_configure(const data_t& args);
   void do_start(const data_t& args);
   void do_stop(const data_t& args);
+  void do_start_pulses(const data_t& args);
+  void do_stop_pulses(const data_t& args);
   void get_info(opmonlib::InfoCollector& ci, int level);
 
   // Configuration

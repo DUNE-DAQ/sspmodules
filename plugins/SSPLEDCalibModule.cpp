@@ -110,10 +110,18 @@ SSPLEDCalibModule::do_configure(const data_t& args)
 }
 
 void
-SSPLEDCalibModule::do_start_pulses(const data_t& args, int pulse_count)
+SSPLEDCalibModule::do_start_pulses(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start called.\n NOTE THAT THIS DOES NOT DO ANYTHING!!!";
-  m_card_wrapper->start(args);
+  m_card_wrapper->start_pulses(args);
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start complete.";
+}
+
+void
+SSPLEDCalibModule::do_stop_pulses(const data_t& args)
+{
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start called.\n NOTE THAT THIS DOES NOT DO ANYTHING!!!";
+  m_card_wrapper->stop_pulses(args);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start complete.";
 }
 

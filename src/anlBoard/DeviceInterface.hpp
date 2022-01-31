@@ -81,6 +81,7 @@ public:
   //along with Ethernet interface code). Artdaq should do everything
   //in fhicl - this method is for convenience when running test code.
   void Configure(const nlohmann::json& args);
+  void ConfigureLEDCalib(const nlohmann::json& args);
 
   //Generate fragment from the data available on the buffer, if possible
   void ReadEvent(std::vector<unsigned int>& fragment);
