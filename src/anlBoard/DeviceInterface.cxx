@@ -1313,8 +1313,11 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
                               << presentTimingAddress << " with endpoint status 0x" << (pdts_status & 0xF)
                               << " and dsp_clock_control at 0x" << dsp_clock_control << std::dec << std::endl;
 
+  //if ((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress &&
+  //    presentTimingPartition == fPartitionNumber && dsp_clock_control == 0x31) {
   if ((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress &&
-      presentTimingPartition == fPartitionNumber && dsp_clock_control == 0x31) {
+      presentTimingPartition == fPartitionNumber && (dsp_clock_control & 0xF) == 0x1) { //NOTE THAT THIS WAS CHANGED SO THAT IF THE DSP_CLOCK_STATUS LOWEST BIT IS STILL HIGH 0x1
+    //THEN THE CLOCK ALREADY IS ASSUMED TO BE GOOD, AND WE DON'T TRY TO RESYNCH WITH THE PDTS
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Clock already looks ok... skipping endpoint reset." << std::endl;
   } else {

@@ -116,15 +116,56 @@ SSPLEDCalibWrapper::start_pulses(const data_t& /*args*/)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
   unsigned int regAddress = 0x800003DC;
   unsigned int regVal = 0xF0000078;
+  unsigned int readVal = 0;
+
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003E0;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003E4;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003E8;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003EC;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << " complete.";
 }
 
@@ -134,15 +175,56 @@ SSPLEDCalibWrapper::stop_pulses(const data_t& /*args*/)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stop pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
   unsigned int regAddress = 0x800003DC;
   unsigned int regVal = 0x00000078;
+  unsigned int readVal = 0x0;
+
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003E0;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003E4;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003E8;
   m_device_interface->SetRegister(regAddress, regVal);
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
   regAddress = 0x800003EC;
   m_device_interface->SetRegister(regAddress, regVal);  
+  m_device_interface->ReadRegister(regAddress, readVal);
+  if (regVal != readVal) {
+    std::stringstream ss;
+    ss << "ERROR: Invalid register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stop pulsing SSPLEDCalibWrapper of card " << m_board_id << " complete.";
 }
 
@@ -237,8 +319,8 @@ SSPLEDCalibWrapper::configure_device(const data_t& /*args*/)
       unsigned int regAddress = m_hexvalues[0];
       unsigned int regVal = m_hexvalues[1];
       unsigned int regMask = m_hexvalues.size() > 2 ? m_hexvalues[2] : 0xFFFFFFFF;
-      TLOG(TLVL_FULL_DEBUG) << "Preparing to write to literal register address: " << regAddress
-                            << " with value: " << regVal << " and mask: " << regMask << std::endl;
+      TLOG(TLVL_FULL_DEBUG) << "Preparing to write to literal register address: 0x" << std::hex << regAddress
+                            << " with value: 0x" << regVal << " and mask: 0x" << regMask << std::dec << std::endl;
       m_device_interface->SetRegister(regAddress, regVal, regMask);
     } // End Processing of Literals
     // Intercept channel_control setting so that we can replace bits with logical values later...
