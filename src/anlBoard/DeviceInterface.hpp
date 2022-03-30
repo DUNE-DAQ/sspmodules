@@ -81,6 +81,7 @@ public:
   //along with Ethernet interface code). Artdaq should do everything
   //in fhicl - this method is for convenience when running test code.
   void Configure(const nlohmann::json& args);
+  void ConfigureLEDCalib(const nlohmann::json& args);
 
   //Generate fragment from the data available on the buffer, if possible
   void ReadEvent(std::vector<unsigned int>& fragment);
@@ -190,6 +191,8 @@ private:
   bool GetTriggerInfo(const EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger);
 
   unsigned long GetTimestamp(const dunedaq::detdataformats::ssp::EventHeader& header);  // NOLINT(runtime/int)
+
+  void SetExternalTimestamp(dunedaq::detdataformats::ssp::EventHeader& header, unsigned long newtimestamp);  // NOLINT(runtime/int)
 
   //Build a millislice containing only a header and place in fQueue
   //    void BuildEmptyMillislice(unsigned long startTime,unsigned long endTime);
