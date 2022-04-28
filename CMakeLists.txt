@@ -10,6 +10,7 @@ daq_setup_environment()
 # Boost program_options: to allow command line options with descriptions/default values
 
 find_package(appfwk REQUIRED)
+find_package(iomanager REQUIRED)
 find_package(logging REQUIRED)
 find_package(ers REQUIRED)
 find_package(detdataformats REQUIRED)

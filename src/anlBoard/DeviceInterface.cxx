@@ -16,7 +16,7 @@
 #include "RegMap.hpp"
 #include "SSPIssues.hpp"
 #include "anlExceptions.hpp"
-//#include "dune-artdaq/DAQLogger/DAQLogger.hh"
+#include "iomanager/IOManager.hpp"
 
 #include "boost/asio.hpp"
 
@@ -103,11 +103,12 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
 
   // init queues here.... I know...
   auto ini = args.get<dunedaq::appfwk::app::ModInit>();
-  for (const auto& qi : ini.qinfos) {
+  iomanager::IOManager iom;
+  for (const auto& qi : ini.conn_ref) {
     if (qi.dir != "output") {
       continue;
     } else {
-      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPReader output queue is " << qi.inst;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPReader output is " << qi.inst;
       const char delim = '_';
       std::string target = qi.inst;
       std::vector<std::string> words;
@@ -116,7 +117,8 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
 
       try {
         linkid = std::stoi(words.back());
-        m_sink_queues[linkid] = std::make_unique<sink_t>(qi.inst);
+
+        m_sink_queues[linkid] = iom.get_receiver<sink_t>(target);
       } catch (const std::exception& ex) {
         TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
         // ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
@@ -304,7 +306,7 @@ dunedaq::sspmodules::DeviceInterface::HardwareReadLoop()
 
     auto chid = ((newPacket.header.group2 & 0x000F) >> 0);
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Getting ready to write newPacket to chid: " << chid << std::endl;
-    m_sink_queues[chid]->push(std::move(sspfs));
+    m_sink_queues[chid]->send(sspfs, std::chrono::milliseconds(10));
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Guess it wasn't writing to the sink_queues... " << chid << std::endl;
 
     // fPacketBuffer.emplace_back(std::move(newPacket));

@@ -76,7 +76,7 @@ SSPLEDCalibModule::init(const data_t& args)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init called.";
   auto ini = args.get<appfwk::app::ModInit>();
   m_card_wrapper->init(args);
-  for (const auto& qi : ini.qinfos) {
+  for (const auto& qi : ini.conn_refs) {
     if (qi.dir != "output") {
       // ers::error(InitializationError(ERS_HERE, "Only output queues are supported in this module!"));
       continue;

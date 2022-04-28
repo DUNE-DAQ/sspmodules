@@ -40,8 +40,8 @@ class DeviceInterface{
 public:
 
   // RS: queues here... I know...
-  using sink_t = dunedaq::appfwk::DAQSink<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>;
-  std::map<unsigned, std::unique_ptr<sink_t>> m_sink_queues;
+  using sink_t = dunedaq::iomanager::SenderConcept<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>;
+  std::map<unsigned, std::shared_ptr<sink_t>> m_sink_queues;
 
 
   enum State_t{kUninitialized,kInitialized,kRunning,kStopping,kStopped,kBad};
