@@ -9,6 +9,7 @@
 #define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
 
 #include "appfwk/app/Nljs.hpp"
+#include "iomanager/Sender.hpp"
 #include "fdreadoutlibs/FDReadoutTypes.hpp"
 #include "detdataformats/ssp/SSPTypes.hpp"
 #include "logging/Logging.hpp"

@@ -118,7 +118,7 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
       try {
         linkid = std::stoi(words.back());
 
-        m_sink_queues[linkid] = iom.get_sender<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>(qi.uid);
+        m_sink_queues[linkid] = iom.get_sender<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>(qi);
       } catch (const std::exception& ex) {
         TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
         // ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
