@@ -103,7 +103,6 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
 
   // init queues here.... I know...
   auto ini = args.get<dunedaq::appfwk::app::ModInit>();
-  iomanager::IOManager iom;
   for (const auto& qi : ini.conn_refs) {
     if (qi.dir != iomanager::Direction::kInput) {
       continue;
@@ -118,7 +117,7 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
       try {
         linkid = std::stoi(words.back());
 
-        m_sink_queues[linkid] = iom.get_sender<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>(qi);
+        m_sink_queues[linkid] = get_iom_sender<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>(qi);
       } catch (const std::exception& ex) {
         TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
         // ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
