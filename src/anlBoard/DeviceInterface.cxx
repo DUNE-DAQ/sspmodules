@@ -305,7 +305,7 @@ dunedaq::sspmodules::DeviceInterface::HardwareReadLoop()
 
     auto chid = ((newPacket.header.group2 & 0x000F) >> 0);
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Getting ready to write newPacket to chid: " << chid << std::endl;
-    m_sink_queues[chid]->send(sspfs, std::chrono::milliseconds(10));
+    m_sink_queues[chid]->send(std::move(sspfs), std::chrono::milliseconds(10));
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Guess it wasn't writing to the sink_queues... " << chid << std::endl;
 
     // fPacketBuffer.emplace_back(std::move(newPacket));
