@@ -77,14 +77,6 @@ SSPCardReader::init(const data_t& args)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader init called.";
   auto ini = args.get<appfwk::app::ModInit>();
   m_card_wrapper->init(args);
-  for (const auto& qi : ini.qinfos) {
-    if (qi.dir != "output") {
-      // ers::error(InitializationError(ERS_HERE, "Only output queues are supported in this module!"));
-      continue;
-    } else {
-      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPCardReader output queue is " << qi.inst;
-    }
-  }
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPCardReader init complete.";
   // Set function for the SSPCardWrapper's block processor.
