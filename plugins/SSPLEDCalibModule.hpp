@@ -58,6 +58,8 @@ private:
   void do_start_pulses(const data_t& args);
   void do_stop_pulses(const data_t& args);
   void get_info(opmonlib::InfoCollector& ci, int level);
+  void do_single_pulse_config(const data_t& args);
+  void do_burst_mode_config(const data_t& args);
 
   // Configuration
   module_conf_t m_cfg;

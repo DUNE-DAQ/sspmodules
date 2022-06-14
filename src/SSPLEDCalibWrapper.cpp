@@ -1,7 +1,7 @@
 /**
  * @file SSPLEDCalibWrapper.cpp SSP library wrapper implementation
  *
- * This is part of the DUNE DAQ , copyright 2020.
+ * This is part of the DUNE DAQ , copyright 2022.
  * Licensing/copyright details are in the COPYING file that you should have
  * received with this code.
  */
@@ -10,9 +10,6 @@
 
 // From Module
 #include "SSPLEDCalibWrapper.hpp"
-//#include "dune-raw-data/Overlays/SSPFragment.hh"
-//#include "dune-raw-data/Overlays/SSPFragmentWriter.hh"
-//#include "packetformat/block_format.hpp"
 
 // From STD
 #include <chrono>
@@ -39,8 +36,8 @@ namespace sspmodules {
 
 SSPLEDCalibWrapper::SSPLEDCalibWrapper()
   : m_device_interface(0)
-  , m_ssp_processor(0)
-  , m_run_marker{ false }
+    //  , m_ssp_processor(0)
+    , m_run_marker{ false }
 {
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper constructor called." << std::endl;
@@ -52,7 +49,7 @@ SSPLEDCalibWrapper::SSPLEDCalibWrapper()
 SSPLEDCalibWrapper::~SSPLEDCalibWrapper()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper destructor called." << std::endl;
-  close_card();
+  //close_card();
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper destructor complete." << std::endl;
 }
 
@@ -99,14 +96,18 @@ SSPLEDCalibWrapper::configure(const data_t& args)
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Board ID is listed as: " << m_cfg.board_id << std::endl
                               << "Partition Number is: " << m_cfg.partition_number << std::endl
-                              << "Timing Address is: " << m_cfg.timing_address << std::endl;
+                              << "Timing Address is: " << m_cfg.timing_address << std::endl
+                              << "Module ID is: " << m_cfg.module_id << std::endl;
 
   m_device_interface->SetPartitionNumber(m_partition_number);
   m_device_interface->SetTimingAddress(m_timing_address);
+  m_module_id = m_cfg.module_id;
+  m_device_interface->SetRegisterByName("module_id", m_module_id);
+  m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
   m_device_interface->ConfigureLEDCalib(args);
 
-  this->configure_daq(args);
-  this->configure_device(args);
+  //this->configure_daq(args);
+  //this->configure_device(args);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::configure complete.";
 }
 
@@ -114,6 +115,11 @@ void
 SSPLEDCalibWrapper::start_pulses(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
+  if (m_run_marker.load()) {
+    TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Run Marker says that SSPLEDCalibWrapper card " << m_board_id << " is already pulsing...";
+    return;
+  }
+    
   unsigned int regAddress = 0x800003DC;
   unsigned int regVal = 0xF0000078;
   unsigned int readVal = 0;
@@ -166,6 +172,7 @@ SSPLEDCalibWrapper::start_pulses(const data_t& /*args*/)
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
   }
+  m_run_marker = true;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << " complete.";
 }
 
@@ -173,6 +180,10 @@ void
 SSPLEDCalibWrapper::stop_pulses(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stop pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
+  if (!m_run_marker.load()) {
+    TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "The run_marker says that SSPLEDCalibWrapper card " << m_board_id << " is already stopped, but stopping anyways...";
+  }
+  
   unsigned int regAddress = 0x800003DC;
   unsigned int regVal = 0x00000078;
   unsigned int readVal = 0x0;
@@ -225,14 +236,15 @@ SSPLEDCalibWrapper::stop_pulses(const data_t& /*args*/)
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
   }
+  m_run_marker = false;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stop pulsing SSPLEDCalibWrapper of card " << m_board_id << " complete.";
 }
 
 void
-SSPLEDCalibWrapper::start(const data_t& /*args*/)
+SSPLEDCalibWrapper::start(const data_t& )
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPLEDCalibWrapper of card " << m_board_id << "...";
-  /*if (!m_run_marker.load()) {
+  /* if (!m_run_marker.load()) {
     m_num_zero_fragments = 0;
     m_num_fragments_sent = 0;
     m_num_read_event_calls = 0;
@@ -243,11 +255,12 @@ SSPLEDCalibWrapper::start(const data_t& /*args*/)
   } else {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPLEDCalibWrapper of card " << m_board_id << " is already running!";
     }*/
+  TLOG_DEBUG(0) << "NOTE THAT THIS START COMMAND DOESN'T DO ANYTHING FOR THE SSP LED CALIB CARD!!!";
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Starting SSPLEDCalibWrapper of card " << m_board_id << " complete.\n BUT NOTE THAT THIS COMMAND DOESN'T DO ANYTHING!";
 }
 
 void
-SSPLEDCalibWrapper::stop(const data_t& /*args*/)
+SSPLEDCalibWrapper::stop(const data_t& )
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stopping SSPLEDCalibWrapper of card " << m_board_id << "...";
   /*if (m_run_marker.load()) {
@@ -260,6 +273,7 @@ SSPLEDCalibWrapper::stop(const data_t& /*args*/)
   } else {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "SSPLEDCalibWrapper of card " << m_board_id << " is already stopped!";
     }*/
+  TLOG_DEBUG(0) << "NOTE THAT THIS STOP COMMAND DOESN'T DO ANYTHING FOR THE SSP LED CALIB CARD!!!";
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stoping SSPLEDCalibWrapper of card " << m_board_id << " complete.\n BUT NOTE THAT THIS COMMAND DOESN'T DO ANYTHING!";
 }
 
@@ -272,22 +286,115 @@ SSPLEDCalibWrapper::set_running(bool should_run)
 }
   */
 
+/*
 void
 SSPLEDCalibWrapper::open_card()
 {}
+*/
 
+ /*
 void
 SSPLEDCalibWrapper::close_card()
 {}
+*/
+ 
+void
+SSPLEDCalibWrapper::configure_single_pulse(const data_t& /*args*/)
+{
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse called.";
+  //check if it's currently pulsing
+     //send error message
+     //abort reconfigure
+  //if not currently pulsing reconfigure
+  m_device_interface->SetRegister(0x80000464, 0x00000200, 0xFFFFFFFF); //pdts_cmd_control_1
+  m_device_interface->SetRegister(0x80000940, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_0
+  m_device_interface->SetRegister(0x80000944, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_1
+  m_device_interface->SetRegister(0x80000948, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_2
+  m_device_interface->SetRegister(0x8000094C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_3
+  m_device_interface->SetRegister(0x80000950, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_4
+  m_device_interface->SetRegister(0x80000954, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_5
+  m_device_interface->SetRegister(0x80000958, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_6
+  m_device_interface->SetRegister(0x8000095C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_7
+  m_device_interface->SetRegister(0x80000960, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_8
+  m_device_interface->SetRegister(0x80000964, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_9
+  m_device_interface->SetRegister(0x80000968, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_10
+  m_device_interface->SetRegister(0x8000096C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_11
+  m_device_interface->SetRegister(0x80000970, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_12
+  m_device_interface->SetRegister(0x80000974, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_13
+  m_device_interface->SetRegister(0x80000978, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_14
+  m_device_interface->SetRegister(0x8000097C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_15
+  m_device_interface->SetRegister(0x80000468, 0x80000000, 0xFFFFFFFF); //pdts_cmd_control_2
+  m_device_interface->SetRegister(0x80000520, 0x00000011, 0xFFFFFFFF); //pulser_mode_control
+  m_device_interface->SetRegister(0x800003DC, 0xF0000078, 0xFFFFFFFF); //cal_config_7
+  m_device_interface->SetRegister(0x800003E0, 0xF0000078, 0xFFFFFFFF); //cal_config_8
+  m_device_interface->SetRegister(0x800003E4, 0xF0000078, 0xFFFFFFFF); //cal_config_9
+  m_device_interface->SetRegister(0x800003E8, 0xF0000078, 0xFFFFFFFF); //cal_config_10
+  m_device_interface->SetRegister(0x800003EC, 0xF0000078, 0xFFFFFFFF); //cal_config_11
+  m_device_interface->SetRegister(0x8000035C, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_7
+  m_device_interface->SetRegister(0x80000360, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_8
+  m_device_interface->SetRegister(0x80000364, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_9
+  m_device_interface->SetRegister(0x80000368, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_10
+  m_device_interface->SetRegister(0x8000036C, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_11
+  m_device_interface->SetRegister(0x80000300, 0x00000001, 0xFFFFFFFF); //pdts_cmd_delay_14 bias_control
+  m_device_interface->SetRegister(0x80000448, 0x00000001, 0xFFFFFFFF); //pdts_cmd_delay_14 cal_count
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse completed.";
+}
+
+void
+SSPLEDCalibWrapper::configure_burst_mode(const data_t& /*args*/)
+{
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureBurstMode called.";
+  //check if it's currently pulsing
+     //send error message
+     //abort reconfigure
+  //if not currently pulsing reconfigure
+  m_device_interface->SetRegister(0x80000464, 0x00000200, 0xFFFFFFFF); //pdts_cmd_control_1
+  m_device_interface->SetRegister(0x80000940, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_0
+  m_device_interface->SetRegister(0x80000944, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_1
+  m_device_interface->SetRegister(0x80000948, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_2
+  m_device_interface->SetRegister(0x8000094C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_3
+  m_device_interface->SetRegister(0x80000950, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_4
+  m_device_interface->SetRegister(0x80000954, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_5
+  m_device_interface->SetRegister(0x80000958, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_6
+  m_device_interface->SetRegister(0x8000095C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_7
+  m_device_interface->SetRegister(0x80000960, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_8
+  m_device_interface->SetRegister(0x80000964, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_9
+  m_device_interface->SetRegister(0x80000968, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_10
+  m_device_interface->SetRegister(0x8000096C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_11
+  m_device_interface->SetRegister(0x80000970, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_12
+  m_device_interface->SetRegister(0x80000974, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_13
+  m_device_interface->SetRegister(0x80000978, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_14
+  m_device_interface->SetRegister(0x8000097C, 0x00030036, 0xFFFFFFFF); //pdts_cmd_delay_15
+  m_device_interface->SetRegister(0x80000468, 0x80000000, 0xFFFFFFFF); //pdts_cmd_control_2
+  m_device_interface->SetRegister(0x80000520, 0x00000011, 0xFFFFFFFF); //pulser_mode_control
+  m_device_interface->SetRegister(0x800003DC, 0xF0000078, 0xFFFFFFFF); //cal_config_7
+  m_device_interface->SetRegister(0x800003E0, 0xF0000078, 0xFFFFFFFF); //cal_config_8
+  m_device_interface->SetRegister(0x800003E4, 0xF0000078, 0xFFFFFFFF); //cal_config_9
+  m_device_interface->SetRegister(0x800003E8, 0xF0000078, 0xFFFFFFFF); //cal_config_10
+  m_device_interface->SetRegister(0x800003EC, 0xF0000078, 0xFFFFFFFF); //cal_config_11
+  m_device_interface->SetRegister(0x8000035C, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_7
+  m_device_interface->SetRegister(0x80000360, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_8
+  m_device_interface->SetRegister(0x80000364, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_9
+  m_device_interface->SetRegister(0x80000368, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_10
+  m_device_interface->SetRegister(0x8000036C, 0x00040FFF, 0xFFFFFFFF); //BIAS_DAC_CONFIG_11
+  m_device_interface->SetRegister(0x80000300, 0x00000001, 0xFFFFFFFF); //pdts_cmd_delay_14 bias_control
+
+  unsigned int burst_count = 1000;
+  m_device_interface->SetRegister(0x80000448, burst_count, 0xFFFFFFFF); //pdts_cmd_delay_14 cal_count
+  m_device_interface->SetRegister(0x800003DC, 0x90000078, 0xFFFFFFFF); //cal_config_7
+  m_device_interface->SetRegister(0x800003E0, 0x90000078, 0xFFFFFFFF); //cal_config_8
+  m_device_interface->SetRegister(0x800003E4, 0x90000078, 0xFFFFFFFF); //cal_config_9
+  m_device_interface->SetRegister(0x800003E8, 0x90000078, 0xFFFFFFFF); //cal_config_10
+  m_device_interface->SetRegister(0x800003EC, 0x90000078, 0xFFFFFFFF); //cal_config_11
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureBurstMode completed.";
+}
 
 void
 SSPLEDCalibWrapper::configure_device(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice called.";
 
-  m_module_id = m_cfg.module_id;
-  m_device_interface->SetRegisterByName("module_id", m_module_id);
-  m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
   std::vector<dunedaq::sspmodules::sspledcalibmodule::RegisterValues> m_hardware_configuration =
     m_cfg.hardware_configuration;
   std::vector<unsigned int> chControlReg(12, 0);
@@ -390,53 +497,6 @@ SSPLEDCalibWrapper::configure_device(const data_t& /*args*/)
   }
   m_device_interface->SetRegisterArrayByName("channel_control", chControlReg);
 
-  // this is all just doing it hardcoded
-
-  // unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-  // m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),val);// for ALL configs not
-  // channel_control std::vector<unsigned int> vals=hardwareConfig.get<std::vector<unsigned int> >(*hcIter);
-  // m_device_interface->SetRegisterArrayByName(hcIter->substr(4,std::string::npos),vals); //for ARR configs not
-  // channel_control unsigned int val=hardwareConfig.get<unsigned int>(*hcIter);
-  // m_device_interface->SetRegisterByName(*hcIter,val); //for things without ARR, ALL, or ELE
-
-  // std::vector<unsigned int> chControlReg(12,0);
-  // for(unsigned int i=0;i<12;++i){
-  //  chControlReg[i]=0x00000401;
-  //}
-  // m_device_interface->SetRegisterArrayByName("channel_control",chControlReg); //set all channel control to 0x00000401
-  // m_device_interface->SetRegisterArrayByName("channel_control", 0x00000401);
-  // m_device_interface->SetRegisterArrayByName("readout_window", 2000);
-  // m_device_interface->SetRegisterArrayByName("readout_pretrigger", 50);
-  // m_device_interface->SetRegisterArrayByName("cfd_parameters", 0x1800 );
-  // m_device_interface->SetRegisterArrayByName("p_window", 0x20 );
-  // m_device_interface->SetRegisterArrayByName("i2_window", 1200 );
-  // m_device_interface->SetRegisterArrayByName("m1_window", 10 );
-  // m_device_interface->SetRegisterArrayByName("m2_window", 10 );
-  // m_device_interface->SetRegisterArrayByName("d_window", 20 );
-  // m_device_interface->SetRegisterArrayByName("i1_window", 40 );
-  // m_device_interface->SetRegisterArrayByName("disc_width", 10 );
-  // m_device_interface->SetRegisterArrayByName("baseline_start", 0x0000);
-  // end of the ALL register sets from fcl file
-
-  // std::vector<unsigned int> vals;
-  // vals = {0xFF000000, 0x00000000, 0x00000FFF};
-  // m_device_interface->SetRegisterArrayByName("pdts_cmd_control",vals);
-  // vals.clear();
-
-  // vals = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
-  // m_device_interface->SetRegisterArrayByName("led_threshold",vals);
-  // vals.clear();
-  // end of the ARR register sets from fcl file
-
-  // m_device_interface->SetRegisterByName("trigger_input_delay", 0x00000020);
-  // m_device_interface->SetRegisterByName("baseline_delay", 5);
-  // m_device_interface->SetRegisterByName("qi_config", 0x0FFF1300);
-  // m_device_interface->SetRegisterByName("qi_delay", 0x00000000);
-  // m_device_interface->SetRegisterByName("qi_pulse_width", 0x00008000);
-  // m_device_interface->SetRegisterByName("qi_dac_config", 0x00000000);
-  // m_device_interface->SetRegisterByName("external_gate_width", 0x00008000);
-  // m_device_interface->SetRegisterByName("gpio_output_width", 0x00001000);
-
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice complete.";
 } // NOLINT(readability/fn_size)
 
@@ -512,64 +572,16 @@ SSPLEDCalibWrapper::build_channel_control_registers(const std::vector<std::pair<
   }
 }
 
+/*
 void
 SSPLEDCalibWrapper::configure_daq(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDAQ called.";
   m_cfg = args.get<sspledcalibmodule::Conf>();
-  /*  m_pre_trig_length = m_cfg.pre_trig_length; // unsigned int preTrigLength=337500;
-  if (m_pre_trig_length == 0) {
-    TLOG() << "Error: PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!" << std::endl;
-    throw ConfigurationError(ERS_HERE,
-                             "PreTrigger sample length (pre_trig_length) not defined in SSP DAQ configuration!");
-  }
-  m_post_trig_length = m_cfg.post_trig_length; // unsigned int postTrigLength=412500;
-  if (m_post_trig_length == 0) {
-    TLOG() << "Error: PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!" << std::endl;
-    throw ConfigurationError(ERS_HERE,
-                             "PostTrigger sample length (post_trig_length) not defined in SSP DAQ configuration!");
-  }
-  m_use_external_timestamp = m_cfg.use_external_timestamp; // unsigned int useExternalTimestamp=1;
-  if (m_use_external_timestamp > 1) {
-    TLOG() << "Error: Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ "
-              "configuration!"
-           << std::endl;
-    throw ConfigurationError(
-      ERS_HERE,
-      "Timestamp source not definite (use_external_timestamp) , or invalidly defined in SSP DAQ configuration!");
-  }
-  m_trigger_write_delay = m_cfg.trigger_write_delay; // unsigned int triggerWriteDelay=1000;
-  if (m_trigger_write_delay == 0) {
-    TLOG() << "Error: trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!" << std::endl;
-    throw ConfigurationError(ERS_HERE,
-                             "trigger write delay (trigger_write_delay) not defined in SSP DAQ configuration!");
-  }
-  m_trigger_latency = m_cfg.trigger_latency; // unsigned int trigLatency=0; //not sure about this.
-  m_dummy_period = m_cfg.dummy_period;       // int dummyPeriod=-1;//default to off which is set with a value of -1
-  m_hardware_clock_rate_in_MHz = m_cfg.hardware_clock_rate_in_MHz; // unsigned int hardwareClockRate=150; //in MHz
-
-  if (m_hardware_clock_rate_in_MHz == 0) {
-    TLOG() << "Error: Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!"
-           << std::endl;
-    throw ConfigurationError(ERS_HERE,
-                             "Hardware clock rate (hardware_clock_rate_in_MHz) not defined in SSP DAQ configuration!");
-  }
-  m_trigger_mask = m_cfg.trigger_mask;                           // unsigned int triggerMask=0x2000;
-  m_fragment_timestamp_offset = m_cfg.fragment_timestamp_offset; // m_fragment_timestamp_offset=988;
-
-  m_device_interface->SetPreTrigLength(m_pre_trig_length);
-  m_device_interface->SetPostTrigLength(m_post_trig_length);
-  m_device_interface->SetUseExternalTimestamp(static_cast<bool>(m_use_external_timestamp));
-  m_device_interface->SetTriggerWriteDelay(m_trigger_write_delay);
-  m_device_interface->SetTriggerLatency(m_trigger_latency);
-  m_device_interface->SetDummyPeriod(m_dummy_period);
-  m_device_interface->SetHardwareClockRateInMHz(m_hardware_clock_rate_in_MHz);
-  m_device_interface->SetTriggerMask(m_trigger_mask);
-  m_device_interface->SetFragmentTimestampOffset(m_fragment_timestamp_offset);
-  */
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDAQ complete.";
-}
+  }*/
 
+/*
 void
 SSPLEDCalibWrapper::process_ssp()
 {
@@ -629,6 +641,7 @@ SSPLEDCalibWrapper::process_ssp()
     std::this_thread::sleep_for(std::chrono::milliseconds(500)); // fix 5ms initial poll
   }
 }
+*/
 
 } // namespace sspmodules
 } // namespace dunedaq
@@ -641,20 +654,5 @@ SSPLEDCalibWrapper::process_ssp()
 // ssp101_standard.fragment_receiver.HardwareConfig.module_id: 11
 // ssp101_standard.metrics.dim.IDName: "ssp101"
 //
-// ssp304_standard: @local::ssp_standard
-// ssp304_standard.fragment_receiver.fragment_id: 34
-// ssp304_standard.fragment_receiver.board_id: 34
-// ssp304_standard.fragment_receiver.timing_address: 0x2B
-// ssp304_standard.fragment_receiver.board_ip: "10.73.137.79"
-// ssp304_standard.fragment_receiver.HardwareConfig.module_id: 34
-// ssp304_standard.metrics.dim.IDName: "ssp304"
-//
-// ssp603_standard: @local::ssp_standard
-// ssp603_standard.fragment_receiver.fragment_id: 63
-// ssp603_standard.fragment_receiver.board_id: 63
-// ssp603_standard.fragment_receiver.timing_address: 0x36
-// ssp603_standard.fragment_receiver.board_ip: "10.73.137.74"
-// ssp603_standard.fragment_receiver.HardwareConfig.module_id: 63
-// ssp603_standard.metrics.dim.IDName: "ssp603"
 
 #endif // SSPMODULES_SRC_SSPLEDCALIBWRAPPER_CPP_

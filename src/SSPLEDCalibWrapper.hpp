@@ -51,7 +51,9 @@ public:
   //void set_running(bool should_run);
   void start_pulses(const data_t& args);
   void stop_pulses(const data_t& args);
-
+  void configure_single_pulse(const data_t& args);
+  void configure_burst_mode(const data_t& args);
+  
 private:
   // Types
   using module_conf_t = dunedaq::sspmodules::sspledcalibmodule::Conf;
@@ -60,7 +62,7 @@ private:
   // dune::detail::FragmentType const fragment_type_; // Type of fragment (see FragmentType.hh), //KIRBY this is
   // something I don't know how to transition to the new framework
   dunedaq::sspmodules::DeviceInterface* m_device_interface; // instance of the SSP device interface class
-  readoutlibs::ReusableThread m_ssp_processor; // reusable thread used to start the work done by the device interface
+  //readoutlibs::ReusableThread m_ssp_processor; // reusable thread used to start the work done by the device interface
 
   // module status booleans for transition like init, conf, start, etc
   std::atomic<bool> m_run_marker;
@@ -77,33 +79,33 @@ private:
   unsigned long m_module_id; // NOLINT
 
   // DAQ configuration variables first
-  unsigned int m_pre_trig_length {0}; // Window length in ticks for packets to be included in a fragment. This is the length
+  //unsigned int m_pre_trig_length {0}; // Window length in ticks for packets to be included in a fragment. This is the length
                                   // of the window before the trigger timestamp.
-  unsigned int m_post_trig_length {0};       // Length of the window after the trigger timestamp.
-  unsigned int m_use_external_timestamp {2}; // Whether to use the external timestamp to determine whether to include
+  //unsigned int m_post_trig_length {0};       // Length of the window after the trigger timestamp.
+  //unsigned int m_use_external_timestamp {2}; // Whether to use the external timestamp to determine whether to include
                                          // packets in fragment. Both timestamps are stored in the packets anyway. 0 is
                                          // front panel, 1 is NOvA style
-  unsigned int m_trigger_write_delay {0};
-  unsigned int m_trigger_latency {0};
-  int m_dummy_period {-1};
-  unsigned int m_hardware_clock_rate_in_MHz {0}; // clock rate on the hardware in MHz
-  unsigned int m_trigger_mask {0};     // this is normally given as a hex number for what triggers to mask on or off
-  int m_fragment_timestamp_offset {0}; // offset for the timestamp put into the data stream of this SSP
+  //unsigned int m_trigger_write_delay {0};
+  //unsigned int m_trigger_latency {0};
+  //int m_dummy_period {-1};
+  //unsigned int m_hardware_clock_rate_in_MHz {0}; // clock rate on the hardware in MHz
+  //unsigned int m_trigger_mask {0};     // this is normally given as a hex number for what triggers to mask on or off
+  //int m_fragment_timestamp_offset {0}; // offset for the timestamp put into the data stream of this SSP
 
   // Tracking metrics for debugging and checking consistency
-  unsigned long m_num_zero_fragments;   // NOLINT
-  unsigned long m_num_fragments_sent;   // NOLINT
-  unsigned long m_num_read_event_calls; // NOLINT
+  //unsigned long m_num_zero_fragments;   // NOLINT
+  //unsigned long m_num_fragments_sent;   // NOLINT
+  //unsigned long m_num_read_event_calls; // NOLINT
   std::string m_instance_name_for_metrics;
 
   // Card
-  void open_card();
-  void close_card();
-  void configure_daq(const data_t& args);
+  //void open_card();
+  //void close_card();
+  //void configure_daq(const data_t& args);
   void configure_device(const data_t& args);
   void build_channel_control_registers(const std::vector<std::pair<std::string, unsigned int>> entries,
                                        std::vector<unsigned int>& reg);
-  void process_ssp();
+  //void process_ssp();
 };
 
 } // namespace sspmodules
