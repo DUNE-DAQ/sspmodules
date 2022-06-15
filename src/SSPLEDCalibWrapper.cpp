@@ -527,7 +527,7 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     //throw ConfigurationError(ERS_HERE, ss.str());
   }
 
-  if (m_cfg.pulse_width_ticks > 1000) {
+  if (m_cfg.pulse_width_ticks > 1000000) {
     std::stringstream ss;
     ss << "ERROR: Incorrect pulse_width_ticks value is " << m_cfg.pulse_width_ticks << ", which is greater than a single drift readout window"
        << std::endl;
