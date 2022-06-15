@@ -107,7 +107,7 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
     if (qi.dir != iomanager::Direction::kInput) {
       continue;
     } else {
-      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPReader output is " << qi.name;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPLEDCalib output is " << qi.name;
       const char delim = '_';
       std::string target = qi.uid;
       std::vector<std::string> words;
@@ -953,11 +953,6 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
   }
 
   fDevice = device;
-  //SINCE THIS IS A MODIFIED SSP, LET US AVOID WRITING TO REGISTERS DETERMINED BY THE SSP REG MAP
-  //TLOG_DEBUG(TLVL_FULL_DEBUG) << "SSP LED Calib Device Interface sending stop." << std::endl;
-  // Put device into sensible state
-  //this->Stop();
-  //TLOG_DEBUG(TLVL_FULL_DEBUG) << "SSP LED Calib Device Interface stop sent." << std::endl;
 
   // Reset timing endpoint
   dunedaq::sspmodules::RegMap& duneReg = dunedaq::sspmodules::RegMap::Get();
