@@ -68,7 +68,10 @@ local sspledcalibmodule = {
 	s.field("double_pulse_delay_ticks", self.count, 1,
                 doc="number of ticks between first and second pulse in double pulse mode"),
 
-	s.field("pulse_width_ticks", self.count, 1,
+	s.field("pulse1_width_ticks", self.count, 1,
+                doc="width of the pulse in tick"),
+
+	s.field("pulse2_width_ticks", self.count, 1,
                 doc="width of the pulse in tick"),
 
 	s.field("pulse_bias_percent_270nm", self.count, 0,
@@ -80,7 +83,7 @@ local sspledcalibmodule = {
 	s.field("hardware_configuration",self.hardwareconfiguration,
 		doc="Hardware configuration for the SSP board."),
 
-    ], doc="Upstream SSP LED Calib DAQ Module Configuration"),
+    ], doc="SSP LED Calib DAQ Module Configuration"),
 
 };
 

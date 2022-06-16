@@ -73,7 +73,17 @@ SSPLEDCalibWrapper::configure(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::configure called.";
 
+  this->validate_config(args);
   m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
+
+  m_channel_mask = m_cfg.channel_mask;
+  m_burst_count = m_cfg.burst_count;
+  m_double_pulse_delay_ticks = m_cfg.double_pulse_delay_ticks;
+  m_pulse1_width_ticks = m_cfg.pulse1_width_ticks;
+  m_pulse2_width_ticks = m_cfg.pulse2_width_ticks;
+  m_pulse_bias_percent_270nm = m_cfg.pulse_bias_percent_270nm;
+  m_pulse_bias_percent_367nm = m_cfg.pulse_bias_percent_367nm;
+  
   if (m_cfg.board_ip == "default") {
     TLOG() << "SSPLEDCalibWrapper::configure: This Board IP value in the Conf is set to: default" << std::endl
            << "As we currently only deal with SSPs on ethernet, this means that either the Board IP was " << std::endl
@@ -112,13 +122,9 @@ SSPLEDCalibWrapper::configure(const data_t& args)
   } else if ( m_cfg.pulse_mode == "burst") {
     m_burst_mode = true;
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: I think that you want SSP LED Calib module to be in BURST MODE..." << std::endl;
-  } else if (m_cfg.pulse_mode == "double") {
-    m_double_pulse = true;
-  }
+  } 
 
-  if ( (m_single_pulse && m_double_pulse) ||
-       (m_double_pulse && m_burst_mode) ||
-       (m_single_pulse && m_burst_mode) ) {
+  if ( (m_single_pulse && m_burst_mode) ) {
     std::stringstream ss;
     ss << "ERROR: SOMEHOW ENDED UP WITH SEVERAL PULSE MODES SET ON!!!!" << std::endl;
     TLOG() << ss.str();
@@ -127,26 +133,16 @@ SSPLEDCalibWrapper::configure(const data_t& args)
     
   if (m_burst_mode) {
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Configuring for BURST MODE..." << std::endl;
-    this->configure_burst_mode(args);
+    this->configure_burst_mode();
   } else if (m_single_pulse) {
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Configuring for single pulse mode..." << std::endl;
-    this->configure_single_pulse(args);
-  } else if (m_double_pulse) {
-    this->configure_double_pulse(args);
+    this->configure_single_pulse();
   } else {
     std::stringstream ss;
     ss << "ERROR: SOMEHOW ENDED UP WITH NO PULSE MODES SET ON!!!!" << std::endl;
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
   }  
-  //these seven lines should be commented out once the flag between burst mode and single pulse mode is sorted out
-  //m_device_interface->SetRegister(0x80000448, m_burst_count, 0xFFFFFFFF); //pdts_cmd_delay_14 cal_count
-  //m_device_interface->SetRegister(0x800003DC, 0x90000078, 0xFFFFFFFF); //cal_config_7
-  //m_device_interface->SetRegister(0x800003E0, 0x90000078, 0xFFFFFFFF); //cal_config_8
-  //m_device_interface->SetRegister(0x800003E4, 0x90000078, 0xFFFFFFFF); //cal_config_9
-  //m_device_interface->SetRegister(0x800003E8, 0x90000078, 0xFFFFFFFF); //cal_config_10
-  //m_device_interface->SetRegister(0x800003EC, 0x90000078, 0xFFFFFFFF); //cal_config_11
-  //the above seven lines should be commented out once the flag between burst mode and single pulse mode is sorted out
 
   //if there are "literal" entries in the configuration they are explicit writes to the specified register with given value
   //these literal entries are paresed and applied last after any other parameters so this method call needs to be after the
@@ -164,26 +160,34 @@ SSPLEDCalibWrapper::start(const data_t& args)
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Run Marker says that SSPLEDCalibWrapper card " << m_board_id << " is already pulsing...";
     return;
   }
-
-  m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
-  unsigned int channel_mask = m_cfg.channel_mask;
-  unsigned int pulse_width = m_cfg.pulse_width_ticks;
-  unsigned int pulse_bias_setting_270nm = 4095 * m_cfg.pulse_bias_percent_270nm/100;
-  unsigned int pulse_bias_setting_367nm = 4095 * m_cfg.pulse_bias_percent_367nm/100;
+  unsigned int pulse_bias_setting_270nm = (4095 * m_pulse_bias_percent_270nm)/100;
+  unsigned int pulse_bias_setting_367nm = (4095 * m_pulse_bias_percent_367nm)/100;
   
   for (unsigned int counter = 0; counter < 5; counter++) { //switch this to 12 for a 12 channel SSP
     unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
     unsigned int bias_regVal = 0x00040000;
-    unsigned int width_regAddress =  0x800003DC + 0x4*(counter);
-    unsigned int width_regVal = 0xF0000000;
-    if ( channel_mask & (1 << counter) ) {
+    unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
+    unsigned int timing_regVal = 0x0; //the highest byte sets 8 (pdts trigger) + 1 (953.5 Hz) for burst mode, but 8 (pdts trigger) + 7 (single shot) for single
+    if (m_single_pulse) {
+      timing_regVal = 0xF0000000;
+    } else if (m_burst_mode) {
+      timing_regVal = 0x90000000;
+    }
+      
+    TLOG(TLVL_FULL_DEBUG) << "Channel map is 0x" << std::hex << m_channel_mask << " and the comparison is 0x" << (1 << counter ) << std::endl;
+    if ( (m_channel_mask & ( (unsigned int)1 << counter)) == ((unsigned int)1 << counter) ) {      
       bias_regVal = bias_regVal + pulse_bias_setting_270nm;
-      width_regVal = width_regVal + pulse_width;
+      timing_regVal = timing_regVal + m_pulse1_width_ticks;
+      timing_regVal = timing_regVal + (m_pulse2_width_ticks << 8);
+      timing_regVal = timing_regVal + (m_double_pulse_delay_ticks << 16);
+      TLOG(TLVL_FULL_DEBUG) << "Will turn on " << std::dec << counter << " channel at bias register 0x" << std::hex << bias_regAddress << " with bias value 0x" << bias_regVal << std::endl;
+      TLOG(TLVL_FULL_DEBUG) << " and set the width regsiter 0x" << std::hex << timing_regAddress << " to value of 0x" << timing_regVal << std::dec << std::endl;
       m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-      m_device_interface->SetRegister(width_regAddress, width_regVal); //cal_CONFIG_N
+      m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     } else {
+      TLOG(TLVL_FULL_DEBUG) << "Will turn off channel " << std::dec << counter << " at timing register 0x" << std::hex << timing_regAddress << std::dec << std::endl;
       m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-      m_device_interface->SetRegister(width_regAddress, width_regVal); //cal_CONFIG_N
+      m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     }
   }
   
@@ -203,18 +207,7 @@ SSPLEDCalibWrapper::start(const data_t& args)
   //   }
   // }
 
-  unsigned int regAddress = 0x40000300;
-  unsigned int regVal = 0x1;
-  unsigned int readVal = 0x0;
-
-  m_device_interface->SetRegister(regAddress, 0x1);
-  m_device_interface->ReadRegister(regAddress, readVal);
-  if (regVal != readVal) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-  }
+  m_device_interface->SetRegister(0x40000300, 0x1); //writing 0x1 to this register applies the bias voltage settings
 
   m_run_marker = true;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << " complete.";
@@ -230,33 +223,21 @@ SSPLEDCalibWrapper::stop(const data_t& /*args*/)
 
   for (unsigned int counter = 0; counter < 5; counter++) { //switch this to 12 for a 12 channel SSP
     unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
-    unsigned int width_regAddress =  0x800003DC + 0x4*(counter);
+    unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
     m_device_interface->SetRegister(bias_regAddress, 0x00040000); //BIAS_DAC_CONFIG_N
-    m_device_interface->SetRegister(width_regAddress, 0xF0000000); //cal_CONFIG_N
+    m_device_interface->SetRegister(timing_regAddress, 0x00000000); //cal_CONFIG_N
   }
 
-  unsigned int regAddress = 0x40000300;
-  unsigned int regVal = 0x0;
-  unsigned int readVal = 0xFFFFFFFF;
+  m_device_interface->SetRegister(0x40000300, 0x1); //writing 0x1 to this register applies the bias voltage settings
 
-  m_device_interface->SetRegister(regAddress, regVal);
-  m_device_interface->ReadRegister(regAddress, readVal);
-  if (regVal != readVal) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-  }
-  
   m_run_marker = false;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stop pulsing SSPLEDCalibWrapper of card " << m_board_id << " complete.";
 }
 
 void
-SSPLEDCalibWrapper::configure_single_pulse(const data_t& args)
+SSPLEDCalibWrapper::configure_single_pulse()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse called.";
-  m_cfg = args.get<sspledcalibmodule::Conf>();
 
   m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
   m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
@@ -279,71 +260,13 @@ SSPLEDCalibWrapper::configure_single_pulse(const data_t& args)
   m_device_interface->SetRegister(0x80000520, 0x00000011); //pulser_mode_control
   m_device_interface->SetRegister(0x80000448, 0x00000001); //cal_count
   
-  unsigned int regAddress = 0x40000300;
-  unsigned int regVal = 0x0; //turn off the bias at the time of configuration
-  unsigned int readVal = 0xFFFFFFFF;
-  m_device_interface->SetRegister(regAddress, regVal); //bias_control
-  m_device_interface->ReadRegister(regAddress, readVal); //bias_control
-  if (regVal != readVal) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-    }
-
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse completed.";
 }
 
 void
-SSPLEDCalibWrapper::configure_double_pulse(const data_t& args)
-{
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse called.";
-  m_cfg = args.get<sspledcalibmodule::Conf>();
-  unsigned int double_pulse_delay_ticks = m_cfg.double_pulse_delay_ticks;
-
-  m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
-  m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
-  m_device_interface->SetRegister(0x80000944, 0x00030036); //pdts_cmd_delay_1
-  m_device_interface->SetRegister(0x80000948, 0x00030036); //pdts_cmd_delay_2
-  m_device_interface->SetRegister(0x8000094C, 0x00030036); //pdts_cmd_delay_3
-  m_device_interface->SetRegister(0x80000950, 0x00030036); //pdts_cmd_delay_4
-  m_device_interface->SetRegister(0x80000954, 0x00030036); //pdts_cmd_delay_5
-  m_device_interface->SetRegister(0x80000958, 0x00030036); //pdts_cmd_delay_6
-  m_device_interface->SetRegister(0x8000095C, 0x00030036); //pdts_cmd_delay_7
-  m_device_interface->SetRegister(0x80000960, 0x00030036); //pdts_cmd_delay_8
-  m_device_interface->SetRegister(0x80000964, 0x00030036); //pdts_cmd_delay_9
-  m_device_interface->SetRegister(0x80000968, 0x00030036); //pdts_cmd_delay_10
-  m_device_interface->SetRegister(0x8000096C, 0x00030036); //pdts_cmd_delay_11
-  m_device_interface->SetRegister(0x80000970, 0x00030036); //pdts_cmd_delay_12
-  m_device_interface->SetRegister(0x80000974, 0x00030036); //pdts_cmd_delay_13
-  m_device_interface->SetRegister(0x80000978, 0x00030036); //pdts_cmd_delay_14
-  m_device_interface->SetRegister(0x8000097C, 0x00030036); //pdts_cmd_delay_15
-  m_device_interface->SetRegister(0x80000468, 0x80000000); //pdts_cmd_control_2
-  m_device_interface->SetRegister(0x80000520, 0x00000011); //pulser_mode_control
-  m_device_interface->SetRegister(0x80000448, 0x00000001); //cal_count
-  
-  unsigned int regAddress = 0x40000300;
-  unsigned int regVal = 0x0; //turn off the bias at the time of configuration
-  unsigned int readVal = 0xFFFFFFFF;
-  m_device_interface->SetRegister(regAddress, regVal); //bias_control
-  m_device_interface->ReadRegister(regAddress, readVal); //bias_control
-  if (regVal != readVal) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-    }
-
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse completed.";
-}
-
-void
-SSPLEDCalibWrapper::configure_burst_mode(const data_t& args)
+SSPLEDCalibWrapper::configure_burst_mode()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureBurstMode called.";
-  m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
-  unsigned int burst_count = 1;
-  burst_count = m_cfg.burst_count;
 
   m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
   m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
@@ -364,20 +287,8 @@ SSPLEDCalibWrapper::configure_burst_mode(const data_t& args)
   m_device_interface->SetRegister(0x8000097C, 0x00030036); //pdts_cmd_delay_15
   m_device_interface->SetRegister(0x80000468, 0x80000000); //pdts_cmd_control_2
   m_device_interface->SetRegister(0x80000520, 0x00000011); //pulser_mode_control
-  m_device_interface->SetRegister(0x80000448, burst_count); //cal_count
+  m_device_interface->SetRegister(0x80000448, m_burst_count); //cal_count
   
-  unsigned int regAddress = 0x40000300;
-  unsigned int regVal = 0x0; //turn off the bias control at the time of configuration
-  unsigned int readVal = 0xFFFFFFFF;
-  m_device_interface->SetRegister(regAddress, regVal); //bias_control
-  m_device_interface->ReadRegister(regAddress, readVal); //bias_control
-  if (regVal != readVal) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect register value 0x" <<std::hex << readVal << " at regsiter address 0x" << regAddress <<"!!!" << std::dec << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureBurstMode completed.";
 }
 
@@ -494,7 +405,7 @@ void
 SSPLEDCalibWrapper::validate_config(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::validate_config called.";
-  m_cfg = args.get<sspledcalibmodule::Conf>();
+  m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
 
   if (m_cfg.channel_mask > 4095) {
     std::stringstream ss;
@@ -527,9 +438,17 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     //throw ConfigurationError(ERS_HERE, ss.str());
   }
 
-  if (m_cfg.pulse_width_ticks > 1000000) {
+  if (m_cfg.pulse1_width_ticks > 255) {
     std::stringstream ss;
-    ss << "ERROR: Incorrect pulse_width_ticks value is " << m_cfg.pulse_width_ticks << ", which is greater than a single drift readout window"
+    ss << "ERROR: Incorrect pulse1_width_ticks value is " << m_cfg.pulse1_width_ticks << ", which is greater than the limit of 255!!!"
+       << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+    if (m_cfg.pulse2_width_ticks > 255) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect pulse2_width_ticks value is " << m_cfg.pulse2_width_ticks << ", which is greater than the limit of 255!!!"
        << std::endl;
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
@@ -573,7 +492,8 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     //                     "pulse_mode": "burst","single","double"
     //                     "double_pulse_delay_ticks": 100, //number of ticks between pulses when in double mode
     //                     "burst_count": 1000, //count of pulses to give in burst mode
-    //                     "pulse_width_ticks": 100, //one tick is ~4 ns
+    //                     "pulse1_width_ticks": 100, //one tick is ~4 ns
+    //                     "pulse2_width_ticks": 100, //one tick is ~4 ns
     //                     "pulse_bias_percent_270nm": 100, //this is percentage of the bias that is supplied to the SSP card
     //                     "pulse_bias_percent_367nm": 100,  //note that the bias might be anything 0V - 35V
                         // "hardware_configuration": [ //included to be able to overwrite default config values
