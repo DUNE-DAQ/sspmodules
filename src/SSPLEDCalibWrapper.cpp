@@ -36,8 +36,7 @@ namespace sspmodules {
 
 SSPLEDCalibWrapper::SSPLEDCalibWrapper()
   : m_device_interface(0)
-    //  , m_ssp_processor(0)
-    , m_run_marker{ false }
+  , m_run_marker{ false }
 {
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper constructor called." << std::endl;
