@@ -71,6 +71,7 @@ private:
   bool m_burst_mode = false;
   bool m_double_pulse = false;
   bool m_single_pulse = false;
+  unsigned int m_number_channels{12};
   unsigned int m_channel_mask{4095};
   unsigned int m_burst_count{1};
   unsigned int m_double_pulse_delay_ticks{0};

@@ -56,7 +56,10 @@ local sspledcalibmodule = {
         s.field("timing_address", self.count, 0,
                 doc="timing address of the SSP board"),
 
-        s.field("channel_mask", self.count, 4095,
+        s.field("number_channels", self.count, 12,
+                doc="decimal number of the number of channels in the card, should be either 5 or 12"),
+
+	s.field("channel_mask", self.count, 4095,
                 doc="decimal number for the 12-bit channel mask where 1 is on, e.g. 4095 is all channels on "),
 
         s.field("pulse_mode", self.name, "default",

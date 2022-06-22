@@ -75,6 +75,7 @@ SSPLEDCalibWrapper::configure(const data_t& args)
   this->validate_config(args);
   m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
 
+  m_number_channels = m_cfg.number_channels;
   m_channel_mask = m_cfg.channel_mask;
   m_burst_count = m_cfg.burst_count;
   m_double_pulse_delay_ticks = m_cfg.double_pulse_delay_ticks;
@@ -155,14 +156,27 @@ void
 SSPLEDCalibWrapper::start(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
+
   if (m_run_marker.load()) {
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Run Marker says that SSPLEDCalibWrapper card " << m_board_id << " is already pulsing...";
     return;
   }
+
+  if (m_number_channels == 5) {
+    TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Configuring board with 5 channels..." ;
+  } else if (m_number_channels == 12) {
+    TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Configuring board with 12 channels..." ;
+  } else {    
+    std::stringstream ss;
+    ss << "ERROR: SOMEHOW ENDED UP WITHOUT NUMBER OF CHANNELS SET!!!!" << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+  
   unsigned int pulse_bias_setting_270nm = (4095 * m_pulse_bias_percent_270nm)/100;
   unsigned int pulse_bias_setting_367nm = (4095 * m_pulse_bias_percent_367nm)/100;
   
-  for (unsigned int counter = 0; counter < 5; counter++) { //switch this to 12 for a 12 channel SSP
+  for (unsigned int counter = 0; counter < m_number_channels ; counter++) { //switch this to 12 for a 12 channel SSP
     unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
     unsigned int bias_regVal = 0x00040000;
     unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
@@ -175,7 +189,11 @@ SSPLEDCalibWrapper::start(const data_t& args)
       
     TLOG(TLVL_FULL_DEBUG) << "Channel map is 0x" << std::hex << m_channel_mask << " and the comparison is 0x" << (1 << counter ) << std::endl;
     if ( (m_channel_mask & ( (unsigned int)1 << counter)) == ((unsigned int)1 << counter) ) {      
-      bias_regVal = bias_regVal + pulse_bias_setting_270nm;
+      if ( counter < 6) {
+	bias_regVal = bias_regVal + pulse_bias_setting_270nm;
+      } else {
+	bias_regVal = bias_regVal + pulse_bias_setting_367nm;
+      }
       timing_regVal = timing_regVal + m_pulse1_width_ticks;
       timing_regVal = timing_regVal + (m_pulse2_width_ticks << 8);
       timing_regVal = timing_regVal + (m_double_pulse_delay_ticks << 16);
@@ -189,22 +207,6 @@ SSPLEDCalibWrapper::start(const data_t& args)
       m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     }
   }
-  
-  // for (unsigned int counter = 6; counter < 12; counter++) { 
-  //   unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
-  //   unsigned int bias_regVal = 0x00040000;
-  //   unsigned int width_regAddress =  0x800003DC + 0x4*(counter);
-  //   unsigned int width_regVal = 0xF0000000;
-  //   if ( channel_mask & (1 << counter) ) {
-  //     bias_regVal = bias_regVal + pulse_bias_setting_367nm;
-  //     width_regVal = width_regVal + pulse_width;
-  //     m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-  //     m_device_interface->SetRegister(width_regAddress, width_regVal); //cal_CONFIG_N
-  //   } else {
-  //     m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-  //     m_device_interface->SetRegister(width_regAddress, width_regVal); //cal_CONFIG_N
-  //   }
-  // }
 
   m_device_interface->SetRegister(0x40000300, 0x1); //writing 0x1 to this register applies the bias voltage settings
 
@@ -215,6 +217,7 @@ SSPLEDCalibWrapper::start(const data_t& args)
 void
 SSPLEDCalibWrapper::stop(const data_t& /*args*/)
 {
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Stop pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
   if (!m_run_marker.load()) {
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "The run_marker says that SSPLEDCalibWrapper card " << m_board_id << " is already stopped, but stopping anyways...";
@@ -405,6 +408,13 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::validate_config called.";
   m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
+
+  if ( ! ( (m_cfg.number_channels == 5) || (m_cfg.number_channels == 12) ) ) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect number_channels value " << m_cfg.number_channels << " is not equal to 5 or 12!!!" << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
 
   if (m_cfg.channel_mask > 4095) {
     std::stringstream ss;
