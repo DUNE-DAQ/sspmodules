@@ -162,7 +162,12 @@ SSPLEDCalibWrapper::start(const data_t& args)
     return;
   }
 
+  unsigned int base_bias_regAddress = 0x40000340;
+  unsigned int base_timing_regAddress = 0x800003C0;
+
   if (m_number_channels == 5) {
+    base_bias_regAddress = 0x4000035C;
+    base_timing_regAddress = 0x800003DC;
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Configuring board with 5 channels..." ;
   } else if (m_number_channels == 12) {
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Configuring board with 12 channels..." ;
@@ -176,10 +181,10 @@ SSPLEDCalibWrapper::start(const data_t& args)
   unsigned int pulse_bias_setting_270nm = (4095 * m_pulse_bias_percent_270nm)/100;
   unsigned int pulse_bias_setting_367nm = (4095 * m_pulse_bias_percent_367nm)/100;
   
-  for (unsigned int counter = 0; counter < m_number_channels ; counter++) { //switch this to 12 for a 12 channel SSP
-    unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
+  for (unsigned int counter = 0; counter < m_number_channels ; counter++) {
+    unsigned int bias_regAddress =  base_bias_regAddress + 0x4*(counter);  //0x40000340 - 0x4000036C
     unsigned int bias_regVal = 0x00040000;
-    unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
+    unsigned int timing_regAddress =  base_timing_regAddress + 0x4*(counter); //0x80003C0 - 0x800003EC
     unsigned int timing_regVal = 0x0; //the highest byte sets 8 (pdts trigger) + 1 (953.5 Hz) for burst mode, but 8 (pdts trigger) + 7 (single shot) for single
     if (m_single_pulse) {
       timing_regVal = 0xF0000000;
@@ -200,6 +205,14 @@ SSPLEDCalibWrapper::start(const data_t& args)
       TLOG(TLVL_FULL_DEBUG) << "Will turn on " << std::dec << counter << " channel at bias register 0x" << std::hex << bias_regAddress << " with bias value 0x" << bias_regVal << std::endl;
       TLOG(TLVL_FULL_DEBUG) << " and set the width regsiter 0x" << std::hex << timing_regAddress << " to value of 0x" << timing_regVal << std::dec << std::endl;
       m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
+      if ( (counter == 7) && ! ( (m_channel_mask & ( (unsigned int)1 << counter)) == ((unsigned int)1 << (counter-1) ) ) )  {
+	//this is a really convoluted situation where for the very specific 12 channel board that arrived at CERN in June 2022
+	//the bias for channel 7 was not working and so the bias is taken from channel 6
+	//which means that if channel 7 is to be turned on while channel 6 is masked off
+	//you still have to bias channel 6 in order for the led on channel 7 to emmit light
+	m_device_interface->SetRegister((bias_regAddress - 0x4), bias_regVal); //BIAS_DAC_CONFIG_N
+      }
+	
       m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     } else {
       TLOG(TLVL_FULL_DEBUG) << "Will turn off channel " << std::dec << counter << " at timing register 0x" << std::hex << timing_regAddress << std::dec << std::endl;
@@ -330,79 +343,6 @@ SSPLEDCalibWrapper::manual_configure_device(const data_t& /*args*/)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice complete.";
 } // NOLINT(readability/fn_size)
 
-  /*void
-SSPLEDCalibWrapper::build_channel_control_registers(const std::vector<std::pair<std::string, unsigned int>> entries,
-                                                std::vector<unsigned int>& reg)
-{
-  for (auto ccIter = entries.begin(); ccIter != entries.end(); ++ccIter) {
-    // External trigger mode
-    if (!ccIter->first.compare("ChannelControl_ExtTriggerMode")) {
-      unsigned int val = ccIter->second;
-      switch (val) {
-        case 0: // No external trigger
-          for (unsigned int i = 0; i < 12; ++i) {
-            reg[i] = reg[i] & 0xFFFF0FFF;
-          }
-          break;
-        case 1: // Edge trigger on front panel
-          for (unsigned int i = 0; i < 12; ++i) {
-            reg[i] = (reg[i] & 0xFFFF0FFF) + 0x00006000;
-          }
-          break;
-        case 2: // Use front panel as gate
-          for (unsigned int i = 0; i < 12; ++i) {
-            reg[i] = (reg[i] & 0xFFFF0FFF) + 0x00005000;
-          }
-          break;
-        case 3: // Timestamp trigger
-          for (unsigned int i = 0; i < 12; ++i) {
-            reg[i] = (reg[i] & 0xFFFF0FFF) + 0x0000E000;
-          }
-          break;
-        default:
-          // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for external trigger source
-          // setting!"<<std::endl;
-          // throw SSPDAQ::EDAQConfigError("");
-          break;
-      }
-    } else if (!ccIter->first.compare("ChannelControl_LEDTrigger")) {
-      unsigned int val = ccIter->second;
-      switch (val) {
-        case 1: // Negative edge
-          for (unsigned int i = 0; i < 12; ++i) {
-            reg[i] = (reg[i] & 0x7FFFF3FF) + 0x80000800;
-          }
-          break;
-        case 2: // Positive edge
-          for (unsigned int i = 0; i < 12; ++i) {
-            reg[i] = (reg[i] & 0x7FFFF3FF) + 0x80000400;
-          }
-          break;
-        case 0:
-          for (unsigned int i = 0; i < 12; ++i) { // Disabled
-            reg[i] = reg[i] & 0x7FFFF3FF;
-          }
-          break;
-        default:
-          // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for trigger polarity
-          // setting!"<<std::endl;
-          // throw SSPDAQ::EDAQConfigError("");
-          break;
-      }
-    } else if (!ccIter->first.compare("ChannelControl_TimestampRate")) {
-      unsigned int val = ccIter->second;
-      if (val > 7) {
-        // DAQLogger::LogError("SSP_SSP_generator")<<"Error: invalid value for timestamp rate setting!"<<std::endl;
-        // throw SSPDAQ::EDAQConfigError("");
-      }
-      for (unsigned int i = 0; i < 12; ++i) {
-        reg[i] = (reg[i] & 0xFFFFFF1F) + 0x20 * val;
-      }
-    }
-  }
-  }*/
-
-
 void
 SSPLEDCalibWrapper::validate_config(const data_t& args)
 {
@@ -423,17 +363,17 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
 
-  if (!( (m_cfg.pulse_mode == "single") || (m_cfg.pulse_mode == "double") || (m_cfg.pulse_mode == "burst") ) ) {
+  if (!( (m_cfg.pulse_mode == "single") || (m_cfg.pulse_mode == "burst") ) ) {
     std::stringstream ss;
-    ss << "ERROR: Incorrect pulse_mode value is " << m_cfg.pulse_mode << ", it must be single, double, or burst."
+    ss << "ERROR: Incorrect pulse_mode value is " << m_cfg.pulse_mode << ", it must be single, or burst."
        << std::endl;
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
   }
   
-  if (m_cfg.double_pulse_delay_ticks > 1000) {
+  if (m_cfg.double_pulse_delay_ticks > 4095) {
     std::stringstream ss;
-    ss << "ERROR: Strange!! double_pulse_delay_ticks value is " << m_cfg.double_pulse_delay_ticks << ", which is greater than a single drift readout window"
+    ss << "ERROR: Strange!! double_pulse_delay_ticks value is " << m_cfg.double_pulse_delay_ticks << ", which is greater than the limit of 4095"
        << std::endl;
     TLOG() << ss.str();
     //throw ConfigurationError(ERS_HERE, ss.str());
@@ -497,12 +437,13 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     //                     "board_ip": "10.73.137.81",
     //                     "partition_number": 0,
     //                     "timing_address": 32,
-    //                     "channel_mask": 4095, //this is a binary bit mask, but has to be given in decimal
-    //                     "pulse_mode": "burst","single","double"
-    //                     "double_pulse_delay_ticks": 100, //number of ticks between pulses when in double mode
-    //                     "burst_count": 1000, //count of pulses to give in burst mode
-    //                     "pulse1_width_ticks": 100, //one tick is ~4 ns
-    //                     "pulse2_width_ticks": 100, //one tick is ~4 ns
+    //                     "number_channels": 12, //this has to be either 5 or 12
+    //                     "channel_mask": 4095, //12 chan binary bit mask, has to be given in decimal, e.g. 128 turns on chan 7 (count from 0)
+    //                     "pulse_mode": "burst","single"
+    //                     "double_pulse_delay_ticks": 100, //number of ticks between pulses when in double mode < 4096
+    //                     "burst_count": 1000, //count of pulses to give in burst mode, must be < 10000
+    //                     "pulse1_width_ticks": 100, //one tick is ~4 ns, must be less than 256
+    //                     "pulse2_width_ticks": 100, //one tick is ~4 ns, must be less than 256
     //                     "pulse_bias_percent_270nm": 100, //this is percentage of the bias that is supplied to the SSP card
     //                     "pulse_bias_percent_367nm": 100,  //note that the bias might be anything 0V - 35V
                         // "hardware_configuration": [ //included to be able to overwrite default config values
