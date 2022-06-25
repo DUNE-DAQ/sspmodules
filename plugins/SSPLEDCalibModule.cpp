@@ -53,9 +53,7 @@ SSPLEDCalibModule::SSPLEDCalibModule(const std::string& name)
   register_command("conf", &SSPLEDCalibModule::do_configure);
   register_command("start", &SSPLEDCalibModule::do_start);
   register_command("stop", &SSPLEDCalibModule::do_stop);
-  register_command("start_pulses", &SSPLEDCalibModule::do_start_pulses);
-  register_command("stop_pulses", &SSPLEDCalibModule::do_stop_pulses);
-
+  
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule constructor complete.";
 }
 
@@ -101,33 +99,18 @@ SSPLEDCalibModule::do_configure(const data_t& args)
 }
 
 void
-SSPLEDCalibModule::do_start_pulses(const data_t& args)
-{
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start_pulses called.";
-  m_card_wrapper->start_pulses(args);
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start_pulses complete.";
-}
-
-void
-SSPLEDCalibModule::do_stop_pulses(const data_t& args)
-{
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_stop_pulses called.";
-  m_card_wrapper->stop_pulses(args);
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_stop_pulses complete.";
-}
-
-void
 SSPLEDCalibModule::do_start(const data_t& args)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start called.\n NOTE THAT THIS DOES NOT DO ANYTHING!!!";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start called.";
   m_card_wrapper->start(args);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start complete.";
 }
 
+
 void
 SSPLEDCalibModule::do_stop(const data_t& args)
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_stop called.\n NOTE THAT THIS DOES NOT DO ANYTHING!!!";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_stop called.";
   m_card_wrapper->stop(args);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_stop complete.";
 }

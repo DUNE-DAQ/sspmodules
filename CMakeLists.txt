@@ -18,8 +18,8 @@ find_package(readoutlibs REQUIRED)
 find_package(fdreadoutlibs REQUIRED)
 find_package(opmonlib REQUIRED)
 
-daq_codegen(sspcardreader.jsonnet sspledcalibmodule.jsonnet TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
-daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
+daq_codegen(sspledcalibmodule.jsonnet TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
+#daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
 
 set(DUNEDAQ_DEPENDENCIES appfwk::appfwk readoutlibs::readoutlibs fdreadoutlibs::fdreadoutlibs detdataformats::detdataformats)
 
@@ -40,7 +40,7 @@ set(DUNEDAQ_DEPENDENCIES appfwk::appfwk readoutlibs::readoutlibs fdreadoutlibs::
 # Note that when the ers library is linked in, it uses a "::" because
 # it's in an external package, not a local CMake target. The semantics
 # are <namespace>::<shared library / executable>
-daq_add_library(anlBoard/*.cxx SSPCardWrapper.cpp SSPLEDCalibWrapper.cpp LINK_LIBRARIES ${SSP_DEPENDENCIES} ${DUNEDAQ_DEPENDENCIES})
+daq_add_library(anlBoard/*.cxx SSPLEDCalibWrapper.cpp LINK_LIBRARIES ${SSP_DEPENDENCIES} ${DUNEDAQ_DEPENDENCIES})
 #daq_add_library(IntPrinter.cpp LINK_LIBRARIES ers::ers)
 
 #if(WITH_FTD2XX_AS_PACKAGE)
@@ -54,7 +54,7 @@ daq_add_library(anlBoard/*.cxx SSPCardWrapper.cpp SSPLEDCalibWrapper.cpp LINK_LI
 #daq_add_python_bindings(ssp_wrapper.cpp LINK_LIBRARIES ${PROJECT_NAME})
 
 ##############################################################################
-daq_add_plugin(SSPCardReader duneDAQModule LINK_LIBRARIES sspmodules)
+#daq_add_plugin(SSPCardReader duneDAQModule LINK_LIBRARIES sspmodules)
 daq_add_plugin(SSPLEDCalibModule duneDAQModule LINK_LIBRARIES sspmodules)
 
 ##############################################################################

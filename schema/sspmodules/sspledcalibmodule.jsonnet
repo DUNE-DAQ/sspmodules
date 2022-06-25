@@ -56,40 +56,37 @@ local sspledcalibmodule = {
         s.field("timing_address", self.count, 0,
                 doc="timing address of the SSP board"),
 
-        s.field("led_pulse_count", self.count, 0,
-                doc="number of LED calib pulses to send"),
+        s.field("number_channels", self.count, 12,
+                doc="decimal number of the number of channels in the card, should be either 5 or 12"),
 
-//        s.field("pre_trig_length", self.count, 0,
-//                doc="Window length in ticks for packets to be included in a fragment. Length of the window before the trigger timestamp in ticks."),
+	s.field("channel_mask", self.count, 4095,
+                doc="decimal number for the 12-bit channel mask where 1 is on, e.g. 4095 is all channels on "),
 
-//        s.field("post_trig_length", self.count, 0,
-//                doc="Length of the window after the trigger timestamp in ticks."),
+        s.field("pulse_mode", self.name, "default",
+                doc="chose of the pulse mode either single, double, or burst"),
 
-//        s.field("use_external_timestamp", self.count, 0,
-//                doc="Whether to use the external timestamp to determine whether to include packets in fragment. Both timestamps are stored in the packets anyway. 0 is front panel, 1 is NOvA style"),
+	s.field("burst_count", self.count, 1,
+                doc="number of LED calib pulses to send in burst mode"),
 
-//        s.field("trigger_write_delay", self.count, 0,
-//                doc="timing delay for when the data should be written out"),
+	s.field("double_pulse_delay_ticks", self.count, 1,
+                doc="number of ticks between first and second pulse in double pulse mode"),
 
-//        s.field("trigger_latency", self.count, 0,
-//               doc="uncertain what this does"),
+	s.field("pulse1_width_ticks", self.count, 1,
+                doc="width of the pulse in tick"),
 
-//        s.field("dummy_period", self.id, 0,
-//                doc="uncertain what this does"),
+	s.field("pulse2_width_ticks", self.count, 1,
+                doc="width of the pulse in tick"),
 
-//        s.field("hardware_clock_rate_in_MHz", self.count, 0,
-//                doc="clock rate on the hardware in MHz"),
+	s.field("pulse_bias_percent_270nm", self.count, 0,
+                doc="the fraction of bias to be applied to the 270nm LEDs"),
 
-//        s.field("trigger_mask", self.count, 0,
-//                doc="this is normally given as a hex number for what triggers to mask on or off"),
-
-//        s.field("fragment_timestamp_offset", self.id, 0,
-//                doc="offset for the timestamp put into the data stream of this SSP"),
+	s.field("pulse_bias_percent_367nm", self.count, 0,
+                doc="the fraction of bias to be applied to the 367nm LEDs"),
 
 	s.field("hardware_configuration",self.hardwareconfiguration,
 		doc="Hardware configuration for the SSP board."),
 
-    ], doc="Upstream SSP LED Calib DAQ Module Configuration"),
+    ], doc="SSP LED Calib DAQ Module Configuration"),
 
 };
 
