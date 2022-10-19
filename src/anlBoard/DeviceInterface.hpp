@@ -10,7 +10,7 @@
 
 #include "appfwk/app/Nljs.hpp"
 #include "iomanager/Sender.hpp"
-#include "fdreadoutlibs/FDReadoutTypes.hpp"
+#include "fdreadoutlibs/SSPFrameTypeAdapter.hpp"
 #include "detdataformats/ssp/SSPTypes.hpp"
 #include "logging/Logging.hpp"
 
@@ -41,7 +41,7 @@ class DeviceInterface{
 public:
 
   // RS: queues here... I know...
-  using sink_t = dunedaq::iomanager::SenderConcept<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>;
+  using sink_t = dunedaq::iomanager::SenderConcept<dunedaq::fdreadoutlibs::types::SSPFrameTypeAdapter>;
   std::map<unsigned, std::shared_ptr<sink_t>> m_sink_queues;
 
 

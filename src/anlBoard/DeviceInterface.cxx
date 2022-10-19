@@ -9,7 +9,7 @@
 #define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_CXX_
 
 #include "appfwk/app/Nljs.hpp"
-#include "fdreadoutlibs/FDReadoutTypes.hpp"
+#include "fdreadoutlibs/SSPFrameTypeAdapter.hpp"
 #include "sspmodules/sspledcalibmodule/Nljs.hpp"
 
 #include "DeviceInterface.hpp"
@@ -117,7 +117,7 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
       try {
         linkid = std::stoi(words.back());
 
-        m_sink_queues[linkid] = get_iom_sender<dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT>(qi);
+        m_sink_queues[linkid] = get_iom_sender<dunedaq::fdreadoutlibs::types::SSPFrameTypeAdapter>(qi);
       } catch (const std::exception& ex) {
         TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
         // ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
@@ -298,7 +298,7 @@ dunedaq::sspmodules::DeviceInterface::HardwareReadLoop()
     // Push event onto deque.                              //
     /////////////////////////////////////////////////////////
 
-    dunedaq::fdreadoutlibs::types::SSP_FRAME_STRUCT sspfs;
+    dunedaq::fdreadoutlibs::types::SSPFrameTypeAdapter sspfs;
     sspfs.header = newPacket.header;
     // memcpy();
     memcpy(sspfs.data, newPacket.data.data(), newPacket.data.size());
