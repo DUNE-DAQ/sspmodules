@@ -14,7 +14,7 @@
 
 // From appfwk
 #include "appfwk/DAQModule.hpp"
-#include  "iomanager/Sender.hpp"
+#include "iomanager/Sender.hpp"
 #include "utilities/WorkerThread.hpp"
 //#include "appfwk/ThreadHelper.hpp"
 

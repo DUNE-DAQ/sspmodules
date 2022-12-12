@@ -20,95 +20,94 @@
 namespace dunedaq {
 namespace sspmodules {
 
-//Singleton containing human-readable names for SSP registers.
-//Note that Zynq registers are in camelCase, and Artix registers
-//are spaced_with_underscores.  
-class RegMap{
+// Singleton containing human-readable names for SSP registers.
+// Note that Zynq registers are in camelCase, and Artix registers
+// are spaced_with_underscores.
+class RegMap
+{
 public:
-
-  //Get a reference to the instance of RegMap
+  // Get a reference to the instance of RegMap
   static RegMap& Get();
 
-  class Register{
+  class Register
+  {
   public:
-    Register(unsigned int address, unsigned int readMask, unsigned int writeMask,
-             unsigned int size=1, unsigned int offset=0, unsigned int bits=32):
-             fAddress(address),
-             fReadMask(readMask),
-             fWriteMask(writeMask),
-             fSize(size),
-             fOffset(offset),
-             fBits(bits){}
+    Register(unsigned int address,
+             unsigned int readMask,
+             unsigned int writeMask,
+             unsigned int size = 1,
+             unsigned int offset = 0,
+             unsigned int bits = 32)
+      : fAddress(address)
+      , fReadMask(readMask)
+      , fWriteMask(writeMask)
+      , fSize(size)
+      , fOffset(offset)
+      , fBits(bits)
+    {
+    }
 
-     Register(){}
+    Register() {}
 
-     //Allow implicit conversion to unsigned int for scalar registers
-     operator unsigned int(){
-      if(fSize>1){
-        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
-        // <<std::hex<<fAddress<<std::dec<<" as scalar!"<<std::endl;
+    // Allow implicit conversion to unsigned int for scalar registers
+    operator unsigned int()
+    {
+      if (fSize > 1) {
+        // dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register array at "
+        //  <<std::hex<<fAddress<<std::dec<<" as scalar!"<<std::endl;
         throw(std::invalid_argument(""));
       }
       return fAddress;
     }
 
-    //Indexing returns another register with correct address offset and size 1
-    Register operator[](unsigned int i) const{
-      if(i>=fSize){
-        //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register at "
-        // <<std::hex<<fAddress<<std::dec<<" index "<<i
+    // Indexing returns another register with correct address offset and size 1
+    Register operator[](unsigned int i) const
+    {
+      if (i >= fSize) {
+        // dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access SSP register at "
+        //  <<std::hex<<fAddress<<std::dec<<" index "<<i
         //<<", beyond end of array (size is "<<fSize<<")"<<std::endl;
       }
-      return Register(fAddress+0x4*i,fReadMask,fWriteMask,fOffset,1);
+      return Register(fAddress + 0x4 * i, fReadMask, fWriteMask, fOffset, 1);
     }
 
-    //Getters and setters
+    // Getters and setters
 
-    inline unsigned int ReadMask() const{
-      return fReadMask;
-    }
+    inline unsigned int ReadMask() const { return fReadMask; }
 
-    inline unsigned int WriteMask() const{
-      return fWriteMask;
-    }
+    inline unsigned int WriteMask() const { return fWriteMask; }
 
-    inline unsigned int Offset() const{
-      return fOffset;
-    }
+    inline unsigned int Offset() const { return fOffset; }
 
-    inline unsigned int Bits() const{
-      return fBits;
-    }
+    inline unsigned int Bits() const { return fBits; }
 
-    inline unsigned int Size() const{
-      return fSize;
-    }
+    inline unsigned int Size() const { return fSize; }
 
   private:
+    // Address of register in SSP space
+    unsigned int fAddress{ 0x00000000 };
 
-    //Address of register in SSP space
-    unsigned int fAddress {0x00000000};
+    // Readable/writable bits in this register for calling code to check
+    // that read/write requests make sense
+    unsigned int fReadMask{ 0xFFFFFFFF };
+    unsigned int fWriteMask{ 0xFFFFFFFF };
 
-    //Readable/writable bits in this register for calling code to check
-    //that read/write requests make sense
-    unsigned int fReadMask {0xFFFFFFFF};
-    unsigned int fWriteMask {0xFFFFFFFF};
+    unsigned int fSize{ 1 };
 
-    unsigned int fSize {1};
+    // Bit offset of relevant quantity relative to start of addressed word.
+    // Not currently used but we could use this to "virtually" address logical quantities
+    // which are assigned only part of a 32-bit word
+    unsigned int fOffset{ 0 };
 
-    //Bit offset of relevant quantity relative to start of addressed word.
-    //Not currently used but we could use this to "virtually" address logical quantities
-    //which are assigned only part of a 32-bit word
-    unsigned int fOffset {0};
-
-    //Number of bits assigned to relevant quantity. Not currently used (see above)
-    unsigned int fBits {32};
+    // Number of bits assigned to relevant quantity. Not currently used (see above)
+    unsigned int fBits{ 32 };
   };
 
-  //Get registers using variable names...
-  Register operator[](std::string name){
-    if(fNamed.find(name)==fNamed.end()){
-      //dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access named SSP register "<<name
+  // Get registers using variable names...
+  Register operator[](std::string name)
+  {
+    if (fNamed.find(name) == fNamed.end()) {
+      // dune::DAQLogger::LogError("SSP_RegMap")<<"Attempt to access named SSP register "<<name
       //<<", which does not exist!"<<std::endl;
       throw(std::invalid_argument(""));
     }
@@ -121,19 +120,19 @@ public:
   unsigned int armCommand;
   unsigned int armVersion;
   unsigned int armTest[4];
-  unsigned int armRxAddress;	// 0x00000020
-  unsigned int armRxCommand;	// 0x00000024
-  unsigned int armRxSize;		// 0x00000028
-  unsigned int armRxStatus;	// 0x0000002C
-  unsigned int armTxAddress;	// 0x00000030
-  unsigned int armTxCommand;	// 0x00000034
-  unsigned int armTxSize;		// 0x00000038
-  unsigned int armTxStatus;	// 0x0000003C
-  unsigned int armPackets;	// 0x00000040
-  unsigned int armOperMode;	// 0x00000044
-  unsigned int armOptions;	// 0x00000048
-  unsigned int armModemStatus;// 0x0000004C
-  unsigned int PurgeDDR;        // 0x00000300
+  unsigned int armRxAddress;   // 0x00000020
+  unsigned int armRxCommand;   // 0x00000024
+  unsigned int armRxSize;      // 0x00000028
+  unsigned int armRxStatus;    // 0x0000002C
+  unsigned int armTxAddress;   // 0x00000030
+  unsigned int armTxCommand;   // 0x00000034
+  unsigned int armTxSize;      // 0x00000038
+  unsigned int armTxStatus;    // 0x0000003C
+  unsigned int armPackets;     // 0x00000040
+  unsigned int armOperMode;    // 0x00000044
+  unsigned int armOptions;     // 0x00000048
+  unsigned int armModemStatus; // 0x0000004C
+  unsigned int PurgeDDR;       // 0x00000300
 
   // Registers in the Zynq FPGA
   unsigned int zynqTest[6];
@@ -159,37 +158,37 @@ public:
   unsigned int comm_led_config;
   unsigned int comm_led_input;
   unsigned int eventDataStatus;
-  unsigned int qi_dac_control;			
-  unsigned int qi_dac_config;			
-  
-  unsigned int bias_control;			
-  unsigned int bias_status;			
-  unsigned int bias_config[12];	
-  unsigned int bias_readback[12];	
-  
-  unsigned int vmon_config;			
-  unsigned int vmon_select;			
-  unsigned int vmon_gpio;			
-  unsigned int vmon_config_readback;		
-  unsigned int vmon_select_readback;		
-  unsigned int vmon_gpio_readback;		
-  unsigned int vmon_id_readback;			
-  unsigned int vmon_control;			
-  unsigned int vmon_status;			
-  unsigned int vmon_bias[12];		
-  unsigned int vmon_value[9];			
+  unsigned int qi_dac_control;
+  unsigned int qi_dac_config;
 
-  unsigned int imon_config;			
-  unsigned int imon_select;			
-  unsigned int imon_gpio;			
-  unsigned int imon_config_readback;		
-  unsigned int imon_select_readback;		
-  unsigned int imon_gpio_readback;		
-  unsigned int imon_id_readback;			
-  unsigned int imon_control;			
-  unsigned int imon_status;			
-  unsigned int imon_bias[12];		
-  unsigned int imon_value[9];			
+  unsigned int bias_control;
+  unsigned int bias_status;
+  unsigned int bias_config[12];
+  unsigned int bias_readback[12];
+
+  unsigned int vmon_config;
+  unsigned int vmon_select;
+  unsigned int vmon_gpio;
+  unsigned int vmon_config_readback;
+  unsigned int vmon_select_readback;
+  unsigned int vmon_gpio_readback;
+  unsigned int vmon_id_readback;
+  unsigned int vmon_control;
+  unsigned int vmon_status;
+  unsigned int vmon_bias[12];
+  unsigned int vmon_value[9];
+
+  unsigned int imon_config;
+  unsigned int imon_select;
+  unsigned int imon_gpio;
+  unsigned int imon_config_readback;
+  unsigned int imon_select_readback;
+  unsigned int imon_gpio_readback;
+  unsigned int imon_id_readback;
+  unsigned int imon_control;
+  unsigned int imon_status;
+  unsigned int imon_bias[12];
+  unsigned int imon_value[9];
 
   // Registers in the Artix FPGA
   unsigned int board_id;
@@ -251,7 +250,7 @@ public:
   unsigned int link_tx_status;
   unsigned int dsp_clock_control;
   unsigned int dsp_clock_phase_control;
-	
+
   unsigned int code_revision;
   unsigned int code_date;
 
@@ -264,10 +263,10 @@ public:
   unsigned int adc_status[12];
 
 private:
-  RegMap(){}
-  ~RegMap(){}
-  RegMap(RegMap const&) = delete; //Don't implement
-  void operator=(RegMap const&) = delete; //Don't implement
+  RegMap() {}
+  ~RegMap() {}
+  RegMap(RegMap const&) = delete;         // Don't implement
+  void operator=(RegMap const&) = delete; // Don't implement
   RegMap(RegMap&&) = delete;
   RegMap& operator=(RegMap&&) = delete;
   std::map<std::string, Register> fNamed;

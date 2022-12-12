@@ -53,7 +53,7 @@ SSPLEDCalibModule::SSPLEDCalibModule(const std::string& name)
   register_command("conf", &SSPLEDCalibModule::do_configure);
   register_command("start", &SSPLEDCalibModule::do_start);
   register_command("stop", &SSPLEDCalibModule::do_stop);
-  
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule constructor complete.";
 }
 
@@ -106,7 +106,6 @@ SSPLEDCalibModule::do_start(const data_t& args)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start complete.";
 }
 
-
 void
 SSPLEDCalibModule::do_stop(const data_t& args)
 {
@@ -117,7 +116,8 @@ SSPLEDCalibModule::do_stop(const data_t& args)
 
 void
 SSPLEDCalibModule::get_info(opmonlib::InfoCollector& /*ci*/, int /*level*/)
-{}
+{
+}
 
 } // namespace sspmodules
 } // namespace dunedaq

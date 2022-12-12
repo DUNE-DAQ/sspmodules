@@ -10,48 +10,51 @@
 
 #include "detdataformats/ssp/SSPTypes.hpp"
 
-#include <vector>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 namespace dunedaq {
 namespace sspmodules {
 
-
-//Simple bag of data but with implementation of move methods
-//to allow efficient shifting around of data between containers
-class EventPacket{
+// Simple bag of data but with implementation of move methods
+// to allow efficient shifting around of data between containers
+class EventPacket
+{
 public:
-
-  //Move constructor
-  EventPacket(EventPacket&& rhs){
-    data=std::move(rhs.data);
-    header=rhs.header;
+  // Move constructor
+  EventPacket(EventPacket&& rhs)
+  {
+    data = std::move(rhs.data);
+    header = rhs.header;
   }
 
-  //Move assignment operator
-  EventPacket& operator=(EventPacket&& rhs){
-    data=std::move(rhs.data);
-    header=rhs.header;
+  // Move assignment operator
+  EventPacket& operator=(EventPacket&& rhs)
+  {
+    data = std::move(rhs.data);
+    header = rhs.header;
     return *this;
   }
 
-  //Copy constructor
-  EventPacket(const EventPacket& rhs){
-    data=rhs.data;
-    header=rhs.header;
+  // Copy constructor
+  EventPacket(const EventPacket& rhs)
+  {
+    data = rhs.data;
+    header = rhs.header;
   }
 
-  //Copy assignment operator
-  EventPacket& operator=(const EventPacket& rhs){
-    data=rhs.data;
-    header=rhs.header;
+  // Copy assignment operator
+  EventPacket& operator=(const EventPacket& rhs)
+  {
+    data = rhs.data;
+    header = rhs.header;
     return *this;
   }
 
-  EventPacket(){}
+  EventPacket() {}
 
-  //Clear data vector and set header word to 0xDEADBEEF
+  // Clear data vector and set header word to 0xDEADBEEF
   void SetEmpty();
 
   void DumpHeader();

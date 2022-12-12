@@ -122,8 +122,8 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
   //      //If length is zero, then device is probably open in another process (though maybe we don't get type then
   //      either...)
   //      //===TODO: Should check flags for open devices and report the number open in other processes to cout
-  //      unsigned int length = strlen(deviceInfoNodes[i].SerialNumber);	// Find length of serial number (including
-  //      'A' or 'B') if (length == 0) {
+  //      unsigned int length = strlen(deviceInfoNodes[i].SerialNumber);	// Find length of serial number
+  //      (including 'A' or 'B') if (length == 0) {
   //	continue;	// Skip to next device
   //      }
   //
@@ -161,7 +161,7 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
   //    if(dIter->first!=cIter->first){
   //      try {
   //	//dune::DAQLogger::LogError("SSP_DeviceManager")<<"Non-matching serial numbers for data and comm channels on
-  //FTDI!"<<std::endl;
+  // FTDI!"<<std::endl;
   //      } catch (...) {}
   //      delete deviceInfoNodes;
   //      throw(EBadDeviceList());
@@ -228,7 +228,7 @@ dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::detdataformats::ssp::Com
       }
       break;
     default:
-        // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Unrecognised interface type!"<<std::endl;
+      // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Unrecognised interface type!"<<std::endl;
       throw(std::invalid_argument(""));
   }
   return device;
