@@ -13,33 +13,35 @@
 #include "Device.hpp"
 #include "SafeQueue.hpp"
 
-#include <atomic>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <stdint.h>
 #include <cstdio>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <memory>
-#include <stdint.h>
-#include <string>
 #include <unistd.h>
+#include <memory>
+#include <atomic>
 #include <vector>
 
 namespace dunedaq {
 namespace sspmodules {
 
-class EmulatedDevice : public Device
-{
+class EmulatedDevice : public Device{
 
   friend class DeviceManager;
 
 public:
+
   explicit EmulatedDevice(unsigned int deviceNumber = 0);
 
-  virtual ~EmulatedDevice() {}
+  virtual ~EmulatedDevice(){}
 
-  // Implementation of base class interface
+  //Implementation of base class interface
 
-  inline virtual bool IsOpen() { return isOpen; }
+  inline virtual bool IsOpen(){
+    return isOpen;
+  }
 
   virtual void Close();
 
@@ -68,31 +70,32 @@ public:
   virtual void DeviceArrayWrite(unsigned int address, unsigned int size, unsigned int* data);
 
 private:
-  virtual void Open(bool slowControlOnly = false);
 
-  // Start generation of events by emulator thread
-  // Called when appropriate register is set via DeviceWrite
+  virtual void Open(bool slowControlOnly=false);
+
+  //Start generation of events by emulator thread
+  //Called when appropriate register is set via DeviceWrite
   void Start();
 
-  // Stop generation of events by emulator thread
-  // Called when appropriate register is set via DeviceWrite
+  //Stop generation of events by emulator thread
+  //Called when appropriate register is set via DeviceWrite
   void Stop();
 
-  // Add fake events to fEmulatedBuffer periodically
+  //Add fake events to fEmulatedBuffer periodically
   void EmulatorLoop();
 
-  // Device number to put into event headers
+  //Device number to put into event headers
   unsigned int fDeviceNumber;
 
   bool isOpen;
 
-  // Separate thread to generate fake data asynchronously
+  //Separate thread to generate fake data asynchronously
   std::unique_ptr<std::thread> fEmulatorThread;
 
-  // Buffer for fake data, popped from by DeviceReceive
+  //Buffer for fake data, popped from by DeviceReceive
   SafeQueue<unsigned int> fEmulatedBuffer;
 
-  // Set by Stop method; tells emulator thread to stop generating data
+  //Set by Stop method; tells emulator thread to stop generating data
   std::atomic<bool> fEmulatorShouldStop;
 };
 

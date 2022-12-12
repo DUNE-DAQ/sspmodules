@@ -33,7 +33,7 @@ class Device
   friend class DeviceManager;
 
 public:
-  virtual ~Device() {}
+  virtual ~Device(){}
 
   // Return whether device is currently open
   virtual bool IsOpen() = 0;
