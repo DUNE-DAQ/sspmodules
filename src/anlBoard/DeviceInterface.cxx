@@ -69,7 +69,8 @@ dunedaq::sspmodules::DeviceInterface::OpenSlowControl()
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Opening "
                               << ((fCommType == dunedaq::detdataformats::ssp::kUSB)
                                     ? "USB"
-                                    : ((fCommType == dunedaq::detdataformats::ssp::kEthernet) ? "Ethernet" : "Emulated"))
+                                    : ((fCommType == dunedaq::detdataformats::ssp::kEthernet) ? "Ethernet"
+                                                                                              : "Emulated"))
                               << " device #" << fDeviceId << " for slow control only..." << std::endl;
 
   device = devman.OpenDevice(fCommType, fDeviceId, true);
@@ -104,23 +105,22 @@ dunedaq::sspmodules::DeviceInterface::Initialize(const nlohmann::json& args)
   // init queues here.... I know...
   auto ini = args.get<dunedaq::appfwk::app::ModInit>();
   for (const auto& qi : ini.conn_refs) {
-    
-      TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPLEDCalib output is " << qi.name;
-      const char delim = '_';
-      std::string target = qi.uid;
-      std::vector<std::string> words;
-      tokenize(target, delim, words);
-      int linkid = -1;
 
-      try {
-        linkid = std::stoi(words.back());
+    TLOG_DEBUG(TLVL_WORK_STEPS) << ": SSPLEDCalib output is " << qi.name;
+    const char delim = '_';
+    std::string target = qi.uid;
+    std::vector<std::string> words;
+    tokenize(target, delim, words);
+    int linkid = -1;
 
-        m_sink_queues[linkid] = get_iom_sender<dunedaq::fdreadoutlibs::types::SSPFrameTypeAdapter>(qi.uid);
-      } catch (const std::exception& ex) {
-        TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
-        // ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
-      }
-    
+    try {
+      linkid = std::stoi(words.back());
+
+      m_sink_queues[linkid] = get_iom_sender<dunedaq::fdreadoutlibs::types::SSPFrameTypeAdapter>(qi.uid);
+    } catch (const std::exception& ex) {
+      TLOG() << "SSP Channel ID could not be parsed on queue instance name!";
+      // ers::fatal(InitializationError(ERS_HERE, "SSP Channel ID could not be parsed on queue instance name! "));
+    }
   }
   fState = kInitialized;
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP Device Interface Initailize complete.";
@@ -252,19 +252,23 @@ dunedaq::sspmodules::DeviceInterface::HardwareReadLoop()
     }
 
     newPacket.DumpHeader();
-    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl << " GetTimestamp return value before modification: " << GetTimestamp(newPacket.header)
-				<< std::endl;
+    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl
+                                 << " GetTimestamp return value before modification: " << GetTimestamp(newPacket.header)
+                                 << std::endl;
     unsigned long m_external_packetTime = GetTimestamp(newPacket.header);
     unsigned long m_corrected_external_packetTime = 0;
-    m_corrected_external_packetTime = (m_external_packetTime + fFragmentTimestampOffset)/3;
-    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl << " External timestamp straight from the header: " << m_external_packetTime
-				<< std::endl;
-    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl << " modified external timestamp after removing offset and dividing by 3: " << m_corrected_external_packetTime
-				<< std::endl;
+    m_corrected_external_packetTime = (m_external_packetTime + fFragmentTimestampOffset) / 3;
+    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl
+                                 << " External timestamp straight from the header: " << m_external_packetTime
+                                 << std::endl;
+    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl
+                                 << " modified external timestamp after removing offset and dividing by 3: "
+                                 << m_corrected_external_packetTime << std::endl;
     this->SetExternalTimestamp(newPacket.header, m_corrected_external_packetTime);
     newPacket.DumpHeader();
-    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl << " GetTimestamp return value after modification: " << GetTimestamp(newPacket.header)
-				<< std::endl;
+    TLOG_DEBUG(TLVL_BOOKKEEPING) << std::endl
+                                 << " GetTimestamp return value after modification: " << GetTimestamp(newPacket.header)
+                                 << std::endl;
 
     //    unsigned long m_external_packetTime = 0;
     //    for(unsigned int iWord=0;iWord<=3;++iWord){
@@ -340,7 +344,7 @@ dunedaq::sspmodules::DeviceInterface::HardwareReadLoop()
     //      if(this->GetTriggerInfo(fPacketBuffer.back(),newTrigger)){
     //	if(fTriggers.size()&&(newTrigger.startTime<fTriggers.back().endTime)){
     //	  //dune::DAQLogger::LogError("SSP_DeviceInterface")<<"Seen trigger with start time overlapping with previous,
-    //falling over!"<<std::endl; 	  throw(EEventReadError());
+    // falling over!"<<std::endl; 	  throw(EEventReadError());
     //	  //	set_exception(true);
     //	  return;
     //	}
@@ -550,8 +554,9 @@ dunedaq::sspmodules::DeviceInterface::BuildFragment(const dunedaq::sspmodules::T
   // Put millislice header at front of vector
   auto sliceDataPtr = fragmentData.begin();
   unsigned int* millisliceHeaderPtr = static_cast<unsigned int*>(static_cast<void*>(&sliceHeader));
-  std::copy(
-    millisliceHeaderPtr, millisliceHeaderPtr + dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts, sliceDataPtr);
+  std::copy(millisliceHeaderPtr,
+            millisliceHeaderPtr + dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts,
+            sliceDataPtr);
 
   // Fill rest of vector with event data
   sliceDataPtr += dunedaq::detdataformats::ssp::MillisliceHeader::sizeInUInts;
@@ -665,8 +670,8 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
       if (!skippedWords)
         firstSkippedWord = data[0];
       ++skippedWords;
-      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier() << "Warning: GetEvent skipping over word " << data[0] << " (0x"
-                                  << std::hex << data[0] << std::dec << ")" << std::endl;
+      TLOG_DEBUG(TLVL_WORK_STEPS) << this->GetIdentifier() << "Warning: GetEvent skipping over word " << data[0]
+                                  << " (0x" << std::hex << data[0] << std::dec << ")" << std::endl;
     }
   }
 
@@ -679,7 +684,8 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   unsigned int* headerBlock = (unsigned int*)&event.header;
   headerBlock[0] = 0xAAAAAAAA;
 
-  static const unsigned int headerReadSize = (sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int) - 1);
+  static const unsigned int headerReadSize =
+    (sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int) - 1);
 
   // Wait for hardware queue to fill with full header data
   unsigned int timeWaited = 0; // in us
@@ -717,7 +723,8 @@ dunedaq::sspmodules::DeviceInterface::ReadEventFromDevice(EventPacket& event)
   std::copy(data.begin(), data.end(), &(headerBlock[1]));
 
   // Wait for hardware queue to fill with full event data
-  unsigned int bodyReadSize = event.header.length - (sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int));
+  unsigned int bodyReadSize =
+    event.header.length - (sizeof(dunedaq::detdataformats::ssp::EventHeader) / sizeof(unsigned int));
   queueLengthInUInts = 0;
   timeWaited = 0; // in us
 
@@ -940,7 +947,8 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Configuring "
                               << ((fCommType == dunedaq::detdataformats::ssp::kUSB)
                                     ? "USB"
-                                    : ((fCommType == dunedaq::detdataformats::ssp::kEthernet) ? "Ethernet" : "Emulated"))
+                                    : ((fCommType == dunedaq::detdataformats::ssp::kEthernet) ? "Ethernet"
+                                                                                              : "Emulated"))
                               << " device #" << fDeviceId << "..." << std::endl;
 
   device = devman.OpenDevice(fCommType, fDeviceId);
@@ -962,7 +970,8 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
   fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
   TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status read back as 0x" << std::hex << pdts_status << std::dec << std::endl;
   fDevice->DeviceRead(duneReg.pdts_control, &pdts_control);
-  TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_control read back as 0x" << std::hex << pdts_control << std::dec << std::endl;
+  TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_control read back as 0x" << std::hex << pdts_control << std::dec
+                              << std::endl;
   fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
   TLOG_DEBUG(TLVL_FULL_DEBUG) << "The dsp_clock_control read back as 0x" << std::hex << dsp_clock_control << std::dec
                               << std::endl;
@@ -970,21 +979,24 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
   unsigned int presentTimingAddress = (pdts_control >> 16) & 0xFF;
   unsigned int presentTimingPartition = pdts_control & 0x3;
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "SSP HW presently on partition " << presentTimingPartition << ", address 0x" << std::hex
-                              << presentTimingAddress << " with endpoint status 0x" << (pdts_status & 0xF)
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "SSP HW presently on partition " << presentTimingPartition << ", address 0x"
+                              << std::hex << presentTimingAddress << " with endpoint status 0x" << (pdts_status & 0xF)
                               << " and dsp_clock_control at 0x" << dsp_clock_control << std::dec << std::endl;
 
-  //if ((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress &&
-  //    presentTimingPartition == fPartitionNumber && dsp_clock_control == 0x31) {
+  // if ((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress &&
+  //     presentTimingPartition == fPartitionNumber && dsp_clock_control == 0x31) {
   if ((pdts_status & 0xF) >= 0x6 && (pdts_status & 0xF) <= 0x8 && presentTimingAddress == fTimingAddress &&
-      presentTimingPartition == fPartitionNumber && (dsp_clock_control & 0xF) == 0x1) { //NOTE THAT THIS WAS CHANGED SO THAT IF THE DSP_CLOCK_STATUS LOWEST BIT IS STILL HIGH 0x1
-    //THEN THE CLOCK ALREADY IS ASSUMED TO BE GOOD, AND WE DON'T TRY TO RESYNCH WITH THE PDTS
+      presentTimingPartition == fPartitionNumber &&
+      (dsp_clock_control & 0xF) ==
+        0x1) { // NOTE THAT THIS WAS CHANGED SO THAT IF THE DSP_CLOCK_STATUS LOWEST BIT IS STILL HIGH 0x1
+    // THEN THE CLOCK ALREADY IS ASSUMED TO BE GOOD, AND WE DON'T TRY TO RESYNCH WITH THE PDTS
 
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Clock already looks ok... skipping endpoint reset." << std::endl;
   } else {
 
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "Syncing SSP LED Calib to PDTS (partition " << fPartitionNumber << ", endpoint address 0x"
-                                << std::hex << fTimingAddress << std::dec << ")" << std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "Syncing SSP LED Calib to PDTS (partition " << fPartitionNumber
+                                << ", endpoint address 0x" << std::hex << fTimingAddress << std::dec << ")"
+                                << std::endl;
 
     unsigned int nTries = 0;
 
@@ -994,8 +1006,9 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
                                   << std::endl; // setting the lowest bit to 0 sets the DSP clock to internal.
       fDevice->DeviceWrite(duneReg.pdts_control, 0x80000000 + fPartitionNumber + fTimingAddress * 0x10000);
       TLOG_DEBUG(TLVL_FULL_DEBUG)
-        << "The pdts_control value was set to 0x" << std::hex << 0x80000000 + fPartitionNumber + fTimingAddress * 0x10000
-        << std::dec << std::endl; // setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
+        << "The pdts_control value was set to 0x" << std::hex
+        << 0x80000000 + fPartitionNumber + fTimingAddress * 0x10000 << std::dec
+        << std::endl; // setting the highest bit (0x80000000) to 1 puts the SSP in Reset mode for the PDTS.
 
       fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
       TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status read back as 0x" << std::hex << pdts_status << std::dec
@@ -1004,8 +1017,8 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
       TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_control read back as 0x" << std::hex << pdts_control << std::dec
                                   << std::endl;
       fDevice->DeviceRead(duneReg.dsp_clock_control, &dsp_clock_control);
-      TLOG_DEBUG(TLVL_FULL_DEBUG) << "The dsp_clock_control read back as 0x" << std::hex << dsp_clock_control << std::dec
-                                  << std::endl;
+      TLOG_DEBUG(TLVL_FULL_DEBUG) << "The dsp_clock_control read back as 0x" << std::hex << dsp_clock_control
+                                  << std::dec << std::endl;
 
       fDevice->DeviceWrite(duneReg.pdts_control, 0x00000000 + fPartitionNumber + fTimingAddress * 0x10000);
       TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status value was set to 0x" << std::hex
@@ -1044,7 +1057,8 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
   if ((pdts_status & 0xF) != 0x8) {
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Waiting for endpoint to reach status 0x8..." << std::endl;
     TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status value is 0x" << std::hex << pdts_status
-                                << " and the 0xF bit masked value is 0x" << (pdts_status & 0xF) << std::dec << std::endl;
+                                << " and the 0xF bit masked value is 0x" << (pdts_status & 0xF) << std::dec
+                                << std::endl;
   }
   while ((pdts_status & 0xF) != 0x8) {
     usleep(2000000);
@@ -1052,7 +1066,8 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const nlohmann::json& ar
                                 << std::endl;
     fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
     TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status value is 0x" << std::hex << pdts_status
-                                << " and the 0xF bit masked value is 0x" << (pdts_status & 0xF) << std::dec << std::endl;
+                                << " and the 0xF bit masked value is 0x" << (pdts_status & 0xF) << std::dec
+                                << std::endl;
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Endpoint is in running state, continuing with configuration!" << std::endl;
@@ -1083,7 +1098,7 @@ dunedaq::sspmodules::DeviceInterface::GetIdentifier()
   return ident;
 }
 
-unsigned long                   // NOLINT(runtime/int)
+unsigned long // NOLINT(runtime/int)
 dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::detdataformats::ssp::EventHeader& header)
 {
   unsigned long packetTime = 0; // NOLINT(runtime/int)
@@ -1103,14 +1118,16 @@ dunedaq::sspmodules::DeviceInterface::GetTimestamp(const dunedaq::detdataformats
 }
 
 void
-dunedaq::sspmodules::DeviceInterface::SetExternalTimestamp(dunedaq::detdataformats::ssp::EventHeader& header, unsigned long newtimestamp)
+dunedaq::sspmodules::DeviceInterface::SetExternalTimestamp(dunedaq::detdataformats::ssp::EventHeader& header,
+                                                           unsigned long newtimestamp)
 {
   TLOG_DEBUG(TLVL_WORK_STEPS) << "fUseExternalTimestamp value: " << std::boolalpha << fUseExternalTimestamp
                               << std::endl;
   for (unsigned int iWord = 0; iWord <= 3; ++iWord) {
-    TLOG_DEBUG(TLVL_WORK_STEPS) << "header.timestamp [" << iWord << "] set to: " << (unsigned short)((newtimestamp >> 16 * iWord) & 0xFFFF) << std::endl;
+    TLOG_DEBUG(TLVL_WORK_STEPS) << "header.timestamp [" << iWord
+                                << "] set to: " << (unsigned short)((newtimestamp >> 16 * iWord) & 0xFFFF) << std::endl;
     header.timestamp[iWord] = (unsigned short)((newtimestamp >> 16 * iWord) & 0xFFFF); // NOLINT(runtime/int)
-    //packetTime += ((unsigned long)(header.timestamp[iWord])) << 16 * iWord; // NOLINT(runtime/int)
+    // packetTime += ((unsigned long)(header.timestamp[iWord])) << 16 * iWord; // NOLINT(runtime/int)
   }
   return;
 }

@@ -12,15 +12,19 @@
 
 #include "EventPacket.hpp"
 
-void dunedaq::sspmodules::EventPacket::SetEmpty(){
+void
+dunedaq::sspmodules::EventPacket::SetEmpty()
+{
   data.clear();
-  header.header=0xDEADBEEF;
+  header.header = 0xDEADBEEF;
 }
 
-void dunedaq::sspmodules::EventPacket::DumpHeader(){
+void
+dunedaq::sspmodules::EventPacket::DumpHeader()
+{
 
   u_int32_t peaksum = ((header.group3 & 0x00FF) >> 16) + header.peakSumLow;
-  if(peaksum & 0x00800000) {
+  if (peaksum & 0x00800000) {
     peaksum |= 0xFF000000;
   }
   // clang-format off
@@ -53,27 +57,30 @@ void dunedaq::sspmodules::EventPacket::DumpHeader(){
   // clang-format on
 }
 
-void dunedaq::sspmodules::EventPacket::DumpEvent(){
+void
+dunedaq::sspmodules::EventPacket::DumpEvent()
+{
 
-  //dune::DAQLogger::LogInfo("SSP_EventPacket")<<"*****EVENT DUMP***********************************" <<std::endl<<std::endl;
+  // dune::DAQLogger::LogInfo("SSP_EventPacket")<<"*****EVENT DUMP***********************************"
+  // <<std::endl<<std::endl;
 
   this->DumpHeader();
 
-  //dune::DAQLogger::LogInfo("SSP_EventPacket")<<"=====ADC VALUES===================================" <<std::endl;
+  // dune::DAQLogger::LogInfo("SSP_EventPacket")<<"=====ADC VALUES===================================" <<std::endl;
 
-  unsigned int nADC=data.size()*2;
-  unsigned short* adcs=reinterpret_cast<unsigned short*>(&(data[0])); // NOLINT
+  unsigned int nADC = data.size() * 2;
+  unsigned short* adcs = reinterpret_cast<unsigned short*>(&(data[0])); // NOLINT
 
   std::stringstream adcstream;
 
-  for(unsigned int i=0;i<nADC;++i){
+  for (unsigned int i = 0; i < nADC; ++i) {
 
     adcstream << adcs[i] << ", ";
   }
 
-  //dune::DAQLogger::LogInfo("SSP_EventPacket")<< adcstream.str() ;
+  // dune::DAQLogger::LogInfo("SSP_EventPacket")<< adcstream.str() ;
 
-  //dune::DAQLogger::LogInfo("SSP_EventPacket")<<std::endl<<"**************************************************" 
+  // dune::DAQLogger::LogInfo("SSP_EventPacket")<<std::endl<<"**************************************************"
   //<<std::endl<<std::endl;
 }
 

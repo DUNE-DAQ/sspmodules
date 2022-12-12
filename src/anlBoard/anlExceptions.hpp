@@ -23,11 +23,13 @@ class ENoSuchDevice : public std::runtime_error
 public:
   explicit ENoSuchDevice(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   ENoSuchDevice()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 class EDeviceAlreadyOpen : public std::runtime_error
@@ -35,11 +37,13 @@ class EDeviceAlreadyOpen : public std::runtime_error
 public:
   explicit EDeviceAlreadyOpen(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   EDeviceAlreadyOpen()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 class EBadDeviceList : public std::runtime_error
@@ -47,11 +51,13 @@ class EBadDeviceList : public std::runtime_error
 public:
   explicit EBadDeviceList(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   EBadDeviceList()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 //=======================================//
@@ -63,11 +69,13 @@ class EFTDIError : public std::runtime_error
 public:
   explicit EFTDIError(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   EFTDIError()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 //=======================================//
@@ -79,11 +87,13 @@ class ETCPError : public std::runtime_error
 public:
   explicit ETCPError(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   ETCPError()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 //===============================================//
@@ -95,11 +105,13 @@ class EEventReadError : public std::runtime_error
 public:
   explicit EEventReadError(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   EEventReadError()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 class EDAQConfigError : public std::runtime_error
@@ -107,11 +119,13 @@ class EDAQConfigError : public std::runtime_error
 public:
   explicit EDAQConfigError(const std::string& s)
     : std::runtime_error(s)
-  {}
+  {
+  }
 
   EDAQConfigError()
     : std::runtime_error("")
-  {}
+  {
+  }
 };
 
 } // namespace sspmodules
