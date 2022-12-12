@@ -8,24 +8,26 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_
 #define SSPMODULES_SRC_ANLBOARD_SAFEQUEUE_HPP_
 
-#include <chrono>
-#include <condition_variable>
-#include <mutex>
 #include <queue>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 #include <utility>
 
 namespace dunedaq {
 namespace sspmodules {
 
-template<typename T>
+template <typename T>
 class SafeQueue
 {
 public:
+
   T pop()
   {
     std::unique_lock<std::mutex> mlock(mutex_);
-    while (queue_.empty()) {
+    while (queue_.empty())
+    {
       cond_.wait(mlock);
     }
     auto val = std::move(queue_.front());
@@ -36,7 +38,8 @@ public:
   void pop(T& item)
   {
     std::unique_lock<std::mutex> mlock(mutex_);
-    while (queue_.empty()) {
+    while (queue_.empty())
+    {
       cond_.wait(mlock);
     }
     item = std::move(queue_.front());
@@ -47,7 +50,7 @@ public:
   {
     std::unique_lock<std::mutex> mlock(mutex_);
 
-    if (!cond_.wait_for(mlock, timeout, [this] { return !queue_.empty(); }))
+    if(!cond_.wait_for(mlock, timeout, [this] { return !queue_.empty(); }))
       return false;
 
     item = std::move(queue_.front());
@@ -81,7 +84,7 @@ public:
     return queue_size;
   }
 
-  SafeQueue() = default;
+  SafeQueue()=default;
   SafeQueue(const SafeQueue&) = delete;            // disable copying
   SafeQueue& operator=(const SafeQueue&) = delete; // disable assignment
 

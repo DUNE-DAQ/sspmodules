@@ -13,28 +13,30 @@
 #include "Device.hpp"
 #include "boost/asio.hpp"
 
+#include <iostream>
+#include <iomanip>
+#include <string>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <string>
 #include <unistd.h>
 #include <vector>
 
 namespace dunedaq {
 namespace sspmodules {
 
-class EthernetDevice : public Device
-{
+class EthernetDevice : public Device{
 
 public:
-  // Create a device object using FTDI handles given for data and communication channels
-  explicit EthernetDevice(unsigned long ipAddress); // NOLINT
 
-  // Implementation of base class interface
+  //Create a device object using FTDI handles given for data and communication channels
+  explicit EthernetDevice(unsigned long ipAddress);  // NOLINT
 
-  inline virtual bool IsOpen() { return isOpen; }
+  //Implementation of base class interface
+
+  inline virtual bool IsOpen(){
+    return isOpen;
+  }
 
   virtual void Close();
 
@@ -62,13 +64,9 @@ public:
 
   virtual void DeviceArrayWrite(unsigned int address, unsigned int size, unsigned int* data);
 
-  // Internal functions - make public so debugging code can access them
+  //Internal functions - make public so debugging code can access them
 
-  void SendReceive(dunedaq::detdataformats::ssp::CtrlPacket& tx,
-                   dunedaq::detdataformats::ssp::CtrlPacket& rx,
-                   unsigned int txSize,
-                   unsigned int rxSizeExpected,
-                   unsigned int retryCount = 0);
+  void SendReceive(dunedaq::detdataformats::ssp::CtrlPacket& tx, dunedaq::detdataformats::ssp::CtrlPacket& rx, unsigned int txSize, unsigned int rxSizeExpected, unsigned int retryCount=0);
 
   void SendEthernet(dunedaq::detdataformats::ssp::CtrlPacket& tx, unsigned int txSize);
 
@@ -77,6 +75,7 @@ public:
   void DevicePurge(boost::asio::ip::tcp::socket& socket);
 
 private:
+
   friend class DeviceManager;
 
   bool isOpen;
@@ -88,8 +87,9 @@ private:
 
   boost::asio::ip::address fIP;
 
-  // Can only be opened by DeviceManager, not by user
+  //Can only be opened by DeviceManager, not by user
   virtual void Open(bool slowControlOnly);
+
 };
 
 } // namespace sspmodules
