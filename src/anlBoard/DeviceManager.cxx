@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
 #define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
 
-#include "detdataformats/ssp/SSPTypes.hpp"
+#include "fddetdataformats/SSPTypes.hpp"
 
 #include "DeviceManager.hpp"
 //#include "ftd2xx.h"
@@ -175,12 +175,12 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
 }
 
 dunedaq::sspmodules::Device*
-dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::detdataformats::ssp::Comm_t commType,
+dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::fddetdataformats::ssp::Comm_t commType,
                                                unsigned int deviceNum,
                                                bool slowControlOnly)
 {
   // Check for devices if this hasn't yet been done
-  if (!fHaveLookedForDevices && commType != dunedaq::detdataformats::ssp::kEmulated) {
+  if (!fHaveLookedForDevices && commType != dunedaq::fddetdataformats::ssp::kEmulated) {
     this->RefreshDevices();
   }
 
@@ -200,7 +200,7 @@ dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::detdataformats::ssp::Com
       //    }
       //    break;
       //
-    case dunedaq::detdataformats::ssp::kEthernet:
+    case dunedaq::fddetdataformats::ssp::kEthernet:
       if (fEthernetDevices.find(deviceNum) == fEthernetDevices.end()) {
         fEthernetDevices[deviceNum] = (std::move(
           std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
@@ -214,7 +214,7 @@ dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::detdataformats::ssp::Com
       }
       break;
 
-    case dunedaq::detdataformats::ssp::kEmulated:
+    case dunedaq::fddetdataformats::ssp::kEmulated:
       while (fEmulatedDevices.size() <= deviceNum) {
         fEmulatedDevices.push_back(std::move(std::unique_ptr<dunedaq::sspmodules::EmulatedDevice>(
           new dunedaq::sspmodules::EmulatedDevice(fEmulatedDevices.size()))));

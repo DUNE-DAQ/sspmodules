@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_
 #define SSPMODULES_SRC_ANLBOARD_REGMAP_HPP_
 
-#include "detdataformats/ssp/SSPTypes.hpp"
+#include "fddetdataformats/SSPTypes.hpp"
 
 #include "anlExceptions.hpp"
 

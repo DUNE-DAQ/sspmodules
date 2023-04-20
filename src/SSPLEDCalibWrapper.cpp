@@ -61,7 +61,7 @@ SSPLEDCalibWrapper::init(const data_t& args)
   //          configuration parameters that you're looking for in args aren't available since the args you're
   //          getting here is likely only *::Init data from the json file
 
-  m_device_interface = new dunedaq::sspmodules::DeviceInterface(dunedaq::detdataformats::ssp::kEthernet);
+  m_device_interface = new dunedaq::sspmodules::DeviceInterface(dunedaq::fddetdataformats::ssp::kEthernet);
   m_device_interface->Initialize(args);
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init complete.";

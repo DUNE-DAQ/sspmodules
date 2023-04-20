@@ -14,6 +14,7 @@ find_package(iomanager REQUIRED)
 find_package(logging REQUIRED)
 find_package(ers REQUIRED)
 find_package(detdataformats REQUIRED)
+find_package(fddetdataformats REQUIRED)
 find_package(readoutlibs REQUIRED)
 find_package(fdreadoutlibs REQUIRED)
 find_package(opmonlib REQUIRED)
@@ -21,7 +22,7 @@ find_package(opmonlib REQUIRED)
 daq_codegen(sspledcalibmodule.jsonnet TEMPLATES Structs.hpp.j2 Nljs.hpp.j2 )
 #daq_codegen( *info.jsonnet DEP_PKGS opmonlib TEMPLATES opmonlib/InfoStructs.hpp.j2 opmonlib/InfoNljs.hpp.j2 )
 
-set(DUNEDAQ_DEPENDENCIES appfwk::appfwk readoutlibs::readoutlibs fdreadoutlibs::fdreadoutlibs detdataformats::detdataformats)
+set(DUNEDAQ_DEPENDENCIES appfwk::appfwk readoutlibs::readoutlibs fdreadoutlibs::fdreadoutlibs detdataformats::detdataformats fddetdataformats::fddetdataformats)
 
 # Provide override functionality for SSP dependencies
 #option(WITH_FTD2XX_AS_PACKAGE "SSP external (ftd2xx) as a dunedaq package" OFF)
