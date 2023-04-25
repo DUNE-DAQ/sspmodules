@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_
 #define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_
 
-#include "detdataformats/ssp/SSPTypes.hpp"
+#include "fddetdataformats/SSPTypes.hpp"
 
 //#include "ftd2xx.h"
 //#include "USBDevice.h"
@@ -39,7 +39,7 @@ public:
   //unsigned int GetNUSBDevices();
 
   //Open a device and return a pointer containing a handle to it
-  Device* OpenDevice(dunedaq::detdataformats::ssp::Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
+  Device* OpenDevice(dunedaq::fddetdataformats::ssp::Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
 
   //Interrogate FTDI for list of devices. GetNUSBDevices and OpenDevice will call this
   //if it has not yet been run, so it should not normally be necessary to call this directly.

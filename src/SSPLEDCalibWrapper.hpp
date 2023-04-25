@@ -10,7 +10,7 @@
 
 #include "sspmodules/sspledcalibmodule/Nljs.hpp"
 
-#include "detdataformats/ssp/SSPTypes.hpp"
+#include "fddetdataformats/SSPTypes.hpp"
 
 #include "SSPIssues.hpp"
 #include "anlBoard/DeviceInterface.hpp"
