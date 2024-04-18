@@ -254,7 +254,7 @@ SSPLEDCalibWrapper::configure_single_pulse()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse called.";
 
-  m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
+  m_device_interface->SetRegister(0x80000464, 0x000002E7); //pdts_cmd_control_1
   m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
   m_device_interface->SetRegister(0x80000944, 0x00030036); //pdts_cmd_delay_1
   m_device_interface->SetRegister(0x80000948, 0x00030036); //pdts_cmd_delay_2
@@ -283,7 +283,7 @@ SSPLEDCalibWrapper::configure_burst_mode()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureBurstMode called.";
 
-  m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
+  m_device_interface->SetRegister(0x80000464, 0x000002E7); //pdts_cmd_control_1
   m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
   m_device_interface->SetRegister(0x80000944, 0x00030036); //pdts_cmd_delay_1
   m_device_interface->SetRegister(0x80000948, 0x00030036); //pdts_cmd_delay_2
