@@ -236,10 +236,10 @@ SSPLEDCalibWrapper::stop(const data_t& /*args*/)
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "The run_marker says that SSPLEDCalibWrapper card " << m_board_id << " is already stopped, but stopping anyways...";
   }
 
-  for (unsigned int counter = 0; counter < 5; counter++) { //switch this to 12 for a 12 channel SSP
-    unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
-    unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
-    m_device_interface->SetRegister(bias_regAddress, 0x00040000); //BIAS_DAC_CONFIG_N
+  for (unsigned int counter = 0; counter < 12; counter++) { //switch this to 12 for a 12 channel SSP
+    unsigned int bias_regAddress =  0x40000340 + 0x4*(counter);
+    unsigned int timing_regAddress =  0x800003c0 + 0x4*(counter);
+    m_device_interface->SetRegister(bias_regAddress, 0x00000000); //BIAS_DAC_CONFIG_N
     m_device_interface->SetRegister(timing_regAddress, 0x00000000); //cal_CONFIG_N
   }
 
