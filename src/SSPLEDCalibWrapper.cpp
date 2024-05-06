@@ -216,8 +216,8 @@ SSPLEDCalibWrapper::start(const data_t& args)
       m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     } else {
       TLOG(TLVL_FULL_DEBUG) << "Will turn off channel " << std::dec << counter << " at timing register 0x" << std::hex << timing_regAddress << std::dec << std::endl;
-      m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-      m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
+      m_device_interface->SetRegister(bias_regAddress, 0x0); //BIAS_DAC_CONFIG_N
+      m_device_interface->SetRegister(timing_regAddress, 0x0); //cal_CONFIG_N
     }
   }
 
