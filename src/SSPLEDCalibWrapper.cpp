@@ -178,8 +178,8 @@ SSPLEDCalibWrapper::start(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
   
-  unsigned int pulse_bias_setting_270nm = (4095 * m_pulse_bias_percent_270nm)/100;
-  unsigned int pulse_bias_setting_367nm = (4095 * m_pulse_bias_percent_367nm)/100;
+  unsigned int pulse_bias_setting_270nm = ( m_pulse_bias_percent_270nm);
+  unsigned int pulse_bias_setting_367nm = ( m_pulse_bias_percent_367nm/2);
   
   for (unsigned int counter = 0; counter < m_number_channels ; counter++) {
     unsigned int bias_regAddress =  base_bias_regAddress + 0x4*(counter);  //0x40000340 - 0x4000036C
@@ -403,7 +403,7 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
 
-  if (m_cfg.pulse_bias_percent_270nm > 100) {
+  if (m_cfg.pulse_bias_percent_270nm > 4095) {
     std::stringstream ss;
     ss << "ERROR: Incorrect pulse_bias_percent_270nm value is " << m_cfg.pulse_bias_percent_270nm << ", which is greater than 100 percent!!!"
        << std::endl;
@@ -411,7 +411,7 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
   
-  if (m_cfg.pulse_bias_percent_367nm > 100) {
+  if (m_cfg.pulse_bias_percent_367nm > 4095) {
     std::stringstream ss;
       ss << "ERROR: Incorrect pulse_bias_percent_367nm value is " << m_cfg.pulse_bias_percent_367nm << ", which is greater than 100 percent!!!"
 	 << std::endl;
