@@ -178,8 +178,8 @@ SSPLEDCalibWrapper::start(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
   
-  unsigned int pulse_bias_setting_270nm = (4095 * m_pulse_bias_percent_270nm)/100;
-  unsigned int pulse_bias_setting_367nm = (4095 * m_pulse_bias_percent_367nm)/100;
+  unsigned int pulse_bias_setting_270nm = ( m_pulse_bias_percent_270nm);
+  unsigned int pulse_bias_setting_367nm = ( m_pulse_bias_percent_367nm/2);
   
   for (unsigned int counter = 0; counter < m_number_channels ; counter++) {
     unsigned int bias_regAddress =  base_bias_regAddress + 0x4*(counter);  //0x40000340 - 0x4000036C
@@ -216,8 +216,8 @@ SSPLEDCalibWrapper::start(const data_t& args)
       m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     } else {
       TLOG(TLVL_FULL_DEBUG) << "Will turn off channel " << std::dec << counter << " at timing register 0x" << std::hex << timing_regAddress << std::dec << std::endl;
-      m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-      m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
+      m_device_interface->SetRegister(bias_regAddress, 0x0); //BIAS_DAC_CONFIG_N
+      m_device_interface->SetRegister(timing_regAddress, 0x0); //cal_CONFIG_N
     }
   }
 
@@ -236,10 +236,10 @@ SSPLEDCalibWrapper::stop(const data_t& /*args*/)
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "The run_marker says that SSPLEDCalibWrapper card " << m_board_id << " is already stopped, but stopping anyways...";
   }
 
-  for (unsigned int counter = 0; counter < 5; counter++) { //switch this to 12 for a 12 channel SSP
-    unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
-    unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
-    m_device_interface->SetRegister(bias_regAddress, 0x00040000); //BIAS_DAC_CONFIG_N
+  for (unsigned int counter = 0; counter < 12; counter++) { //switch this to 12 for a 12 channel SSP
+    unsigned int bias_regAddress =  0x40000340 + 0x4*(counter);
+    unsigned int timing_regAddress =  0x800003c0 + 0x4*(counter);
+    m_device_interface->SetRegister(bias_regAddress, 0x00000000); //BIAS_DAC_CONFIG_N
     m_device_interface->SetRegister(timing_regAddress, 0x00000000); //cal_CONFIG_N
   }
 
@@ -403,7 +403,7 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
 
-  if (m_cfg.pulse_bias_percent_270nm > 100) {
+  if (m_cfg.pulse_bias_percent_270nm > 4095) {
     std::stringstream ss;
     ss << "ERROR: Incorrect pulse_bias_percent_270nm value is " << m_cfg.pulse_bias_percent_270nm << ", which is greater than 100 percent!!!"
        << std::endl;
@@ -411,7 +411,7 @@ SSPLEDCalibWrapper::validate_config(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
   
-  if (m_cfg.pulse_bias_percent_367nm > 100) {
+  if (m_cfg.pulse_bias_percent_367nm > 4095) {
     std::stringstream ss;
       ss << "ERROR: Incorrect pulse_bias_percent_367nm value is " << m_cfg.pulse_bias_percent_367nm << ", which is greater than 100 percent!!!"
 	 << std::endl;
