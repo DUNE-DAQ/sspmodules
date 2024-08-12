@@ -8,15 +8,12 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
 #define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
 
-#include "appfwk/app/Nljs.hpp"
-#include "iomanager/Sender.hpp"
-#include "fdreadoutlibs/SSPFrameTypeAdapter.hpp"
-#include "fddetdataformats/SSPTypes.hpp"
 #include "logging/Logging.hpp"
+#include "sspmodules/dal/SSPCalibModule.hpp"
+#include "sspmodules/dal/SSPRegister.hpp"
 
 #include "DeviceManager.hpp"
 #include "Device.hpp"
-#include "SafeQueue.hpp"
 #include "EventPacket.hpp"
 
 #include <string>
@@ -40,55 +37,18 @@ class DeviceInterface{
 
 public:
 
-  // RS: queues here... I know...
-  using sink_t = dunedaq::iomanager::SenderConcept<dunedaq::fdreadoutlibs::types::SSPFrameTypeAdapter>;
-  std::map<unsigned, std::shared_ptr<sink_t>> m_sink_queues;
-
-
   enum State_t{kUninitialized,kInitialized,kRunning,kStopping,kStopped,kBad};
 
   //Just sets the fields needed to request the device.
   //Real work is done in Initialize which is called manually.
-  explicit DeviceInterface(dunedaq::fddetdataformats::ssp::Comm_t commType);
+  explicit DeviceInterface();
 
-  ~DeviceInterface(){
-    //if(fRequestReceiver){
-    //delete fRequestReceiver;
-    //}
-  }
+  ~DeviceInterface(){ }
 
   void OpenSlowControl();
 
-  //Does all the real work in connecting to and setting up the device
-  void Initialize(const nlohmann::json& args);
+  void ConfigureLEDCalib(const dal::SSPCalibModule* conf);
 
-  //void StartRequestReceiver(std::string address);
-
-  //Start a run :-)
-  void Start();
-
-  //Pop a millislice from fQueue and place into sliceData
-  //    void GetMillislice(std::vector<unsigned int>& sliceData);
-
-  //Stop a run. Also resets device state and purges buffers.
-  //This is called automatically by Initialize().
-  void Stop();
-
-  //Relinquish control of device, which must already be stopped.
-  //Allows opening hardware in another interface object if needed.
-  void Shutdown();
-
-  //Build a sensible default configuration (What I got from Michael
-  //along with Ethernet interface code). Artdaq should do everything
-  //in fhicl - this method is for convenience when running test code.
-  //void Configure(const nlohmann::json& args);
-  void ConfigureLEDCalib(const nlohmann::json& args);
-
-  //Generate fragment from the data available on the buffer, if possible
-  void ReadEvent(std::vector<unsigned int>& fragment);
-
-  //Actually read from the hardware. Thread spawned here at Start
-  void HardwareReadLoop();
 
   //Called by ReadEvents
   //Get an event off the hardware buffer.
@@ -96,7 +56,7 @@ public:
   void ReadEventFromDevice(EventPacket& event);
 
   //Obtain current state of device
-  inline State_t State(){return fState;}
+  //inline State_t State(){return fState;}
 
   //Setter for single register
   //If mask is given then only bits which are high in the mask will be set.
@@ -143,21 +103,9 @@ public:
 
   void SetHardwareClockRateInMHz(unsigned int rate){fHardwareClockRateInMHz = rate;}
 
-  void SetPreTrigLength(unsigned int len){fPreTrigLength = len;}
-
-  void SetPostTrigLength(unsigned int len){fPostTrigLength = len;}
-
-  void SetTriggerWriteDelay(unsigned long delay){fTriggerWriteDelay = delay;}   // NOLINT(runtime/int)
-
-  void SetTriggerLatency(unsigned long latency){fTriggerLatency = latency;}     // NOLINT(runtime/int)
-
   void SetDummyPeriod(int period){fDummyPeriod=period;}
 
   void SetUseExternalTimestamp(bool val){fUseExternalTimestamp = val;}
-
-  void SetTriggerMask(unsigned int val){fTriggerMask=val;}
-
-  void SetFragmentTimestampOffset(int val){fFragmentTimestampOffset=val;}
 
   void SetPartitionNumber(unsigned int val){fPartitionNumber=val;}
 
@@ -175,9 +123,6 @@ private:
   //Owned by the device manager, not this object.
   Device* fDevice;
 
-  //Whether we are using USB or Ethernet to connect to the device
-  dunedaq::fddetdataformats::ssp::Comm_t fCommType;
-
   //Index of the device in the hardware-returned list
   unsigned long fDeviceId;    // NOLINT(runtime/int)
 
@@ -185,70 +130,22 @@ private:
   //hardware itself.
   State_t fState;
 
-  //Called by ReadEvents
-  //Build millislice from events in buffer and place in fQueue
-  void BuildFragment(const TriggerInfo& theTrigger,std::vector<unsigned int>& fragmentData);
-
-  bool GetTriggerInfo(const EventPacket& event,dunedaq::sspmodules::TriggerInfo& newTrigger);
-
-  unsigned long GetTimestamp(const dunedaq::fddetdataformats::ssp::EventHeader& header);  // NOLINT(runtime/int)
-
-  void SetExternalTimestamp(dunedaq::fddetdataformats::ssp::EventHeader& header, unsigned long newtimestamp);  // NOLINT(runtime/int)
-
-  //Build a millislice containing only a header and place in fQueue
-  //    void BuildEmptyMillislice(unsigned long startTime,unsigned long endTime);
-
-  // JCF, Mar-8-2016
-
-  // Rather than throw an exception (crashing the enclosing artdaq
-  // process) signal that this object is in an exception state via an
-  // atomic boolean
-
   void set_exception( bool exception ) { exception_.store( exception ); }
-
-  std::deque<EventPacket> fPacketBuffer;
-
-  unsigned long fMillislicesSent;   // NOLINT(runtime/int)
-
-  unsigned long fMillislicesBuilt;  // NOLINT(runtime/int)
 
   bool fUseExternalTimestamp;
 
   unsigned int fHardwareClockRateInMHz;
 
-  unsigned int fPreTrigLength;
-
-  unsigned int fPostTrigLength;
-
-  unsigned long fTriggerWriteDelay; // NOLINT(runtime/int)
-
-  unsigned long fTriggerLatency;    // NOLINT(runtime/int)
-
-  unsigned int fTriggerMask;
-
-  int fFragmentTimestampOffset;
-
   int fDummyPeriod;
 
   bool fSlowControlOnly;
-
-  unsigned int fMaxFragsPerRead;
 
   unsigned int fPartitionNumber;
 
   unsigned int fTimingAddress;
 
-  std::queue<TriggerInfo> fTriggers;
 
   std::atomic<bool> exception_;
-
-  std::atomic<bool> fShouldStop;
-
-  std::thread* fDataThread;
-
-  //RequestReceiver* fRequestReceiver;
-
-  std::mutex fBufferMutex;
 
 };
 
