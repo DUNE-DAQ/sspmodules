@@ -8,19 +8,9 @@
 #ifndef SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_HPP_
 #define SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_HPP_
 
-#include "appfwk/app/Nljs.hpp"
-#include "appfwk/cmd/Nljs.hpp"
-#include "appfwk/cmd/Structs.hpp"
 
 // From appfwk
 #include "appfwk/DAQModule.hpp"
-#include  "iomanager/Sender.hpp"
-#include "utilities/WorkerThread.hpp"
-//#include "appfwk/ThreadHelper.hpp"
-
-// From readout
-#include "readoutlibs/utils/ReusableThread.hpp"
-
 #include "SSPLEDCalibWrapper.hpp"
 
 #include <future>
@@ -45,22 +35,13 @@ public:
   SSPLEDCalibModule(SSPLEDCalibModule&&) = delete;                 ///< SSPLEDCalibModule is not move-constructible
   SSPLEDCalibModule& operator=(SSPLEDCalibModule&&) = delete;      ///< SSPLEDCalibModule is not move-assignable
 
-  void init(const data_t& args) override;
+  void init(std::shared_ptr<appfwk::ModuleConfiguration> mcfg) override;
 
 private:
-  // Types
-  using module_conf_t = dunedaq::sspmodules::sspledcalibmodule::Conf;
 
   // Commands
-  void do_configure(const data_t& args);
   void do_start(const data_t& args);
   void do_stop(const data_t& args);
-  void get_info(opmonlib::InfoCollector& ci, int level);
-
-  // Configuration
-  module_conf_t m_cfg;
-  bool m_configured;
-  int m_card_id;
 
   // SSP Cards
   std::unique_ptr<SSPLEDCalibWrapper> m_card_wrapper;

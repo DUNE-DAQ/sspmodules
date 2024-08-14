@@ -8,7 +8,6 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
 #define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
 
-#include "fddetdataformats/SSPTypes.hpp"
 
 #include "DeviceManager.hpp"
 //#include "ftd2xx.h"
@@ -48,31 +47,16 @@ dunedaq::sspmodules::DeviceManager::DeviceManager() {}
 void
 dunedaq::sspmodules::DeviceManager::RefreshDevices()
 {
-  //
-  //  for(auto device=fUSBDevices.begin();device!=fUSBDevices.end();++device){
-  //    if(device->IsOpen()){
-  //      //dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
-  //      //<<"due to USB devices still open"<<std::endl;
-  //    }
-  //  }
-  //
   for (auto device = fEthernetDevices.begin(); device != fEthernetDevices.end(); ++device) {
     if ((device->second)->IsOpen()) {
       // dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
       //<<"due to ethernet devices still open"<<std::endl;
     }
   }
-  for (auto device = fEmulatedDevices.begin(); device != fEmulatedDevices.end(); ++device) {
-    if ((*device)->IsOpen()) {
-      // dune::DAQLogger::LogWarning("SSP_DeviceManager")<<"Device manager refused request to refresh device list"
-      //<<"due to emulated devices still open"<<std::endl;
-    }
-  }
 
   // Clear Device List
   // fUSBDevices.clear();
   fEthernetDevices.clear();
-  fEmulatedDevices.clear();
 
   //
   //  //===========================//
@@ -175,32 +159,12 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
 }
 
 dunedaq::sspmodules::Device*
-dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::fddetdataformats::ssp::Comm_t commType,
+dunedaq::sspmodules::DeviceManager::OpenDevice(
                                                unsigned int deviceNum,
                                                bool slowControlOnly)
 {
-  // Check for devices if this hasn't yet been done
-  if (!fHaveLookedForDevices && commType != dunedaq::fddetdataformats::ssp::kEmulated) {
-    this->RefreshDevices();
-  }
 
   Device* device = 0;
-  switch (commType) {
-      //
-      //  case SSPDAQ::kUSB:
-      //    device=&fUSBDevices[deviceNum];
-      //    if(device->IsOpen()){
-      //      try {
-      //      //dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
-      //      } catch (...) {}
-      //      throw(EDeviceAlreadyOpen());
-      //    }
-      //    else{
-      //      device->Open(slowControlOnly);
-      //    }
-      //    break;
-      //
-    case dunedaq::fddetdataformats::ssp::kEthernet:
       if (fEthernetDevices.find(deviceNum) == fEthernetDevices.end()) {
         fEthernetDevices[deviceNum] = (std::move(
           std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
@@ -212,25 +176,6 @@ dunedaq::sspmodules::DeviceManager::OpenDevice(dunedaq::fddetdataformats::ssp::C
         device = fEthernetDevices[deviceNum].get();
         device->Open(slowControlOnly);
       }
-      break;
-
-    case dunedaq::fddetdataformats::ssp::kEmulated:
-      while (fEmulatedDevices.size() <= deviceNum) {
-        fEmulatedDevices.push_back(std::move(std::unique_ptr<dunedaq::sspmodules::EmulatedDevice>(
-          new dunedaq::sspmodules::EmulatedDevice(fEmulatedDevices.size()))));
-      }
-      device = fEmulatedDevices[deviceNum].get();
-      if (device->IsOpen()) {
-        // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
-        throw(EDeviceAlreadyOpen());
-      } else {
-        device->Open(slowControlOnly);
-      }
-      break;
-    default:
-        // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Unrecognised interface type!"<<std::endl;
-      throw(std::invalid_argument(""));
-  }
   return device;
 }
 

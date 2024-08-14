@@ -8,11 +8,8 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_
 #define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_HPP_
 
-#include "fddetdataformats/SSPTypes.hpp"
-
 //#include "ftd2xx.h"
 //#include "USBDevice.h"
-#include "EmulatedDevice.hpp"
 #include "EthernetDevice.hpp"
 
 #include <vector>
@@ -39,7 +36,7 @@ public:
   //unsigned int GetNUSBDevices();
 
   //Open a device and return a pointer containing a handle to it
-  Device* OpenDevice(dunedaq::fddetdataformats::ssp::Comm_t commType,unsigned int deviceId,bool slowControlOnly=false);
+  Device* OpenDevice(unsigned int deviceId, bool slowControlOnly=false);
 
   //Interrogate FTDI for list of devices. GetNUSBDevices and OpenDevice will call this
   //if it has not yet been run, so it should not normally be necessary to call this directly.
@@ -59,8 +56,6 @@ private:
   //Ethernet devices keyed by IP address
   std::map<unsigned long,std::unique_ptr<EthernetDevice> > fEthernetDevices;  // NOLINT(runtime/int)
 
-  //List of emulated devices
-  std::vector<std::unique_ptr<EmulatedDevice> > fEmulatedDevices;
 
   bool fHaveLookedForDevices;
 };

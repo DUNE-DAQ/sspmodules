@@ -10,14 +10,6 @@
 
 // From Module
 #include "SSPLEDCalibWrapper.hpp"
-
-// From STD
-#include <chrono>
-#include <iomanip>
-#include <string>
-#include <utility>
-#include <vector>
-
 /**
  * @brief TRACE debug levels used in this source file
  */
@@ -38,65 +30,34 @@ SSPLEDCalibWrapper::SSPLEDCalibWrapper()
   : m_device_interface(0)
   , m_run_marker{ false }
 {
-
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper constructor called." << std::endl;
-  TLOG_DEBUG(TLVL_FULL_DEBUG)
-    << "Constructor doesn't actually do anything but initialize conf paramters to none function values." << std::endl;
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper constructor complete." << std::endl;
 }
 
 SSPLEDCalibWrapper::~SSPLEDCalibWrapper()
 {
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper destructor called." << std::endl;
-  //close_card();
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper destructor complete." << std::endl;
 }
 
 void
-SSPLEDCalibWrapper::init(const data_t& args)
+SSPLEDCalibWrapper::init(const dal::SSPCalibModule* conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init called." << std::endl;
-  // REMEMBER: the init method isn't supposed to do any frontend board configuration in the new DUNE-DAQ framework
-  //          ALL of the frontend board configuration is to be done in the conf call and it is likely that the
-  //          configuration parameters that you're looking for in args aren't available since the args you're
-  //          getting here is likely only *::Init data from the json file
 
-  m_device_interface = new dunedaq::sspmodules::DeviceInterface(dunedaq::fddetdataformats::ssp::kEthernet);
-  m_device_interface->Initialize(args);
+  m_device_interface = new dunedaq::sspmodules::DeviceInterface();
 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init complete.";
-}
+  m_number_channels = conf->get_number_channels();
+  m_channel_mask = conf->get_channel_mask();
+  m_burst_count = conf->get_burst_count();
+  m_double_pulse_delay_ticks = conf->get_double_pulse_delay_ticks();
+  m_pulse1_width_ticks = conf->get_pulse1_width_ticks();
+  m_pulse2_width_ticks = conf->get_pulse2_width_ticks();
+  m_pulse_bias_percent_270nm = conf->get_pulse_bias_percent_270nm();
+  m_pulse_bias_percent_367nm = conf->get_pulse_bias_percent_367nm();
 
-void
-SSPLEDCalibWrapper::configure(const data_t& args)
-{
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::configure called.";
-
-  this->validate_config(args);
-  m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
-
-  m_number_channels = m_cfg.number_channels;
-  m_channel_mask = m_cfg.channel_mask;
-  m_burst_count = m_cfg.burst_count;
-  m_double_pulse_delay_ticks = m_cfg.double_pulse_delay_ticks;
-  m_pulse1_width_ticks = m_cfg.pulse1_width_ticks;
-  m_pulse2_width_ticks = m_cfg.pulse2_width_ticks;
-  m_pulse_bias_percent_270nm = m_cfg.pulse_bias_percent_270nm;
-  m_pulse_bias_percent_367nm = m_cfg.pulse_bias_percent_367nm;
-  
-  if (m_cfg.board_ip == "default") {
-    TLOG() << "SSPLEDCalibWrapper::configure: This Board IP value in the Conf is set to: default" << std::endl
-           << "As we currently only deal with SSPs on ethernet, this means that either the Board IP was " << std::endl
-           << "NOT set, or the args.get<Conf> call failed to find parameters." << std::endl;
-    throw ConfigurationError(ERS_HERE, "Used default Board IP value");
-  }
-
-  m_board_id = m_cfg.board_id;
+  m_board_id = conf->get_board_id();
+  m_module_id = conf->get_module_id();
   m_instance_name_for_metrics = "SSP LED Calib " + std::to_string(m_board_id);
-  m_partition_number =
-    m_cfg.partition_number; // this should be 0-3
+  m_partition_number =conf->get_partition_number(); // this should be 0-3
 
-  m_timing_address = m_cfg.timing_address; // 0x20 is default for 101, 0x2B for 304, and 0x36 for 603
+  m_timing_address = conf->get_timing_address(); // 0x20 is default for 101, 0x2B for 304, and 0x36 for 603
   if (m_timing_address > 0xff) {
     std::stringstream ss;
     ss << "Error: Incorrect timing address set (" << m_timing_address << ")!" << std::endl;
@@ -104,22 +65,21 @@ SSPLEDCalibWrapper::configure(const data_t& args)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
 
-  TLOG_DEBUG(TLVL_WORK_STEPS) << "Board ID is listed as: " << m_cfg.board_id << std::endl
-                              << "Partition Number is: " << m_cfg.partition_number << std::endl
-                              << "Timing Address is: " << m_cfg.timing_address << std::endl
-                              << "Module ID is: " << m_cfg.module_id << std::endl;
+  TLOG_DEBUG(TLVL_WORK_STEPS) << "Board ID is listed as: " << m_board_id << std::endl
+                              << "Partition Number is: " << m_partition_number << std::endl
+                              << "Timing Address is: " << m_timing_address << std::endl
+                              << "Module ID is: " << m_module_id << std::endl;
 
   m_device_interface->SetPartitionNumber(m_partition_number);
   m_device_interface->SetTimingAddress(m_timing_address);
-  m_module_id = m_cfg.module_id;
-  m_device_interface->ConfigureLEDCalib(args); //This sets up the ethernet interface and make sure that the pdts is synched
+  m_device_interface->ConfigureLEDCalib(conf); //This sets up the ethernet interface and make sure that the pdts is synched
   m_device_interface->SetRegisterByName("module_id", m_module_id);
-  m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
+  //m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
 
-  if ( m_cfg.pulse_mode == "single") {
+  if ( conf->get_pulse_mode() == "single") {
     m_single_pulse = true;
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: I think that you want SSP LED Calib module to be in single pulse..." << std::endl;
-  } else if ( m_cfg.pulse_mode == "burst") {
+  } else if ( conf->get_pulse_mode() == "burst") {
     m_burst_mode = true;
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: I think that you want SSP LED Calib module to be in BURST MODE..." << std::endl;
   } 
@@ -147,13 +107,13 @@ SSPLEDCalibWrapper::configure(const data_t& args)
   //if there are "literal" entries in the configuration they are explicit writes to the specified register with given value
   //these literal entries are paresed and applied last after any other parameters so this method call needs to be after the
   //other configuration calls
-  this->manual_configure_device(args);
+  this->manual_configure_device(conf->get_hardware_configuration());
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::configure complete.";
 }
 
 void
-SSPLEDCalibWrapper::start(const data_t& args)
+SSPLEDCalibWrapper::start(const data_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "Start pulsing SSPLEDCalibWrapper of card " << m_board_id << "...";
 
@@ -308,157 +268,22 @@ SSPLEDCalibWrapper::configure_burst_mode()
 }
 
 void
-SSPLEDCalibWrapper::manual_configure_device(const data_t& /*args*/)
+SSPLEDCalibWrapper::manual_configure_device(const std::vector<const dal::SSPRegister*>& hw_conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice called.";
-  std::vector<dunedaq::sspmodules::sspledcalibmodule::RegisterValues> m_hardware_configuration =
-    m_cfg.hardware_configuration;
   TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Processing the Hardware Configuration list..." << std::endl;
-  TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Hardware configuration seq has size : " << m_hardware_configuration.size()
-                        << std::endl;
-  // for (uint i = 0; i < m_hardware_configuration.size() ; ++i ) {
-  for (auto regValuesIter = m_hardware_configuration.begin(); regValuesIter != m_hardware_configuration.end();
-       ++regValuesIter) {
-    std::string m_name = regValuesIter->regname;
-    std::vector<unsigned int> m_hexvalues = regValuesIter->hexvalues;
-    TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Hardware configuration for regsiter name: " << m_name
-                          << " being processed." << std::endl;
-    if (m_hexvalues.size() == 0) {
-      TLOG() << "ERROR: Hardware configuration for regsiter name: " << m_name
-             << " does not have any hexvalues associated with it" << std::endl;
-      continue;
-    }
-
-    // Expect to see a Literals section; take any name starting with "Literal" and parse as hex values: regAddress,
-    // regValue, regMask
-    if (!m_name.compare(0, 7, "Literal")) {              // NOLINT(readability/braces)
-      unsigned int regAddress = m_hexvalues[0];
-      unsigned int regVal = m_hexvalues[1];
-      unsigned int regMask = m_hexvalues.size() > 2 ? m_hexvalues[2] : 0xFFFFFFFF;
-      TLOG(TLVL_FULL_DEBUG) << "Preparing to write to literal register address: 0x" << std::hex << regAddress
-                            << " with value: 0x" << regVal << " and mask: 0x" << regMask << std::dec << std::endl;
-      m_device_interface->SetRegister(regAddress, regVal, regMask);
-    } // End Processing of Literals
+  for (auto regValuesIter : hw_conf) {
+    std::string m_name = regValuesIter->get_name();
+    unsigned int regAddr = regValuesIter->get_address();
+    unsigned int regVal = regValuesIter->get_value();
+    unsigned int regMask = regValuesIter->get_mask();
+    m_device_interface->SetRegister(regAddr, regVal, regMask);
   }
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice complete.";
 } // NOLINT(readability/fn_size)
 
-void
-SSPLEDCalibWrapper::validate_config(const data_t& args)
-{
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::validate_config called.";
-  m_cfg = args.get<dunedaq::sspmodules::sspledcalibmodule::Conf>();
-
-  if ( ! ( (m_cfg.number_channels == 5) || (m_cfg.number_channels == 12) ) ) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect number_channels value " << m_cfg.number_channels << " is not equal to 5 or 12!!!" << std::endl;
-    TLOG() << ss.str();
-    throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
-  if (m_cfg.channel_mask > 4095) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect channel_maks value " << m_cfg.channel_mask << " is higher than the limit of 4095!!!" << std::endl;
-    TLOG() << ss.str();
-    throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
-  if (!( (m_cfg.pulse_mode == "single") || (m_cfg.pulse_mode == "burst") ) ) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect pulse_mode value is " << m_cfg.pulse_mode << ", it must be single, or burst."
-       << std::endl;
-    TLOG() << ss.str();
-    throw ConfigurationError(ERS_HERE, ss.str());
-  }
-  
-  if (m_cfg.double_pulse_delay_ticks > 4095) {
-    std::stringstream ss;
-    ss << "ERROR: Strange!! double_pulse_delay_ticks value is " << m_cfg.double_pulse_delay_ticks << ", which is greater than the limit of 4095"
-       << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
-  if (m_cfg.burst_count > 10000) {
-    std::stringstream ss;
-    ss << "ERROR: Strange!! burst_count value is " << m_cfg.burst_count << ", which is more time than in a drift readout window"
-       << std::endl;
-    TLOG() << ss.str();
-    //throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
-  if (m_cfg.pulse1_width_ticks > 255) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect pulse1_width_ticks value is " << m_cfg.pulse1_width_ticks << ", which is greater than the limit of 255!!!"
-       << std::endl;
-    TLOG() << ss.str();
-    throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
-    if (m_cfg.pulse2_width_ticks > 255) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect pulse2_width_ticks value is " << m_cfg.pulse2_width_ticks << ", which is greater than the limit of 255!!!"
-       << std::endl;
-    TLOG() << ss.str();
-    throw ConfigurationError(ERS_HERE, ss.str());
-  }
-
-  if (m_cfg.pulse_bias_percent_270nm > 100) {
-    std::stringstream ss;
-    ss << "ERROR: Incorrect pulse_bias_percent_270nm value is " << m_cfg.pulse_bias_percent_270nm << ", which is greater than 100 percent!!!"
-       << std::endl;
-    TLOG() << ss.str();
-    throw ConfigurationError(ERS_HERE, ss.str());
-  }
-  
-  if (m_cfg.pulse_bias_percent_367nm > 100) {
-    std::stringstream ss;
-      ss << "ERROR: Incorrect pulse_bias_percent_367nm value is " << m_cfg.pulse_bias_percent_367nm << ", which is greater than 100 percent!!!"
-	 << std::endl;
-      TLOG() << ss.str();
-      throw ConfigurationError(ERS_HERE, ss.str());
-  }
-  
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::validate_config complete.";
-}
 
 } // namespace sspmodules
 } // namespace dunedaq
 
-   // {
-   //      "data": {
-   //          "modules": [
-   //              {
-   //                  "data": {
-   //                      "card_id": 999,
-   //                      "board_id": 999,
-   //                      "module_id": 999,
-   //                     "interface_type": 1,
-    //                     "board_ip": "10.73.137.81",
-    //                     "partition_number": 0,
-    //                     "timing_address": 32,
-    //                     "number_channels": 12, //this has to be either 5 or 12
-    //                     "channel_mask": 4095, //12 chan binary bit mask, has to be given in decimal, e.g. 128 turns on chan 7 (count from 0)
-    //                     "pulse_mode": "burst","single"
-    //                     "double_pulse_delay_ticks": 100, //number of ticks between pulses when in double mode < 4096
-    //                     "burst_count": 1000, //count of pulses to give in burst mode, must be < 10000
-    //                     "pulse1_width_ticks": 100, //one tick is ~4 ns, must be less than 256
-    //                     "pulse2_width_ticks": 100, //one tick is ~4 ns, must be less than 256
-    //                     "pulse_bias_percent_270nm": 100, //this is percentage of the bias that is supplied to the SSP card
-    //                     "pulse_bias_percent_367nm": 100,  //note that the bias might be anything 0V - 35V
-                        // "hardware_configuration": [ //included to be able to overwrite default config values
-                        //     {
-                        //         "regname": "Literal",
-                        //         "hexvalues": [2147484776,2147483648] //this is 0x80000468 with value 0x80000000 which is pdts_cmd_control_2 and turns on the front panel LEDs
-                        //     }
-			// ]
-    //                 },
-    //                 "match": "ssp_led_calib"
-    //             }
-    //         ]
-    //     },
-    //     "entry_state": "INITIAL",
-    //     "exit_state": "CONFIGURED",
-    //     "id": "conf"
-    // }
 #endif // SSPMODULES_SRC_SSPLEDCALIBWRAPPER_CPP_

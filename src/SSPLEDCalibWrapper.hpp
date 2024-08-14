@@ -8,22 +8,16 @@
 #ifndef SSPMODULES_SRC_SSPLEDCALIBWRAPPER_HPP_
 #define SSPMODULES_SRC_SSPLEDCALIBWRAPPER_HPP_
 
-#include "sspmodules/sspledcalibmodule/Nljs.hpp"
-
-#include "fddetdataformats/SSPTypes.hpp"
+#include "sspmodules/dal/SSPCalibModule.hpp"
+#include "sspmodules/dal/SSPRegister.hpp"
 
 #include "SSPIssues.hpp"
 #include "anlBoard/DeviceInterface.hpp"
 #include "logging/Logging.hpp"
-#include "readoutlibs/utils/ReusableThread.hpp"
 
 #include <nlohmann/json.hpp>
 
-#include <atomic>
-#include <memory>
-#include <mutex>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace dunedaq {
@@ -44,23 +38,17 @@ public:
   SSPLEDCalibWrapper& operator=(SSPLEDCalibWrapper&&) = delete;      ///< SSPLEDCalibWrapper is not move-assignable
 
   using data_t = nlohmann::json;
-  void init(const data_t& args);
-  void configure(const data_t& args);
+  void init(const dal::SSPCalibModule* mcfg);
   void start(const data_t& args);
   void stop(const data_t& args);
   
 private:
-  // Types
-  using module_conf_t = dunedaq::sspmodules::sspledcalibmodule::Conf;
   // these are SSP configurations for this instance of the SSP LED Calib Wrapper
   dunedaq::sspmodules::DeviceInterface* m_device_interface; // instance of the SSP device interface class
 
   // module status booleans for transition like init, conf, start, etc
   std::atomic<bool> m_run_marker;
   std::atomic<bool> m_configure;
-
-  // all of the configure variables for the SSP
-  module_conf_t m_cfg;
 
   // Initialization configuration variables
   unsigned int m_board_id {0};  // this is the ID of the SSP board
@@ -84,14 +72,9 @@ private:
 
   // Card
   void validate_config(const data_t& args);
-  //void close_card();
-  //void configure_daq(const data_t& args);
   void configure_single_pulse();
   void configure_burst_mode();
-  void manual_configure_device(const data_t& args);
-  //void build_channel_control_registers(const std::vector<std::pair<std::string, unsigned int>> entries,
-  //                                     std::vector<unsigned int>& reg);
-  //void process_ssp();
+  void manual_configure_device(const std::vector<const dal::SSPRegister*>& hw_conf);
 };
 
 } // namespace sspmodules

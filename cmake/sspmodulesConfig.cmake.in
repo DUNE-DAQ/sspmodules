@@ -4,13 +4,9 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(appfwk)
-find_dependency(iomanager)
+find_dependency(confmodel)
 find_dependency(logging)
 find_dependency(ers)
-find_dependency(detdataformats)
-find_dependency(fddetdataformats)
-find_dependency(readoutlibs)
-find_dependency(fdreadoutlibs)
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/@PROJECT_NAME@)
 

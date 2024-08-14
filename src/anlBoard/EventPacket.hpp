@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_EVENTPACKET_HPP_
 #define SSPMODULES_SRC_ANLBOARD_EVENTPACKET_HPP_
 
-#include "fddetdataformats/SSPTypes.hpp"
+#include "SSPTypes.hpp"
 
 #include <vector>
 #include <sstream>
@@ -58,7 +58,7 @@ public:
 
   void DumpEvent();
 
-  dunedaq::fddetdataformats::ssp::EventHeader header;
+  dunedaq::sspmodules::EventHeader header;
 
   std::vector<unsigned int> data;
 };
