@@ -11,11 +11,12 @@ daq_setup_environment()
 
 find_package(appfwk REQUIRED)
 find_package(confmodel REQUIRED)
+find_package(appmodel REQUIRED)
 find_package(logging REQUIRED)
 find_package(ers REQUIRED)
 
-daq_oks_codegen(sspmodules.schema.xml NAMESPACE dunedaq::sspmodules::dal DALDIR dal DEP_PKGS confmodel)
-set(DUNEDAQ_DEPENDENCIES appfwk::appfwk confmodel::confmodel)
+# daq_oks_codegen(sspmodules.schema.xml NAMESPACE dunedaq::sspmodules::dal DALDIR dal DEP_PKGS confmodel)
+set(DUNEDAQ_DEPENDENCIES appfwk::appfwk confmodel::confmodel appmodel::appmodel)
 
 # Provide override functionality for SSP dependencies
 #option(WITH_FTD2XX_AS_PACKAGE "SSP external (ftd2xx) as a dunedaq package" OFF)

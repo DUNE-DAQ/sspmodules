@@ -258,7 +258,7 @@ dunedaq::sspmodules::DeviceInterface::ReadRegisterArrayByName(std::string name, 
 }
 
 void
-dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const dal::SSPCalibModule* conf)
+dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const appmodel::SSPLEDCalibModule* conf)
 {
 
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSP LED Calib Device Interface Configure called.";

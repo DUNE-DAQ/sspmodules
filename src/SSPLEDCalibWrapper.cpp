@@ -37,7 +37,7 @@ SSPLEDCalibWrapper::~SSPLEDCalibWrapper()
 }
 
 void
-SSPLEDCalibWrapper::init(const dal::SSPCalibModule* conf)
+SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init called." << std::endl;
 
@@ -268,7 +268,7 @@ SSPLEDCalibWrapper::configure_burst_mode()
 }
 
 void
-SSPLEDCalibWrapper::manual_configure_device(const std::vector<const dal::SSPRegister*>& hw_conf)
+SSPLEDCalibWrapper::manual_configure_device(const std::vector<const appmodel::SSPRegister*>& hw_conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice called.";
   TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Processing the Hardware Configuration list..." << std::endl;
