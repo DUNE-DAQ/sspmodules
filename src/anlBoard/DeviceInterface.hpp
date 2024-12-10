@@ -9,8 +9,8 @@
 #define SSPMODULES_SRC_ANLBOARD_DEVICEINTERFACE_HPP_
 
 #include "logging/Logging.hpp"
-#include "sspmodules/dal/SSPCalibModule.hpp"
-#include "sspmodules/dal/SSPRegister.hpp"
+#include "appmodel/SSPLEDCalibModule.hpp"
+#include "appmodel/SSPRegister.hpp"
 
 #include "DeviceManager.hpp"
 #include "Device.hpp"
@@ -47,7 +47,7 @@ public:
 
   void OpenSlowControl();
 
-  void ConfigureLEDCalib(const dal::SSPCalibModule* conf);
+  void ConfigureLEDCalib(const appmodel::SSPLEDCalibModule* conf);
 
 
   //Called by ReadEvents
