@@ -16,6 +16,11 @@ namespace dunedaq {
 
 ERS_DECLARE_ISSUE(sspmodules, ConfigurationError, "SSP Configuration Error: " << conferror, ((std::string)conferror))
 
+ERS_DECLARE_ISSUE(sspmodules,
+		  FailedLEDCalibration,
+		  "LED calibration failed to configure",
+		  ERS_EMPTY)
+
 } // namespace dunedaq
 
 #endif // SSPMODULES_SRC_SSPISSUES_HPP_
