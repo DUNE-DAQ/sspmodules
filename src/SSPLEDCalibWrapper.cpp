@@ -70,11 +70,15 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
                               << "Timing Address is: " << m_timing_address << std::endl
                               << "Module ID is: " << m_module_id << std::endl;
 
-  m_device_interface->SetPartitionNumber(m_partition_number);
-  m_device_interface->SetTimingAddress(m_timing_address);
-  m_device_interface->ConfigureLEDCalib(conf); //This sets up the ethernet interface and make sure that the pdts is synched
-  m_device_interface->SetRegisterByName("module_id", m_module_id);
-  //m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
+  try {
+    m_device_interface->SetPartitionNumber(m_partition_number);
+    m_device_interface->SetTimingAddress(m_timing_address);
+    m_device_interface->ConfigureLEDCalib(conf); //This sets up the ethernet interface and make sure that the pdts is synched
+    m_device_interface->SetRegisterByName("module_id", m_module_id);
+    //m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
+  } catch (const std::exception & e) {
+    throw FailedLEDCalibration(ERS_HERE, e);
+  }
 
   if ( conf->get_pulse_mode() == "single") {
     m_single_pulse = true;
