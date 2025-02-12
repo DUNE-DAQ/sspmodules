@@ -1,21 +1,52 @@
 #!/bin/env python3
 
 import click
-from pathlib import Path
+import conffwk
+import confmodel
+import appmodel
 
 @click.command()
-@click.option('--timeout', '-t', type=int, default=1500,
-              help='Timeout to be used by the daphne controllers in milliseconds')
-@click.option('--name', '-n', type=str, default="",
-              help='Name assigned to the object. If empty its name is derived from the json file name')
+@click.option('--object-name', '-n', type=str, default="np02-ssp-on",
+              help='Name assigned to the object')
+@click.option('--number-channels', type=int, default=None)
+@click.option('--channel-mask', type=int, default=None)
+@click.option('--pulse-mode', type=str, default=None)
+@click.option('--burst-count', type=int, default=None)
+@click.option('--double-pulse-delay-ticks', type=int, default=None)
+@click.option('--pulse1-width-ticks', type=int, default=None)
+@click.option('--pulse2-width-ticks', type=int, default=None)
+@click.option('--pulse-bias-percent-270nm', type=int, default=None)
+@click.option('--pulse-bias-percent-367nm', type=int, default=None)
 @click.argument('oksfile')
-@click.argument('jsonfile')
-def cli(oksfile, jsonfile, name, timeout):
+def cli(oksfile, object_name,
+        number_channels, channel_mask, pulse_mode, burst_count, double_pulse_delay_ticks,
+        pulse1_width_ticks, pulse2_width_ticks, pulse_bias_percent_270nm, pulse_bias_percent_367nm):
   """Script to set the SSP for a particular calibration phase space"""
-  if not name:
-     name = Path(jsonfile).stem
-     
-  daphne.add_daphne_conf(oksfile, name, jsonfile, timeout)
 
+  db = conffwk.Configuration("oksconflibs:" + oksfile)
+  dal=db.get_dal(class_name="SSPLEDCalibModule", uid=object_name)
+
+  if number_channels :
+    dal.number_channels = number_channels
+  if channel_mask :
+    dal.channel_mask = channel_mask
+  if pulse_mode :
+    dal.pulse_mode = pulse_mode
+  if burst_count :
+    dal.burst_count = burst_count
+  if double_pulse_delay_ticks :
+    dal.double_pulse_delay_ticks = double_pulse_delay_ticks
+  if pulse1_width_ticks :
+    dal.pulse1_width_ticks = pulse1_width_ticks
+  if pulse2_width_ticks :
+    dal.pulse2_width_ticks = pulse2_width_ticks
+  if pulse_bias_percent_270nm :
+    dal.pulse_bias_percent_270nm = pulse_bias_percent_270nm 
+  if pulse_bias_percent_367nm :
+    dal.pulse_bias_percent_367nm = pulse_bias_percent_367nm 
+    
+  db.update_dal(dal)
+  db.commit()
+  
 if __name__ == '__main__':
   cli()
