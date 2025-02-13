@@ -8,8 +8,8 @@
 #ifndef SSPMODULES_SRC_SSPLEDCALIBWRAPPER_HPP_
 #define SSPMODULES_SRC_SSPLEDCALIBWRAPPER_HPP_
 
-#include "sspmodules/dal/SSPCalibModule.hpp"
-#include "sspmodules/dal/SSPRegister.hpp"
+#include "appmodel/SSPLEDCalibModule.hpp"
+#include "appmodel/SSPRegister.hpp"
 
 #include "SSPIssues.hpp"
 #include "anlBoard/DeviceInterface.hpp"
@@ -38,7 +38,7 @@ public:
   SSPLEDCalibWrapper& operator=(SSPLEDCalibWrapper&&) = delete;      ///< SSPLEDCalibWrapper is not move-assignable
 
   using data_t = nlohmann::json;
-  void init(const dal::SSPCalibModule* mcfg);
+  void init(const appmodel::SSPLEDCalibModule* mcfg);
   void start(const data_t& args);
   void stop(const data_t& args);
   
@@ -74,7 +74,7 @@ private:
   void validate_config(const data_t& args);
   void configure_single_pulse();
   void configure_burst_mode();
-  void manual_configure_device(const std::vector<const dal::SSPRegister*>& hw_conf);
+  void manual_configure_device(const std::vector<const appmodel::SSPRegister*>& hw_conf);
 };
 
 } // namespace sspmodules

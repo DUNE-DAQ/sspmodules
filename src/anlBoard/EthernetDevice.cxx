@@ -10,7 +10,6 @@
 
 #include "EthernetDevice.hpp"
 
-//#include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "anlExceptions.hpp"
 
 #include <algorithm>

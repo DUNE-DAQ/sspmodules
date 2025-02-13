@@ -37,7 +37,7 @@ SSPLEDCalibWrapper::~SSPLEDCalibWrapper()
 }
 
 void
-SSPLEDCalibWrapper::init(const dal::SSPCalibModule* conf)
+SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init called." << std::endl;
 
@@ -70,11 +70,15 @@ SSPLEDCalibWrapper::init(const dal::SSPCalibModule* conf)
                               << "Timing Address is: " << m_timing_address << std::endl
                               << "Module ID is: " << m_module_id << std::endl;
 
-  m_device_interface->SetPartitionNumber(m_partition_number);
-  m_device_interface->SetTimingAddress(m_timing_address);
-  m_device_interface->ConfigureLEDCalib(conf); //This sets up the ethernet interface and make sure that the pdts is synched
-  m_device_interface->SetRegisterByName("module_id", m_module_id);
-  //m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
+  try {
+    m_device_interface->SetPartitionNumber(m_partition_number);
+    m_device_interface->SetTimingAddress(m_timing_address);
+    m_device_interface->ConfigureLEDCalib(conf); //This sets up the ethernet interface and make sure that the pdts is synched
+    m_device_interface->SetRegisterByName("module_id", m_module_id);
+    //m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
+  } catch (const std::exception & e) {
+    throw FailedLEDCalibration(ERS_HERE, e);
+  }
 
   if ( conf->get_pulse_mode() == "single") {
     m_single_pulse = true;
@@ -138,8 +142,8 @@ SSPLEDCalibWrapper::start(const data_t& /*args*/)
     throw ConfigurationError(ERS_HERE, ss.str());
   }
   
-  unsigned int pulse_bias_setting_270nm = (4095 * m_pulse_bias_percent_270nm)/100;
-  unsigned int pulse_bias_setting_367nm = (4095 * m_pulse_bias_percent_367nm)/100;
+  unsigned int pulse_bias_setting_270nm = ( m_pulse_bias_percent_270nm);
+  unsigned int pulse_bias_setting_367nm = ( m_pulse_bias_percent_367nm/2);
   
   for (unsigned int counter = 0; counter < m_number_channels ; counter++) {
     unsigned int bias_regAddress =  base_bias_regAddress + 0x4*(counter);  //0x40000340 - 0x4000036C
@@ -176,8 +180,8 @@ SSPLEDCalibWrapper::start(const data_t& /*args*/)
       m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
     } else {
       TLOG(TLVL_FULL_DEBUG) << "Will turn off channel " << std::dec << counter << " at timing register 0x" << std::hex << timing_regAddress << std::dec << std::endl;
-      m_device_interface->SetRegister(bias_regAddress, bias_regVal); //BIAS_DAC_CONFIG_N
-      m_device_interface->SetRegister(timing_regAddress, timing_regVal); //cal_CONFIG_N
+      m_device_interface->SetRegister(bias_regAddress, 0x0); //BIAS_DAC_CONFIG_N
+      m_device_interface->SetRegister(timing_regAddress, 0x0); //cal_CONFIG_N
     }
   }
 
@@ -196,10 +200,10 @@ SSPLEDCalibWrapper::stop(const data_t& /*args*/)
     TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "The run_marker says that SSPLEDCalibWrapper card " << m_board_id << " is already stopped, but stopping anyways...";
   }
 
-  for (unsigned int counter = 0; counter < 5; counter++) { //switch this to 12 for a 12 channel SSP
-    unsigned int bias_regAddress =  0x4000035C + 0x4*(counter);
-    unsigned int timing_regAddress =  0x800003DC + 0x4*(counter);
-    m_device_interface->SetRegister(bias_regAddress, 0x00040000); //BIAS_DAC_CONFIG_N
+  for (unsigned int counter = 0; counter < 12; counter++) { //switch this to 12 for a 12 channel SSP
+    unsigned int bias_regAddress =  0x40000340 + 0x4*(counter);
+    unsigned int timing_regAddress =  0x800003c0 + 0x4*(counter);
+    m_device_interface->SetRegister(bias_regAddress, 0x00000000); //BIAS_DAC_CONFIG_N
     m_device_interface->SetRegister(timing_regAddress, 0x00000000); //cal_CONFIG_N
   }
 
@@ -214,7 +218,7 @@ SSPLEDCalibWrapper::configure_single_pulse()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureSinglePulse called.";
 
-  m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
+  m_device_interface->SetRegister(0x80000464, 0x000002E7); //pdts_cmd_control_1
   m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
   m_device_interface->SetRegister(0x80000944, 0x00030036); //pdts_cmd_delay_1
   m_device_interface->SetRegister(0x80000948, 0x00030036); //pdts_cmd_delay_2
@@ -243,7 +247,7 @@ SSPLEDCalibWrapper::configure_burst_mode()
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureBurstMode called.";
 
-  m_device_interface->SetRegister(0x80000464, 0x00000200); //pdts_cmd_control_1
+  m_device_interface->SetRegister(0x80000464, 0x000002E7); //pdts_cmd_control_1
   m_device_interface->SetRegister(0x80000940, 0x00030036); //pdts_cmd_delay_0
   m_device_interface->SetRegister(0x80000944, 0x00030036); //pdts_cmd_delay_1
   m_device_interface->SetRegister(0x80000948, 0x00030036); //pdts_cmd_delay_2
@@ -268,7 +272,7 @@ SSPLEDCalibWrapper::configure_burst_mode()
 }
 
 void
-SSPLEDCalibWrapper::manual_configure_device(const std::vector<const dal::SSPRegister*>& hw_conf)
+SSPLEDCalibWrapper::manual_configure_device(const std::vector<const appmodel::SSPRegister*>& hw_conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice called.";
   TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Processing the Hardware Configuration list..." << std::endl;
@@ -282,6 +286,83 @@ SSPLEDCalibWrapper::manual_configure_device(const std::vector<const dal::SSPRegi
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::ConfigureDevice complete.";
 } // NOLINT(readability/fn_size)
 
+void
+SSPLEDCalibWrapper::validate_config(const data_t& /*args*/  )
+{
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::validate_config called.";
+
+  if ( ! ( (m_number_channels == 5) || (m_number_channels == 12) ) ) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect number_channels value " << m_number_channels << " is not equal to 5 or 12!!!" << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+  if (m_channel_mask > 4095) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect channel_maks value " << m_channel_mask << " is higher than the limit of 4095!!!" << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+  if (!( m_single_pulse || m_burst_mode ) ) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect pulse_mode value. Neither single or burst."
+       << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+  
+  if (m_double_pulse_delay_ticks > 4095) {
+    std::stringstream ss;
+    ss << "ERROR: Strange!! double_pulse_delay_ticks value is " << m_double_pulse_delay_ticks << ", which is greater than the limit of 4095"
+       << std::endl;
+    TLOG() << ss.str();
+    //throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+  if (m_burst_count > 10000) {
+    std::stringstream ss;
+    ss << "ERROR: Strange!! burst_count value is " << m_burst_count << ", which is more time than in a drift readout window"
+       << std::endl;
+    TLOG() << ss.str();
+    //throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+  if (m_pulse1_width_ticks > 255) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect pulse1_width_ticks value is " << m_pulse1_width_ticks << ", which is greater than the limit of 255!!!"
+       << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+    if (m_pulse2_width_ticks > 255) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect pulse2_width_ticks value is " << m_pulse2_width_ticks << ", which is greater than the limit of 255!!!"
+       << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+  if (m_pulse_bias_percent_270nm > 4095) {
+    std::stringstream ss;
+    ss << "ERROR: Incorrect pulse_bias_percent_270nm value is " << m_pulse_bias_percent_270nm << ", which is greater than 100 percent!!!"
+       << std::endl;
+    TLOG() << ss.str();
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+  
+  if (m_pulse_bias_percent_367nm > 4095) {
+    std::stringstream ss;
+      ss << "ERROR: Incorrect pulse_bias_percent_367nm value is " << m_pulse_bias_percent_367nm << ", which is greater than 100 percent!!!"
+	 << std::endl;
+      TLOG() << ss.str();
+      throw ConfigurationError(ERS_HERE, ss.str());
+  }
+  
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::validate_config complete.";
+}
 
 } // namespace sspmodules
 } // namespace dunedaq

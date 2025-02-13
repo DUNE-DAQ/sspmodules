@@ -5,6 +5,7 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(appfwk)
 find_dependency(confmodel)
+find_dependency(appmodel)
 find_dependency(logging)
 find_dependency(ers)
 

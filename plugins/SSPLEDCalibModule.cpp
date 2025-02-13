@@ -9,7 +9,7 @@
 #define SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_CPP_
 
 #include "logging/Logging.hpp"
-#include "sspmodules/dal/SSPCalibModule.hpp"
+#include "appmodel/SSPLEDCalibModule.hpp"
 #include "SSPLEDCalibModule.hpp"
 //#include "SspIssues.hpp"
 
@@ -51,7 +51,9 @@ void
 SSPLEDCalibModule::init(std::shared_ptr<appfwk::ConfigurationManager> mcfg)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init called.";
-  auto conf = mcfg->get_dal<dal::SSPCalibModule>(get_name());
+
+  auto conf = mcfg->get_dal<appmodel::SSPLEDCalibModule>(get_name());
+
   m_card_wrapper->init(conf);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init complete.";
 }
