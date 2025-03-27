@@ -21,6 +21,11 @@ ERS_DECLARE_ISSUE(sspmodules,
 		  "LED calibration failed to configure",
 		  ERS_EMPTY)
 
+ERS_DECLARE_ISSUE(sspmodules,
+                  DeviceInterfacePDTSStatus,
+                  "Endpoint failed to reach 0x8",
+                  ERS_EMPTY)
+
 } // namespace dunedaq
 
 #endif // SSPMODULES_SRC_SSPISSUES_HPP_

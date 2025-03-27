@@ -374,13 +374,20 @@ dunedaq::sspmodules::DeviceInterface::ConfigureLEDCalib(const appmodel::SSPLEDCa
     TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status value is 0x" << std::hex << pdts_status
                                 << " and the 0xF bit masked value is 0x" << (pdts_status & 0xF) << std::dec << std::endl;
   }
+  int nTries = 0;
   while ((pdts_status & 0xF) != 0x8) {
+    if (nTries == 2) {
+      TLOG_DEBUG(TLVL_WORK_STEPS) << "Wrong PDTS status!" << std::endl;
+      //ers::fatal( DeviceInterfacePDTSStatus(ERS_HERE) );
+      throw DeviceInterfacePDTSStatus(ERS_HERE);
+    }
     usleep(2000000);
     TLOG_DEBUG(TLVL_WORK_STEPS) << "Woke up from 2 seconds of sleep and Waiting for endpoint to reach status 0x8..."
                                 << std::endl;
     fDevice->DeviceRead(duneReg.pdts_status, &pdts_status);
     TLOG_DEBUG(TLVL_FULL_DEBUG) << "The pdts_status value is 0x" << std::hex << pdts_status
                                 << " and the 0xF bit masked value is 0x" << (pdts_status & 0xF) << std::dec << std::endl;
+    nTries++;
   }
 
   TLOG_DEBUG(TLVL_WORK_STEPS) << "Endpoint is in running state, continuing with configuration!" << std::endl;
