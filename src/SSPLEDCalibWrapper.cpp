@@ -73,11 +73,24 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
   try {
     m_device_interface->SetPartitionNumber(m_partition_number);
     m_device_interface->SetTimingAddress(m_timing_address);
+  } catch (const std::exception & e) {
+    throw FailedLEDCalibrationInit(ERS_HERE, e);
+  }
+
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init complete.";
+}
+
+void
+SSPLEDCalibWrapper::conf(const appmodel::SSPLEDCalibModule* conf)
+{
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::conf called." << std::endl;
+
+  try {
     m_device_interface->ConfigureLEDCalib(conf); //This sets up the ethernet interface and make sure that the pdts is synched
     m_device_interface->SetRegisterByName("module_id", m_module_id);
     //m_device_interface->SetRegisterByName("eventDataInterfaceSelect", m_cfg.interface_type);
   } catch (const std::exception & e) {
-    throw FailedLEDCalibration(ERS_HERE, e);
+    throw FailedLEDCalibrationConf(ERS_HERE, e);
   }
 
   if ( conf->get_pulse_mode() == "single") {
@@ -86,7 +99,7 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
   } else if ( conf->get_pulse_mode() == "burst") {
     m_burst_mode = true;
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: I think that you want SSP LED Calib module to be in BURST MODE..." << std::endl;
-  } 
+  }
 
   if ( (m_single_pulse && m_burst_mode) ) {
     std::stringstream ss;
@@ -94,7 +107,7 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
   }
-    
+
   if (m_burst_mode) {
     TLOG(TLVL_FULL_DEBUG) << "SSPLEDCalibWrapper: Configuring for BURST MODE..." << std::endl;
     this->configure_burst_mode();
@@ -106,14 +119,14 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
     ss << "ERROR: SOMEHOW ENDED UP WITH NO PULSE MODES SET ON!!!!" << std::endl;
     TLOG() << ss.str();
     throw ConfigurationError(ERS_HERE, ss.str());
-  }  
+  }
 
   //if there are "literal" entries in the configuration they are explicit writes to the specified register with given value
   //these literal entries are paresed and applied last after any other parameters so this method call needs to be after the
   //other configuration calls
   this->manual_configure_device(conf->get_hardware_configuration());
 
-  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::configure complete.";
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::conf complete.";
 }
 
 void

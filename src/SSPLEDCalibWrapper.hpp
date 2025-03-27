@@ -39,6 +39,7 @@ public:
 
   using data_t = nlohmann::json;
   void init(const appmodel::SSPLEDCalibModule* mcfg);
+  void conf(const appmodel::SSPLEDCalibModule* mcfg);
   void start(const data_t& args);
   void stop(const data_t& args);
   
