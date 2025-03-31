@@ -48,10 +48,12 @@ SSPLEDCalibModule::SSPLEDCalibModule(const std::string& name)
 }
 
 void
-SSPLEDCalibModule::init(std::shared_ptr<appfwk::ModuleConfiguration> mcfg)
+SSPLEDCalibModule::init(std::shared_ptr<appfwk::ConfigurationManager> mcfg)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init called.";
-  auto conf = mcfg->module<appmodel::SSPLEDCalibModule>(get_name());
+
+  auto conf = mcfg->get_dal<appmodel::SSPLEDCalibModule>(get_name());
+
   m_card_wrapper->init(conf);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init complete.";
 }
