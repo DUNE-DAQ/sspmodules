@@ -41,9 +41,10 @@ SSPLEDCalibModule::SSPLEDCalibModule(const std::string& name)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule constructor called.";
   m_card_wrapper = std::make_unique<SSPLEDCalibWrapper>();
 
+  register_command("conf", &SSPLEDCalibModule::do_configure);
   register_command("start", &SSPLEDCalibModule::do_start);
   register_command("stop", &SSPLEDCalibModule::do_stop);
-  
+
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule constructor complete.";
 }
 
@@ -52,10 +53,28 @@ SSPLEDCalibModule::init(std::shared_ptr<appfwk::ConfigurationManager> mcfg)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init called.";
 
+  m_mcfg = mcfg;
   auto conf = mcfg->get_dal<appmodel::SSPLEDCalibModule>(get_name());
 
   m_card_wrapper->init(conf);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init complete.";
+}
+
+void
+SSPLEDCalibModule::do_configure(const data_t& /*args*/)
+{
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule conf called.";
+
+  if (!m_mcfg) {
+    std::stringstream ss;
+    ss << "Error: The configuration was not properly stored!" << std::endl;
+    throw ConfigurationError(ERS_HERE, ss.str());
+  }
+
+  auto conf = m_mcfg->get_dal<appmodel::SSPLEDCalibModule>(get_name());
+
+  m_card_wrapper->conf(conf);
+  TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule conf complete.";
 }
 
 void
