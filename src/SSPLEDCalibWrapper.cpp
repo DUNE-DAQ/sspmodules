@@ -41,8 +41,6 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibWrapper::init called." << std::endl;
 
-  m_device_interface = new dunedaq::sspmodules::DeviceInterface();
-
   m_number_channels = conf->get_number_channels();
   m_channel_mask = conf->get_channel_mask();
   m_burst_count = conf->get_burst_count();
@@ -71,6 +69,7 @@ SSPLEDCalibWrapper::init(const appmodel::SSPLEDCalibModule* conf)
                               << "Module ID is: " << m_module_id << std::endl;
 
   try {
+    m_device_interface = new dunedaq::sspmodules::DeviceInterface();
     m_device_interface->SetPartitionNumber(m_partition_number);
     m_device_interface->SetTimingAddress(m_timing_address);
   } catch (const std::exception & e) {
