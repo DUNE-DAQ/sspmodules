@@ -54,9 +54,8 @@ SSPLEDCalibModule::init(std::shared_ptr<appfwk::ConfigurationManager> mcfg)
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init called.";
 
   m_mcfg = mcfg;
-  auto conf = mcfg->get_dal<appmodel::SSPLEDCalibModule>(get_name());
 
-  m_card_wrapper->init(conf);
+  //m_card_wrapper->init(conf); moved to conf for now
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init complete.";
 }
 
@@ -73,6 +72,7 @@ SSPLEDCalibModule::do_configure(const data_t& /*args*/)
 
   auto conf = m_mcfg->get_dal<appmodel::SSPLEDCalibModule>(get_name());
 
+  m_card_wrapper->init(conf);
   m_card_wrapper->conf(conf);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule conf complete.";
 }
