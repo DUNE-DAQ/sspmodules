@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(sspmodules VERSION 1.5.0)
+project(sspmodules VERSION 1.6.0)
 
 find_package(daq-cmake REQUIRED)
 
@@ -46,6 +46,9 @@ daq_add_library(anlBoard/*.cxx SSPLEDCalibWrapper.cpp LINK_LIBRARIES ${SSP_DEPEN
 
 ##############################################################################
 daq_add_plugin(SSPLEDCalibModule duneDAQModule LINK_LIBRARIES sspmodules)
+
+daq_add_application( ssp_tcp_test ssp_tcp_test.cxx TEST LINK_LIBRARIES sspmodules )
+daq_add_application( ssp_udp_test ssp_udp_test.cxx TEST LINK_LIBRARIES sspmodules )
 
 daq_install()
 
