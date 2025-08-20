@@ -60,7 +60,7 @@ SSPLEDCalibModule::init(std::shared_ptr<appfwk::ConfigurationManager> mcfg)
 }
 
 void
-SSPLEDCalibModule::do_configure(const data_t& /*args*/)
+SSPLEDCalibModule::do_configure(const CommandData_t& /*args*/)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule conf called.";
 
@@ -78,7 +78,7 @@ SSPLEDCalibModule::do_configure(const data_t& /*args*/)
 }
 
 void
-SSPLEDCalibModule::do_start(const data_t& args)
+SSPLEDCalibModule::do_start(const CommandData_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start called.";
   m_card_wrapper->start(args);
@@ -87,7 +87,7 @@ SSPLEDCalibModule::do_start(const data_t& args)
 
 
 void
-SSPLEDCalibModule::do_stop(const data_t& args)
+SSPLEDCalibModule::do_stop(const CommandData_t& args)
 {
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_stop called.";
   m_card_wrapper->stop(args);
