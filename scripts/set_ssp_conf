@@ -2,8 +2,6 @@
 
 import click
 import conffwk
-import confmodel
-import appmodel
 
 @click.command()
 @click.option('--object-name', '-n', type=str, default="np02-ssp-on",
