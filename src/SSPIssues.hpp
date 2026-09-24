@@ -8,8 +8,8 @@
 #ifndef SSPMODULES_SRC_SSPISSUES_HPP_
 #define SSPMODULES_SRC_SSPISSUES_HPP_
 
-#include <ers/Issue.hpp>
 #include "logging/Logging.hpp" // NOTE: if ISSUES ARE DECLARED BEFORE include logging/Logging.hpp, TLOG_DEBUG<<issue wont work.
+#include <ers/Issue.hpp>
 
 #include <string>
 
@@ -17,20 +17,11 @@ namespace dunedaq {
 
 ERS_DECLARE_ISSUE(sspmodules, ConfigurationError, "SSP Configuration Error: " << conferror, ((std::string)conferror))
 
-ERS_DECLARE_ISSUE(sspmodules,
-		  FailedLEDCalibrationInit,
-		  "LED calibration failed to initialize",
-		  ERS_EMPTY)
+ERS_DECLARE_ISSUE(sspmodules, FailedLEDCalibrationInit, "LED calibration failed to initialize", ERS_EMPTY)
 
-ERS_DECLARE_ISSUE(sspmodules,
-                  FailedLEDCalibrationConf,
-                  "LED calibration failed to configure",
-                  ERS_EMPTY)
+ERS_DECLARE_ISSUE(sspmodules, FailedLEDCalibrationConf, "LED calibration failed to configure", ERS_EMPTY)
 
-ERS_DECLARE_ISSUE(sspmodules,
-                  DeviceInterfacePDTSStatus,
-                  "Endpoint failed to reach 0x8",
-                  ERS_EMPTY)
+ERS_DECLARE_ISSUE(sspmodules, DeviceInterfacePDTSStatus, "Endpoint failed to reach 0x8", ERS_EMPTY)
 
 } // namespace dunedaq
 

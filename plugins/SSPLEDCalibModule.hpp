@@ -8,10 +8,9 @@
 #ifndef SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_HPP_
 #define SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_HPP_
 
-
 // From appfwk
-#include "appfwk/DAQModule.hpp"
 #include "SSPLEDCalibWrapper.hpp"
+#include "appfwk/DAQModule.hpp"
 
 #include <future>
 #include <map>
@@ -38,7 +37,6 @@ public:
   void init(std::shared_ptr<appfwk::ConfigurationManager> mcfg) override;
 
 private:
-
   // Commands
   void do_configure(const CommandData_t& /*args*/);
   void do_start(const CommandData_t& args);

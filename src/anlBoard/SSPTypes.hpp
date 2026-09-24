@@ -53,7 +53,6 @@ enum statusConstants
 // Types
 //==============================================================================
 
-
 // Structure defined by hardware, i.e. hardware output can be written straight into this struct
 struct EventHeader
 {                                 // NOTE: Group fields are listed from MSB to LSB

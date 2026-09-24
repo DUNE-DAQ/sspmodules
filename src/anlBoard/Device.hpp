@@ -8,7 +8,7 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICE_HPP_
 #define SSPMODULES_SRC_ANLBOARD_DEVICE_HPP_
 
-//#include "ftd2xx.h"
+// #include "ftd2xx.h"
 
 #include <cstdio>
 #include <cstring>
@@ -33,7 +33,7 @@ class Device
   friend class DeviceManager;
 
 public:
-  virtual ~Device(){}
+  virtual ~Device() {}
 
   // Return whether device is currently open
   virtual bool IsOpen() = 0;

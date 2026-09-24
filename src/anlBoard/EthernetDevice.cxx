@@ -18,13 +18,13 @@
 
 boost::asio::io_service dunedaq::sspmodules::EthernetDevice::fIo_service;
 
-dunedaq::sspmodules::EthernetDevice::EthernetDevice(unsigned long ipAddress)  // NOLINT
-  :
-  isOpen(false)
+dunedaq::sspmodules::EthernetDevice::EthernetDevice(unsigned long ipAddress) // NOLINT
+  : isOpen(false)
   , fCommSocket(fIo_service)
   , fDataSocket(fIo_service)
   , fIP(boost::asio::ip::address_v4(ipAddress))
-{}
+{
+}
 
 void
 dunedaq::sspmodules::EthernetDevice::Open(bool slowControlOnly)
@@ -311,7 +311,7 @@ dunedaq::sspmodules::EthernetDevice::DevicePurge(boost::asio::ip::tcp::socket& s
       unsigned int bytesToGet = std::min((unsigned int)256, bytesQueued);
       std::vector<char> junkBuf(bytesToGet);
       socket.read_some(boost::asio::buffer(junkBuf, bytesToGet));
-    } else {      // If queue is empty, wait a bit and check that it hasn't filled up again, then return
+    } else {        // If queue is empty, wait a bit and check that it hasn't filled up again, then return
       usleep(1000); // 1ms
       sleepTime += 1000;
       bytesQueued = socket.available();

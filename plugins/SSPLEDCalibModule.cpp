@@ -8,10 +8,10 @@
 #ifndef SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_CPP_
 #define SSPMODULES_PLUGINS_SSPLEDCALIBMODULE_CPP_
 
-#include "logging/Logging.hpp"
 #include "appmodel/SSPLEDCalibModule.hpp"
 #include "SSPLEDCalibModule.hpp"
-//#include "SspIssues.hpp"
+#include "logging/Logging.hpp"
+// #include "SspIssues.hpp"
 
 #include <vector>
 
@@ -55,7 +55,7 @@ SSPLEDCalibModule::init(std::shared_ptr<appfwk::ConfigurationManager> mcfg)
 
   m_mcfg = mcfg;
 
-  //m_card_wrapper->init(conf); moved to conf for now
+  // m_card_wrapper->init(conf); moved to conf for now
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule init complete.";
 }
 
@@ -84,7 +84,6 @@ SSPLEDCalibModule::do_start(const CommandData_t& args)
   m_card_wrapper->start(args);
   TLOG_DEBUG(TLVL_ENTER_EXIT_METHODS) << "SSPLEDCalibModule do_start complete.";
 }
-
 
 void
 SSPLEDCalibModule::do_stop(const CommandData_t& args)

@@ -8,10 +8,9 @@
 #ifndef SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
 #define SSPMODULES_SRC_ANLBOARD_DEVICEMANAGER_CXX_
 
-
 #include "DeviceManager.hpp"
-//#include "ftd2xx.h"
-//#include "dune-artdaq/DAQLogger/DAQLogger.hh"
+// #include "ftd2xx.h"
+// #include "dune-artdaq/DAQLogger/DAQLogger.hh"
 #include "anlExceptions.hpp"
 
 #include "boost/asio.hpp"
@@ -106,8 +105,8 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
   //      //If length is zero, then device is probably open in another process (though maybe we don't get type then
   //      either...)
   //      //===TODO: Should check flags for open devices and report the number open in other processes to cout
-  //      unsigned int length = strlen(deviceInfoNodes[i].SerialNumber);	// Find length of serial number (including
-  //      'A' or 'B') if (length == 0) {
+  //      unsigned int length = strlen(deviceInfoNodes[i].SerialNumber);	// Find length of serial number
+  //      (including 'A' or 'B') if (length == 0) {
   //	continue;	// Skip to next device
   //      }
   //
@@ -145,7 +144,7 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
   //    if(dIter->first!=cIter->first){
   //      try {
   //	//dune::DAQLogger::LogError("SSP_DeviceManager")<<"Non-matching serial numbers for data and comm channels on
-  //FTDI!"<<std::endl;
+  // FTDI!"<<std::endl;
   //      } catch (...) {}
   //      delete deviceInfoNodes;
   //      throw(EBadDeviceList());
@@ -159,23 +158,21 @@ dunedaq::sspmodules::DeviceManager::RefreshDevices()
 }
 
 dunedaq::sspmodules::Device*
-dunedaq::sspmodules::DeviceManager::OpenDevice(
-                                               unsigned int deviceNum,
-                                               bool slowControlOnly)
+dunedaq::sspmodules::DeviceManager::OpenDevice(unsigned int deviceNum, bool slowControlOnly)
 {
 
   Device* device = 0;
-      if (fEthernetDevices.find(deviceNum) == fEthernetDevices.end()) {
-        fEthernetDevices[deviceNum] = (std::move(
-          std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
-      }
-      if (fEthernetDevices[deviceNum]->IsOpen()) {
-        // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
-        throw(EDeviceAlreadyOpen());
-      } else {
-        device = fEthernetDevices[deviceNum].get();
-        device->Open(slowControlOnly);
-      }
+  if (fEthernetDevices.find(deviceNum) == fEthernetDevices.end()) {
+    fEthernetDevices[deviceNum] = (std::move(
+      std::unique_ptr<dunedaq::sspmodules::EthernetDevice>(new dunedaq::sspmodules::EthernetDevice(deviceNum))));
+  }
+  if (fEthernetDevices[deviceNum]->IsOpen()) {
+    // dune::DAQLogger::LogError("SSP_DeviceManager")<<"Attempt to open already open device!"<<std::endl;
+    throw(EDeviceAlreadyOpen());
+  } else {
+    device = fEthernetDevices[deviceNum].get();
+    device->Open(slowControlOnly);
+  }
   return device;
 }
 
